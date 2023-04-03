@@ -66,9 +66,9 @@
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Dominators.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/PatternMatch.h"
@@ -275,7 +275,7 @@ PreservedAnalyses LICMPass::run(Loop &L, LoopAnalysisManager &AM,
                                 LoopStandardAnalysisResults &AR, LPMUpdater &) {
   if (!AR.MSSA)
     report_fatal_error("LICM requires MemorySSA (loop-mssa)",
-                       /*GenCrashDiag*/false);
+                       /*GenCrashDiag*/ false);
 
   // For the new PM, we also can't use OptimizationRemarkEmitter as an analysis
   // pass.  Function analyses need to be preserved across loop transformations
@@ -309,7 +309,7 @@ PreservedAnalyses LNICMPass::run(LoopNest &LN, LoopAnalysisManager &AM,
                                  LPMUpdater &) {
   if (!AR.MSSA)
     report_fatal_error("LNICM requires MemorySSA (loop-mssa)",
-                       /*GenCrashDiag*/false);
+                       /*GenCrashDiag*/ false);
 
   // For the new PM, we also can't use OptimizationRemarkEmitter as an analysis
   // pass.  Function analyses need to be preserved across loop transformations
@@ -401,7 +401,6 @@ bool LoopInvariantCodeMotion::runOnLoop(Loop *L, AAResults *AA, LoopInfo *LI,
   bool Changed = false;
 
   assert(L->isLCSSAForm(*DT) && "Loop is not in LCSSA form.");
-  MSSA->ensureOptimizedUses();
 
   // If this loop has metadata indicating that LICM is not to be performed then
   // just exit.
@@ -1155,7 +1154,7 @@ bool isOnlyMemoryAccess(const Instruction *I, const Loop *L,
     }
   return true;
 }
-}
+} // namespace
 
 static MemoryAccess *getClobberingMemoryAccess(MemorySSA &MSSA,
                                                BatchAAResults &BAA,
@@ -1204,8 +1203,8 @@ bool llvm::canSinkOrHoistInst(Instruction &I, AAResults *AA, DominatorTree *DT,
 
     bool InvariantGroup = LI->hasMetadata(LLVMContext::MD_invariant_group);
 
-    bool Invalidated = pointerInvalidatedByLoop(
-        MSSA, MU, CurLoop, I, Flags, InvariantGroup);
+    bool Invalidated =
+        pointerInvalidatedByLoop(MSSA, MU, CurLoop, I, Flags, InvariantGroup);
     // Check loop-invariant address because this may also be a sinkable load
     // whose address is not necessarily loop-invariant.
     if (ORE && Invalidated && CurLoop->isLoopInvariant(LI->getPointerOperand()))
@@ -1292,7 +1291,7 @@ bool llvm::canSinkOrHoistInst(Instruction &I, AAResults *AA, DominatorTree *DT,
     auto *Source = getClobberingMemoryAccess(*MSSA, BAA, Flags, SIMD);
     // Make sure there are no clobbers inside the loop.
     if (!MSSA->isLiveOnEntryDef(Source) &&
-           CurLoop->contains(Source->getBlock()))
+        CurLoop->contains(Source->getBlock()))
       return false;
 
     // If there are interfering Uses (i.e. their defining access is in the
@@ -1304,7 +1303,8 @@ bool llvm::canSinkOrHoistInst(Instruction &I, AAResults *AA, DominatorTree *DT,
       if (auto *Accesses = MSSA->getBlockAccesses(BB)) {
         for (const auto &MA : *Accesses)
           if (const auto *MU = dyn_cast<MemoryUse>(&MA)) {
-            auto *MD = MU->getDefiningAccess();
+            auto *MD = getClobberingMemoryAccess(*MSSA, BAA, Flags,
+                                                 const_cast<MemoryUse *>(MU));
             if (!MSSA->isLiveOnEntryDef(MD) &&
                 CurLoop->contains(MD->getBlock()))
               return false;
@@ -1491,8 +1491,8 @@ static Instruction *cloneInstructionInExitBlock(
     if (LI->wouldBeOutOfLoopUseRequiringLCSSA(Op.get(), PN.getParent())) {
       auto *OInst = cast<Instruction>(Op.get());
       PHINode *OpPN =
-        PHINode::Create(OInst->getType(), PN.getNumIncomingValues(),
-                        OInst->getName() + ".lcssa", &ExitBlock.front());
+          PHINode::Create(OInst->getType(), PN.getNumIncomingValues(),
+                          OInst->getName() + ".lcssa", &ExitBlock.front());
       for (unsigned i = 0, e = PN.getNumIncomingValues(); i != e; ++i)
         OpPN->addIncoming(OInst, PN.getIncomingBlock(i));
       Op = OpPN;
@@ -1709,7 +1709,7 @@ static bool sink(Instruction &I, LoopInfo *LI, DominatorTree *DT,
   // the instruction.
   // First check if I is worth sinking for all uses. Sink only when it is worth
   // across all uses.
-  SmallSetVector<User*, 8> Users(I.user_begin(), I.user_end());
+  SmallSetVector<User *, 8> Users(I.user_begin(), I.user_end());
   for (auto *UI : Users) {
     auto *User = cast<Instruction>(UI);
 
@@ -1740,8 +1740,8 @@ static void hoist(Instruction &I, const DominatorTree *DT, const Loop *CurLoop,
   LLVM_DEBUG(dbgs() << "LICM hoisting to " << Dest->getNameOrAsOperand() << ": "
                     << I << "\n");
   ORE->emit([&]() {
-    return OptimizationRemark(DEBUG_TYPE, "Hoisted", &I) << "hoisting "
-                                                         << ore::NV("Inst", &I);
+    return OptimizationRemark(DEBUG_TYPE, "Hoisted", &I)
+           << "hoisting " << ore::NV("Inst", &I);
   });
 
   // Metadata can be dependent on conditions we are hoisting above.
@@ -2374,7 +2374,8 @@ static bool pointerInvalidatedByLoop(MemorySSA *MSSA, MemoryUse *MU,
     MemoryAccess *Source = getClobberingMemoryAccess(*MSSA, BAA, Flags, MU);
     return !MSSA->isLiveOnEntryDef(Source) &&
            CurLoop->contains(Source->getBlock()) &&
-           !(InvariantGroup && Source->getBlock() == CurLoop->getHeader() && isa<MemoryPhi>(Source));
+           !(InvariantGroup && Source->getBlock() == CurLoop->getHeader() &&
+             isa<MemoryPhi>(Source));
   }
 
   // For sinking, we'd need to check all Defs below this use. The getClobbering
@@ -2477,9 +2478,9 @@ static bool hoistMinMax(Instruction &I, Loop &L, ICFLoopSafetyInfo &SafetyInfo,
   if (IsLogical)
     RHS2 = Builder.CreateFreeze(RHS2, RHS2->getName() + ".fr");
   Value *NewRHS = Builder.CreateBinaryIntrinsic(
-      id, RHS1, RHS2, nullptr, StringRef("invariant.") +
-                                   (ICmpInst::isSigned(P1) ? "s" : "u") +
-                                   (UseMin ? "min" : "max"));
+      id, RHS1, RHS2, nullptr,
+      StringRef("invariant.") + (ICmpInst::isSigned(P1) ? "s" : "u") +
+          (UseMin ? "min" : "max"));
   Builder.SetInsertPoint(&I);
   ICmpInst::Predicate P = P1;
   if (Inverse)
