@@ -30,34 +30,101 @@ define void @vector_reverse_mask_v4i1(ptr noalias %a, ptr noalias %cond, i64 %N)
 ; CHECK-NEXT:    [[IND_END:%.*]] = and i64 [[N]], 7
 ; CHECK-NEXT:    br label [[VECTOR_BODY:%.*]]
 ; CHECK:       vector.body:
-; CHECK-NEXT:    [[INDEX:%.*]] = phi i64 [ 0, [[VECTOR_PH]] ], [ [[INDEX_NEXT:%.*]], [[VECTOR_BODY]] ]
-; CHECK-NEXT:    [[TMP0:%.*]] = xor i64 [[INDEX]], -1
-; CHECK-NEXT:    [[TMP1:%.*]] = add i64 [[TMP0]], [[N]]
-; CHECK-NEXT:    [[TMP2:%.*]] = getelementptr inbounds double, ptr [[COND:%.*]], i64 [[TMP1]]
-; CHECK-NEXT:    [[TMP3:%.*]] = getelementptr inbounds double, ptr [[TMP2]], i64 -3
-; CHECK-NEXT:    [[WIDE_LOAD:%.*]] = load <4 x double>, ptr [[TMP3]], align 8
+; CHECK-NEXT:    [[INDEX:%.*]] = phi i64 [ 0, [[VECTOR_PH]] ], [ [[INDEX_NEXT:%.*]], [[PRED_STORE_CONTINUE16:%.*]] ]
+; CHECK-NEXT:    [[OFFSET_IDX:%.*]] = sub i64 [[N]], [[INDEX]]
+; CHECK-NEXT:    [[TMP0:%.*]] = add nsw i64 [[OFFSET_IDX]], -1
+; CHECK-NEXT:    [[TMP1:%.*]] = getelementptr inbounds double, ptr [[COND:%.*]], i64 [[TMP0]]
+; CHECK-NEXT:    [[TMP2:%.*]] = getelementptr inbounds double, ptr [[TMP1]], i64 -3
+; CHECK-NEXT:    [[WIDE_LOAD:%.*]] = load <4 x double>, ptr [[TMP2]], align 8
 ; CHECK-NEXT:    [[REVERSE:%.*]] = shufflevector <4 x double> [[WIDE_LOAD]], <4 x double> poison, <4 x i32> <i32 3, i32 2, i32 1, i32 0>
-; CHECK-NEXT:    [[TMP5:%.*]] = getelementptr inbounds double, ptr [[TMP2]], i64 -4
-; CHECK-NEXT:    [[TMP6:%.*]] = getelementptr inbounds double, ptr [[TMP5]], i64 -3
-; CHECK-NEXT:    [[WIDE_LOAD1:%.*]] = load <4 x double>, ptr [[TMP6]], align 8
+; CHECK-NEXT:    [[TMP3:%.*]] = getelementptr inbounds double, ptr [[TMP1]], i64 -7
+; CHECK-NEXT:    [[WIDE_LOAD1:%.*]] = load <4 x double>, ptr [[TMP3]], align 8
 ; CHECK-NEXT:    [[REVERSE2:%.*]] = shufflevector <4 x double> [[WIDE_LOAD1]], <4 x double> poison, <4 x i32> <i32 3, i32 2, i32 1, i32 0>
-; CHECK-NEXT:    [[TMP8:%.*]] = fcmp une <4 x double> [[REVERSE]], zeroinitializer
-; CHECK-NEXT:    [[TMP9:%.*]] = fcmp une <4 x double> [[REVERSE2]], zeroinitializer
-; CHECK-NEXT:    [[TMP10:%.*]] = getelementptr double, ptr [[A:%.*]], i64 [[TMP1]]
-; CHECK-NEXT:    [[TMP11:%.*]] = getelementptr double, ptr [[TMP10]], i64 -3
-; CHECK-NEXT:    [[REVERSE3:%.*]] = shufflevector <4 x i1> [[TMP8]], <4 x i1> poison, <4 x i32> <i32 3, i32 2, i32 1, i32 0>
-; CHECK-NEXT:    [[WIDE_MASKED_LOAD:%.*]] = call <4 x double> @llvm.masked.load.v4f64.p0(ptr [[TMP11]], i32 8, <4 x i1> [[REVERSE3]], <4 x double> poison)
-; CHECK-NEXT:    [[TMP13:%.*]] = getelementptr double, ptr [[TMP10]], i64 -4
-; CHECK-NEXT:    [[TMP14:%.*]] = getelementptr double, ptr [[TMP13]], i64 -3
-; CHECK-NEXT:    [[REVERSE5:%.*]] = shufflevector <4 x i1> [[TMP9]], <4 x i1> poison, <4 x i32> <i32 3, i32 2, i32 1, i32 0>
-; CHECK-NEXT:    [[WIDE_MASKED_LOAD6:%.*]] = call <4 x double> @llvm.masked.load.v4f64.p0(ptr [[TMP14]], i32 8, <4 x i1> [[REVERSE5]], <4 x double> poison)
-; CHECK-NEXT:    [[TMP16:%.*]] = fadd <4 x double> [[WIDE_MASKED_LOAD]], <double 1.000000e+00, double 1.000000e+00, double 1.000000e+00, double 1.000000e+00>
-; CHECK-NEXT:    [[TMP17:%.*]] = fadd <4 x double> [[WIDE_MASKED_LOAD6]], <double 1.000000e+00, double 1.000000e+00, double 1.000000e+00, double 1.000000e+00>
-; CHECK-NEXT:    call void @llvm.masked.store.v4f64.p0(<4 x double> [[TMP16]], ptr [[TMP11]], i32 8, <4 x i1> [[REVERSE3]])
-; CHECK-NEXT:    call void @llvm.masked.store.v4f64.p0(<4 x double> [[TMP17]], ptr [[TMP14]], i32 8, <4 x i1> [[REVERSE5]])
+; CHECK-NEXT:    [[TMP4:%.*]] = fcmp une <4 x double> [[REVERSE]], zeroinitializer
+; CHECK-NEXT:    [[TMP5:%.*]] = fcmp une <4 x double> [[REVERSE2]], zeroinitializer
+; CHECK-NEXT:    [[TMP6:%.*]] = extractelement <4 x i1> [[TMP4]], i64 0
+; CHECK-NEXT:    br i1 [[TMP6]], label [[PRED_STORE_IF:%.*]], label [[PRED_STORE_CONTINUE:%.*]]
+; CHECK:       pred.store.if:
+; CHECK-NEXT:    [[TMP7:%.*]] = add nsw i64 [[OFFSET_IDX]], -1
+; CHECK-NEXT:    [[TMP8:%.*]] = getelementptr inbounds double, ptr [[A:%.*]], i64 [[TMP7]]
+; CHECK-NEXT:    [[TMP9:%.*]] = load double, ptr [[TMP8]], align 8
+; CHECK-NEXT:    [[TMP10:%.*]] = fadd double [[TMP9]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP10]], ptr [[TMP8]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE]]
+; CHECK:       pred.store.continue:
+; CHECK-NEXT:    [[TMP11:%.*]] = extractelement <4 x i1> [[TMP4]], i64 1
+; CHECK-NEXT:    br i1 [[TMP11]], label [[PRED_STORE_IF3:%.*]], label [[PRED_STORE_CONTINUE4:%.*]]
+; CHECK:       pred.store.if3:
+; CHECK-NEXT:    [[TMP12:%.*]] = add i64 [[OFFSET_IDX]], -2
+; CHECK-NEXT:    [[TMP13:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP12]]
+; CHECK-NEXT:    [[TMP14:%.*]] = load double, ptr [[TMP13]], align 8
+; CHECK-NEXT:    [[TMP15:%.*]] = fadd double [[TMP14]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP15]], ptr [[TMP13]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE4]]
+; CHECK:       pred.store.continue4:
+; CHECK-NEXT:    [[TMP16:%.*]] = extractelement <4 x i1> [[TMP4]], i64 2
+; CHECK-NEXT:    br i1 [[TMP16]], label [[PRED_STORE_IF5:%.*]], label [[PRED_STORE_CONTINUE6:%.*]]
+; CHECK:       pred.store.if5:
+; CHECK-NEXT:    [[TMP17:%.*]] = add i64 [[OFFSET_IDX]], -3
+; CHECK-NEXT:    [[TMP18:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP17]]
+; CHECK-NEXT:    [[TMP19:%.*]] = load double, ptr [[TMP18]], align 8
+; CHECK-NEXT:    [[TMP20:%.*]] = fadd double [[TMP19]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP20]], ptr [[TMP18]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE6]]
+; CHECK:       pred.store.continue6:
+; CHECK-NEXT:    [[TMP21:%.*]] = extractelement <4 x i1> [[TMP4]], i64 3
+; CHECK-NEXT:    br i1 [[TMP21]], label [[PRED_STORE_IF7:%.*]], label [[PRED_STORE_CONTINUE8:%.*]]
+; CHECK:       pred.store.if7:
+; CHECK-NEXT:    [[TMP22:%.*]] = add i64 [[OFFSET_IDX]], -4
+; CHECK-NEXT:    [[TMP23:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP22]]
+; CHECK-NEXT:    [[TMP24:%.*]] = load double, ptr [[TMP23]], align 8
+; CHECK-NEXT:    [[TMP25:%.*]] = fadd double [[TMP24]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP25]], ptr [[TMP23]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE8]]
+; CHECK:       pred.store.continue8:
+; CHECK-NEXT:    [[TMP26:%.*]] = extractelement <4 x i1> [[TMP5]], i64 0
+; CHECK-NEXT:    br i1 [[TMP26]], label [[PRED_STORE_IF9:%.*]], label [[PRED_STORE_CONTINUE10:%.*]]
+; CHECK:       pred.store.if9:
+; CHECK-NEXT:    [[TMP27:%.*]] = add i64 [[OFFSET_IDX]], -5
+; CHECK-NEXT:    [[TMP28:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP27]]
+; CHECK-NEXT:    [[TMP29:%.*]] = load double, ptr [[TMP28]], align 8
+; CHECK-NEXT:    [[TMP30:%.*]] = fadd double [[TMP29]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP30]], ptr [[TMP28]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE10]]
+; CHECK:       pred.store.continue10:
+; CHECK-NEXT:    [[TMP31:%.*]] = extractelement <4 x i1> [[TMP5]], i64 1
+; CHECK-NEXT:    br i1 [[TMP31]], label [[PRED_STORE_IF11:%.*]], label [[PRED_STORE_CONTINUE12:%.*]]
+; CHECK:       pred.store.if11:
+; CHECK-NEXT:    [[TMP32:%.*]] = add i64 [[OFFSET_IDX]], -6
+; CHECK-NEXT:    [[TMP33:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP32]]
+; CHECK-NEXT:    [[TMP34:%.*]] = load double, ptr [[TMP33]], align 8
+; CHECK-NEXT:    [[TMP35:%.*]] = fadd double [[TMP34]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP35]], ptr [[TMP33]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE12]]
+; CHECK:       pred.store.continue12:
+; CHECK-NEXT:    [[TMP36:%.*]] = extractelement <4 x i1> [[TMP5]], i64 2
+; CHECK-NEXT:    br i1 [[TMP36]], label [[PRED_STORE_IF13:%.*]], label [[PRED_STORE_CONTINUE14:%.*]]
+; CHECK:       pred.store.if13:
+; CHECK-NEXT:    [[TMP37:%.*]] = add i64 [[OFFSET_IDX]], -7
+; CHECK-NEXT:    [[TMP38:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP37]]
+; CHECK-NEXT:    [[TMP39:%.*]] = load double, ptr [[TMP38]], align 8
+; CHECK-NEXT:    [[TMP40:%.*]] = fadd double [[TMP39]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP40]], ptr [[TMP38]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE14]]
+; CHECK:       pred.store.continue14:
+; CHECK-NEXT:    [[TMP41:%.*]] = extractelement <4 x i1> [[TMP5]], i64 3
+; CHECK-NEXT:    br i1 [[TMP41]], label [[PRED_STORE_IF15:%.*]], label [[PRED_STORE_CONTINUE16]]
+; CHECK:       pred.store.if15:
+; CHECK-NEXT:    [[TMP42:%.*]] = add i64 [[OFFSET_IDX]], -8
+; CHECK-NEXT:    [[TMP43:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[TMP42]]
+; CHECK-NEXT:    [[TMP44:%.*]] = load double, ptr [[TMP43]], align 8
+; CHECK-NEXT:    [[TMP45:%.*]] = fadd double [[TMP44]], 1.000000e+00
+; CHECK-NEXT:    store double [[TMP45]], ptr [[TMP43]], align 8
+; CHECK-NEXT:    br label [[PRED_STORE_CONTINUE16]]
+; CHECK:       pred.store.continue16:
 ; CHECK-NEXT:    [[INDEX_NEXT]] = add nuw i64 [[INDEX]], 8
-; CHECK-NEXT:    [[TMP20:%.*]] = icmp eq i64 [[INDEX_NEXT]], [[N_VEC]]
-; CHECK-NEXT:    br i1 [[TMP20]], label [[MIDDLE_BLOCK:%.*]], label [[VECTOR_BODY]], !llvm.loop [[LOOP0:![0-9]+]]
+; CHECK-NEXT:    [[TMP46:%.*]] = icmp eq i64 [[INDEX_NEXT]], [[N_VEC]]
+; CHECK-NEXT:    br i1 [[TMP46]], label [[MIDDLE_BLOCK:%.*]], label [[VECTOR_BODY]], !llvm.loop [[LOOP0:![0-9]+]]
 ; CHECK:       middle.block:
 ; CHECK-NEXT:    [[CMP_N:%.*]] = icmp eq i64 [[N_VEC]], [[N]]
 ; CHECK-NEXT:    br i1 [[CMP_N]], label [[FOR_COND_CLEANUP_LOOPEXIT:%.*]], label [[SCALAR_PH]]
@@ -72,18 +139,18 @@ define void @vector_reverse_mask_v4i1(ptr noalias %a, ptr noalias %cond, i64 %N)
 ; CHECK-NEXT:    [[I_08_IN:%.*]] = phi i64 [ [[I_08:%.*]], [[FOR_INC:%.*]] ], [ [[BC_RESUME_VAL]], [[SCALAR_PH]] ]
 ; CHECK-NEXT:    [[I_08]] = add nsw i64 [[I_08_IN]], -1
 ; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr inbounds double, ptr [[COND]], i64 [[I_08]]
-; CHECK-NEXT:    [[TMP21:%.*]] = load double, ptr [[ARRAYIDX]], align 8
-; CHECK-NEXT:    [[TOBOOL:%.*]] = fcmp une double [[TMP21]], 0.000000e+00
+; CHECK-NEXT:    [[TMP47:%.*]] = load double, ptr [[ARRAYIDX]], align 8
+; CHECK-NEXT:    [[TOBOOL:%.*]] = fcmp une double [[TMP47]], 0.000000e+00
 ; CHECK-NEXT:    br i1 [[TOBOOL]], label [[IF_THEN:%.*]], label [[FOR_INC]]
 ; CHECK:       if.then:
 ; CHECK-NEXT:    [[ARRAYIDX1:%.*]] = getelementptr inbounds double, ptr [[A]], i64 [[I_08]]
-; CHECK-NEXT:    [[TMP22:%.*]] = load double, ptr [[ARRAYIDX1]], align 8
-; CHECK-NEXT:    [[ADD:%.*]] = fadd double [[TMP22]], 1.000000e+00
+; CHECK-NEXT:    [[TMP48:%.*]] = load double, ptr [[ARRAYIDX1]], align 8
+; CHECK-NEXT:    [[ADD:%.*]] = fadd double [[TMP48]], 1.000000e+00
 ; CHECK-NEXT:    store double [[ADD]], ptr [[ARRAYIDX1]], align 8
 ; CHECK-NEXT:    br label [[FOR_INC]]
 ; CHECK:       for.inc:
 ; CHECK-NEXT:    [[CMP:%.*]] = icmp sgt i64 [[I_08_IN]], 1
-; CHECK-NEXT:    br i1 [[CMP]], label [[FOR_BODY]], label [[FOR_COND_CLEANUP_LOOPEXIT]], !llvm.loop [[LOOP3:![0-9]+]]
+; CHECK-NEXT:    br i1 [[CMP]], label [[FOR_BODY]], label [[FOR_COND_CLEANUP_LOOPEXIT]], !llvm.loop [[LOOP4:![0-9]+]]
 ;
 
 entry:
