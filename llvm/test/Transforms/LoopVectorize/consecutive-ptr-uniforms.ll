@@ -448,6 +448,15 @@ for.end:
 ; INTER-NEXT:  LV: Found uniform instruction: %i.next = add nuw nsw i64 %i, 1
 ; INTER:       define void @pointer_operand_geps_with_different_indexed_types(
 ; INTER:       vector.body:
+; INTER-NEXT:    [[INDEX:%.*]] = phi i64 [ 0, %vector.ph ], [ [[INDEX_NEXT:%.*]], %vector.body ]
+; INTER-NEXT:    [[TMP4:%.*]] = getelementptr inbounds i64, ptr %A, i64 [[INDEX]]
+; INTER-NEXT:    [[WIDE_VEC:%.*]] = load <32 x i8>, ptr [[TMP4]], align 1
+; INTER-NEXT:    [[STRIDED_VEC:%.*]] = shufflevector <32 x i8> [[WIDE_VEC]], <32 x i8> poison, <4 x i32> <i32 0, i32 8, i32 16, i32 24>
+; INTER-NEXT:    [[STRIDED_VEC3:%.*]] = shufflevector <32 x i8> [[WIDE_VEC]], <32 x i8> poison, <4 x i32> <i32 3, i32 11, i32 19, i32 27>
+; INTER-NEXT:    [[TMP5:%.*]] = xor <4 x i8> [[STRIDED_VEC3]], [[STRIDED_VEC]]
+; INTER-NEXT:    [[TMP6:%.*]] = getelementptr inbounds i8, ptr %B, i64 [[INDEX]]
+; INTER-NEXT:    store <4 x i8> [[TMP5]], ptr [[TMP6]], align 1
+; INTER-NEXT:    [[INDEX_NEXT]] = add nuw i64 [[INDEX]], 4
 ; INTER:         br i1 {{.*}}, label %middle.block, label %vector.body
 ;
 define void @pointer_operand_geps_with_different_indexed_types(i64* %A, i8* %B, i64 %n) {
