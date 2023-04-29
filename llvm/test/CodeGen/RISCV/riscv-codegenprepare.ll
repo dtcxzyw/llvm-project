@@ -142,3 +142,18 @@ for.body:                                         ; preds = %for.body, %for.body
   %niter.ncmp.1 = icmp eq i64 %niter.next.1, %unroll_iter
   br i1 %niter.ncmp.1, label %for.cond.cleanup.loopexit.unr-lcssa, label %for.body
 }
+
+; Make sure we apply reverse transformation to i32 range checks on riscv64.
+define i32 @test3(i64 noundef %0) {
+; CHECK-LABEL: @test3(
+; CHECK-NEXT:    [[TMP2:%.*]] = trunc i64 [[TMP0:%.*]] to i32
+; CHECK-NEXT:    [[TMP3:%.*]] = sext i32 [[TMP2]] to i64
+; CHECK-NEXT:    [[TMP4:%.*]] = icmp eq i64 [[TMP0]], [[TMP3]]
+; CHECK-NEXT:    [[TMP5:%.*]] = zext i1 [[TMP4]] to i32
+; CHECK-NEXT:    ret i32 [[TMP5]]
+;
+  %2 = add i64 %0, 2147483648
+  %3 = icmp ult i64 %2, 4294967296
+  %4 = zext i1 %3 to i32
+  ret i32 %4
+}

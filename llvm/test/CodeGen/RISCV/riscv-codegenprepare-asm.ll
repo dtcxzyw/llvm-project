@@ -125,3 +125,17 @@ for.body:                                         ; preds = %for.body, %for.body
   %niter.ncmp.1 = icmp eq i64 %niter.next.1, %unroll_iter
   br i1 %niter.ncmp.1, label %for.cond.cleanup.loopexit.unr-lcssa, label %for.body
 }
+
+; Make sure we use sext.w for i32 range checks on riscv64.
+define i32 @test3(i64 noundef %0) {
+; CHECK-LABEL: test3:
+; CHECK:       # %bb.0:
+; CHECK-NEXT:    sext.w a1, a0
+; CHECK-NEXT:    xor a0, a0, a1
+; CHECK-NEXT:    seqz a0, a0
+; CHECK-NEXT:    ret
+  %2 = add i64 %0, 2147483648
+  %3 = icmp ult i64 %2, 4294967296
+  %4 = zext i1 %3 to i32
+  ret i32 %4
+}

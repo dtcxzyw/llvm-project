@@ -18,6 +18,7 @@
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/InitializePasses.h"
@@ -54,6 +55,7 @@ public:
   bool visitInstruction(Instruction &I) { return false; }
   bool visitZExtInst(ZExtInst &I);
   bool visitAnd(BinaryOperator &BO);
+  bool visitICmpInst(ICmpInst &Cmp);
 };
 
 } // end anonymous namespace
@@ -147,6 +149,48 @@ bool RISCVCodeGenPrepare::visitAnd(BinaryOperator &BO) {
   BO.setOperand(1, ConstantInt::get(LHS->getType(), C));
 
   return true;
+}
+
+// Optimize i32 range check patterns like (x == (int32_t)x) and
+// (INT_MIN <= x && x <= INT_MAX)
+// Apply reverse transformation to use sext.w
+// X + 2^31 <u 2^32 -> sext (trunc X) == X
+bool RISCVCodeGenPrepare::visitICmpInst(ICmpInst &Cmp) {
+  if (!ST->is64Bit())
+    return false;
+
+  if (Cmp.getPredicate() != ICmpInst::ICMP_ULT)
+    return false;
+
+  using namespace PatternMatch;
+  const APInt *C1;
+  if (!match(Cmp.getOperand(1), m_APInt(C1)) || C1->exactLogBase2() != 32)
+    return false;
+
+  IRBuilder<> Builder(Cmp.getParent());
+  Value *Add = Cmp.getOperand(0);
+  Type *Ty = Builder.getInt64Ty();
+
+  if (!Add->hasOneUse() || Add->getType() != Ty)
+    return false;
+
+  Value *X;
+  const APInt *C2;
+  if (!match(Add, m_Add(m_Value(X), m_APInt(C2))))
+    return false;
+
+  if (*C2 * 2 == *C1) {
+    Builder.SetInsertPoint(&Cmp);
+    Value *Y =
+        Builder.CreateSExt(Builder.CreateTrunc(X, Builder.getInt32Ty()), Ty);
+    Value *NewCmp = Builder.CreateICmp(ICmpInst::ICMP_EQ, X, Y);
+    Cmp.replaceAllUsesWith(NewCmp);
+    Cmp.eraseFromParent();
+    dyn_cast<Instruction>(Add)->eraseFromParent();
+    return true;
+  }
+
+  return false;
 }
 
 bool RISCVCodeGenPrepare::runOnFunction(Function &F) {
