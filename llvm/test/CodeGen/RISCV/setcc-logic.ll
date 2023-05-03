@@ -1322,3 +1322,23 @@ define void @or_ule_lt1(i32 signext %0, i32 signext %1, i32 signext %2) {
 8:                                                ; preds = %8, %4
   ret void
 }
+
+define i32 @i32_range_check(i64 %0) {
+; RV32I-LABEL: i32_range_check:
+; RV32I:       # %bb.0:
+; RV32I-NEXT:    srai a0, a0, 31
+; RV32I-NEXT:    xor a0, a0, a1
+; RV32I-NEXT:    seqz a0, a0
+; RV32I-NEXT:    ret
+;
+; RV64I-LABEL: i32_range_check:
+; RV64I:       # %bb.0:
+; RV64I-NEXT:    sext.w a1, a0
+; RV64I-NEXT:    xor a0, a0, a1
+; RV64I-NEXT:    seqz a0, a0
+; RV64I-NEXT:    ret
+  %2 = add i64 %0, 2147483648
+  %3 = icmp ult i64 %2, 4294967296
+  %4 = zext i1 %3 to i32
+  ret i32 %4
+}

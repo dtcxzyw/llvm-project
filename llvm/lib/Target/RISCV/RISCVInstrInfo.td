@@ -1242,6 +1242,7 @@ class binop_oneuse<SDPatternOperator operator>
 def and_oneuse : binop_oneuse<and>;
 def add_oneuse : binop_oneuse<add>;
 def mul_oneuse : binop_oneuse<mul>;
+def srl_oneuse : binop_oneuse<srl>;
 
 def mul_const_oneuse : PatFrag<(ops node:$A, node:$B),
                                (mul node:$A, node:$B), [{
@@ -1366,6 +1367,18 @@ def : PatGprSimm12<setult, SLTIU>;
 // These ComplexPatterns must be used in pairs.
 def riscv_setne : ComplexPattern<XLenVT, 1, "selectSETNE", [setcc]>;
 def riscv_seteq : ComplexPattern<XLenVT, 1, "selectSETEQ", [setcc]>;
+
+// i32 range checks
+let Predicates = [IsRV64] in {
+// Select ADDIW on rv64
+def : Pat<(seteq (srl_oneuse (add_oneuse GPR:$rs1, (i64 2147483648)), (i64 32)), (i64 0)),
+          (SLTIU (XOR $rs1, (ADDIW $rs1, 0)), 1)>;
+}
+let Predicates = [IsRV32] in {
+// Select SRAI on rv32
+def : Pat<(seteq (add_oneuse GPR:$rs1, (binop_oneuse<setult> (add_oneuse GPR:$rs2, (i32 -2147483648)), GPR:$rs2)), (i32 0)),
+          (SLTIU (XOR (SRAI $rs2, 31), $rs1), 1)>;
+}
 
 // Define pattern expansions for setcc operations that aren't directly
 // handled by a RISC-V instruction.
