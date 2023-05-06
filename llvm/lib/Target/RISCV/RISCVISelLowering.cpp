@@ -12169,7 +12169,7 @@ bool RISCVTargetLowering::shouldTransformSignedTruncationCheck(
     return true;
 
   // With Zbb we can use sext.h. sext.b does not seem to be profitable.
-  return Subtarget.hasStdExtZbb() && KeptBits == 16;
+  return Subtarget.hasStdExtZbb() && ((KeptBits == 8 && XVT == MVT::i64 && !Subtarget.is64Bit()) || KeptBits == 16);
 }
 
 bool RISCVTargetLowering::isDesirableToCommuteWithShift(
