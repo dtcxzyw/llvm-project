@@ -331,7 +331,7 @@ define double @select_nsz_fnegfabs_olt(double %x) {
 ; CHECK-LABEL: @select_nsz_fnegfabs_olt(
 ; CHECK-NEXT:    [[CMP:%.*]] = fcmp olt double [[X:%.*]], 0.000000e+00
 ; CHECK-NEXT:    [[NEGX:%.*]] = fneg nsz double [[X]]
-; CHECK-NEXT:    [[RETVAL_0:%.*]] = select i1 [[CMP]], double [[X]], double [[NEGX]]
+; CHECK-NEXT:    [[RETVAL_0:%.*]] = select nsz i1 [[CMP]], double [[X]], double [[NEGX]]
 ; CHECK-NEXT:    ret double [[RETVAL_0]]
 ;
   %cmp = fcmp olt double %x, 0.000000e+00
@@ -344,7 +344,7 @@ define double @select_nsz_fnegfabs_ult(double %x) {
 ; CHECK-LABEL: @select_nsz_fnegfabs_ult(
 ; CHECK-NEXT:    [[CMP:%.*]] = fcmp ult double [[X:%.*]], 0.000000e+00
 ; CHECK-NEXT:    [[NEGX:%.*]] = fneg nsz double [[X]]
-; CHECK-NEXT:    [[RETVAL_0:%.*]] = select i1 [[CMP]], double [[X]], double [[NEGX]]
+; CHECK-NEXT:    [[RETVAL_0:%.*]] = select nsz i1 [[CMP]], double [[X]], double [[NEGX]]
 ; CHECK-NEXT:    ret double [[RETVAL_0]]
 ;
   %cmp = fcmp ult double %x, 0.000000e+00
