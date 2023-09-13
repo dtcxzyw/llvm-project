@@ -151,7 +151,9 @@ def ReadFMul32      : SchedRead;    // 32-bit floating point multiply
 def ReadFMul64      : SchedRead;    // 64-bit floating point multiply
 def ReadFMA16       : SchedRead;    // 16-bit floating point fused multiply-add
 def ReadFMA32       : SchedRead;    // 32-bit floating point fused multiply-add
+def ReadFMA32Addend : SchedRead;    // 32-bit floating point fused multiply-add
 def ReadFMA64       : SchedRead;    // 64-bit floating point fused multiply-add
+def ReadFMA64Addend : SchedRead;    // 64-bit floating point fused multiply-add
 def ReadFDiv16      : SchedRead;    // 16-bit floating point divide
 def ReadFDiv32      : SchedRead;    // 32-bit floating point divide
 def ReadFDiv64      : SchedRead;    // 64-bit floating point divide

@@ -37,6 +37,9 @@ include "GISel/RISCVRegisterBanks.td"
 include "RISCVSchedRocket.td"
 include "RISCVSchedSiFive7.td"
 include "RISCVSchedSyntacoreSCR1.td"
+include "RISCVSchedXiangShanYanQiHu.td"
+include "RISCVSchedXiangShanNanHu.td"
+include "RISCVSchedXiangShanKunMingHu.td"
 
 //===----------------------------------------------------------------------===//
 // RISC-V processors supported.
