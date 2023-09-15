@@ -57,7 +57,7 @@ define i32 @t4(i64 %a) {
 define i64 @t5(i32 %a) {
 ; CHECK-LABEL: @t5(
 ; CHECK-NEXT:    [[NARROW:%.*]] = call i32 @llvm.smax.i32(i32 [[A:%.*]], i32 5)
-; CHECK-NEXT:    [[TMP1:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[TMP1:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[TMP1]]
 ;
   %1 = icmp slt i32 %a, 5
@@ -1348,8 +1348,8 @@ define i8 @PR14613_smin(i8 %x) {
 define i8 @PR14613_smax(i8 %x) {
 ; CHECK-LABEL: @PR14613_smax(
 ; CHECK-NEXT:    [[TMP1:%.*]] = call i8 @llvm.smax.i8(i8 [[X:%.*]], i8 40)
-; CHECK-NEXT:    [[NARROW:%.*]] = add nuw i8 [[TMP1]], 15
-; CHECK-NEXT:    ret i8 [[NARROW]]
+; CHECK-NEXT:    [[U7:%.*]] = add nuw i8 [[TMP1]], 15
+; CHECK-NEXT:    ret i8 [[U7]]
 ;
   %u4 = sext i8 %x to i32
   %u5 = add nuw nsw i32 %u4, 15

@@ -242,9 +242,7 @@ define <2 x i32> @test12vec(<2 x i1> %cond, <2 x i32> %a) {
 
 define i32 @test12a(i1 %cond, i32 %a) {
 ; CHECK-LABEL: @test12a(
-; CHECK-NEXT:    [[B:%.*]] = zext i1 [[COND:%.*]] to i32
-; CHECK-NEXT:    [[C:%.*]] = ashr i32 [[A:%.*]], [[B]]
-; CHECK-NEXT:    ret i32 [[C]]
+; CHECK-NEXT:    ret i32 [[A:%.*]]
 ;
   %b = ashr i32 %a, 1
   %c = select i1 %cond, i32 %b, i32 %a
@@ -253,9 +251,7 @@ define i32 @test12a(i1 %cond, i32 %a) {
 
 define <2 x i32> @test12avec(<2 x i1> %cond, <2 x i32> %a) {
 ; CHECK-LABEL: @test12avec(
-; CHECK-NEXT:    [[B:%.*]] = zext <2 x i1> [[COND:%.*]] to <2 x i32>
-; CHECK-NEXT:    [[C:%.*]] = ashr <2 x i32> [[A:%.*]], [[B]]
-; CHECK-NEXT:    ret <2 x i32> [[C]]
+; CHECK-NEXT:    ret <2 x i32> [[A:%.*]]
 ;
   %b = ashr <2 x i32> %a, <i32 1, i32 1>
   %c = select <2 x i1> %cond, <2 x i32> %b, <2 x i32> %a
@@ -264,10 +260,7 @@ define <2 x i32> @test12avec(<2 x i1> %cond, <2 x i32> %a) {
 
 define i32 @test12b(i1 %cond, i32 %a) {
 ; CHECK-LABEL: @test12b(
-; CHECK-NEXT:    [[NOT_COND:%.*]] = xor i1 [[COND:%.*]], true
-; CHECK-NEXT:    [[B:%.*]] = zext i1 [[NOT_COND]] to i32
-; CHECK-NEXT:    [[D:%.*]] = ashr i32 [[A:%.*]], [[B]]
-; CHECK-NEXT:    ret i32 [[D]]
+; CHECK-NEXT:    ret i32 [[A:%.*]]
 ;
   %b = ashr i32 %a, 1
   %d = select i1 %cond, i32 %a, i32 %b
@@ -276,10 +269,7 @@ define i32 @test12b(i1 %cond, i32 %a) {
 
 define <2 x i32> @test12bvec(<2 x i1> %cond, <2 x i32> %a) {
 ; CHECK-LABEL: @test12bvec(
-; CHECK-NEXT:    [[NOT_COND:%.*]] = xor <2 x i1> [[COND:%.*]], <i1 true, i1 true>
-; CHECK-NEXT:    [[B:%.*]] = zext <2 x i1> [[NOT_COND]] to <2 x i32>
-; CHECK-NEXT:    [[D:%.*]] = ashr <2 x i32> [[A:%.*]], [[B]]
-; CHECK-NEXT:    ret <2 x i32> [[D]]
+; CHECK-NEXT:    ret <2 x i32> [[A:%.*]]
 ;
   %b = ashr <2 x i32> %a, <i32 1, i32 1>
   %d = select <2 x i1> %cond, <2 x i32> %a, <2 x i32> %b

@@ -1102,6 +1102,10 @@ Instruction *InstCombinerImpl::visitZExt(ZExtInst &Zext) {
   Value *Src = Zext.getOperand(0);
   Type *SrcTy = Src->getType(), *DestTy = Zext.getType();
 
+  // If the value being extended is zero or positive, use a sext instead.
+  if (isKnownNonNegative(Src, DL, 0, &AC, &Zext, &DT))
+    return CastInst::Create(Instruction::SExt, Src, DestTy);
+
   // Try to extend the entire expression tree to the wide destination type.
   unsigned BitsToClear;
   if (shouldChangeType(SrcTy, DestTy) &&
@@ -1371,10 +1375,6 @@ Instruction *InstCombinerImpl::visitSExt(SExtInst &Sext) {
   Type *SrcTy = Src->getType(), *DestTy = Sext.getType();
   unsigned SrcBitSize = SrcTy->getScalarSizeInBits();
   unsigned DestBitSize = DestTy->getScalarSizeInBits();
-
-  // If the value being extended is zero or positive, use a zext instead.
-  if (isKnownNonNegative(Src, DL, 0, &AC, &Sext, &DT))
-    return CastInst::Create(Instruction::ZExt, Src, DestTy);
 
   // Try to extend the entire expression tree to the wide destination type.
   if (shouldChangeType(SrcTy, DestTy) && canEvaluateSExtd(Src, DestTy)) {

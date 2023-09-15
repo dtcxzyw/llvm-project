@@ -392,10 +392,10 @@ Instruction *InstCombinerImpl::commonShiftTransforms(BinaryOperator &I) {
   assert(Op0->getType() == Op1->getType());
   Type *Ty = I.getType();
 
-  // If the shift amount is a one-use `sext`, we can demote it to `zext`.
+  // If the shift amount is a one-use `zext`, we can demote it to `sext`.
   Value *Y;
-  if (match(Op1, m_OneUse(m_SExt(m_Value(Y))))) {
-    Value *NewExt = Builder.CreateZExt(Y, Ty, Op1->getName());
+  if (match(Op1, m_OneUse(m_ZExt(m_Value(Y))))) {
+    Value *NewExt = Builder.CreateSExt(Y, Ty, Op1->getName());
     return BinaryOperator::Create(I.getOpcode(), Op0, NewExt);
   }
 

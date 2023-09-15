@@ -412,9 +412,9 @@ define i32 @demorgan_or_zext(i1 %X, i1 %Y) {
 
 define i32 @demorgan_and_zext(i1 %X, i1 %Y) {
 ; CHECK-LABEL: @demorgan_and_zext(
-; CHECK-NEXT:    [[AND1_DEMORGAN:%.*]] = or i1 [[X:%.*]], [[Y:%.*]]
-; CHECK-NEXT:    [[AND1:%.*]] = xor i1 [[AND1_DEMORGAN]], true
-; CHECK-NEXT:    [[AND:%.*]] = zext i1 [[AND1]] to i32
+; CHECK-NEXT:    [[TMP1:%.*]] = select i1 [[X:%.*]], i1 true, i1 [[Y:%.*]]
+; CHECK-NEXT:    [[NARROW:%.*]] = xor i1 [[TMP1]], true
+; CHECK-NEXT:    [[AND:%.*]] = zext i1 [[NARROW]] to i32
 ; CHECK-NEXT:    ret i32 [[AND]]
 ;
   %zextX = zext i1 %X to i32
@@ -442,9 +442,9 @@ define <2 x i32> @demorgan_or_zext_vec(<2 x i1> %X, <2 x i1> %Y) {
 
 define <2 x i32> @demorgan_and_zext_vec(<2 x i1> %X, <2 x i1> %Y) {
 ; CHECK-LABEL: @demorgan_and_zext_vec(
-; CHECK-NEXT:    [[AND1_DEMORGAN:%.*]] = or <2 x i1> [[X:%.*]], [[Y:%.*]]
-; CHECK-NEXT:    [[AND1:%.*]] = xor <2 x i1> [[AND1_DEMORGAN]], <i1 true, i1 true>
-; CHECK-NEXT:    [[AND:%.*]] = zext <2 x i1> [[AND1]] to <2 x i32>
+; CHECK-NEXT:    [[TMP1:%.*]] = select <2 x i1> [[X:%.*]], <2 x i1> <i1 true, i1 true>, <2 x i1> [[Y:%.*]]
+; CHECK-NEXT:    [[NARROW:%.*]] = xor <2 x i1> [[TMP1]], <i1 true, i1 true>
+; CHECK-NEXT:    [[AND:%.*]] = zext <2 x i1> [[NARROW]] to <2 x i32>
 ; CHECK-NEXT:    ret <2 x i32> [[AND]]
 ;
   %zextX = zext <2 x i1> %X to <2 x i32>

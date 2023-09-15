@@ -6,8 +6,8 @@
 
 define i32 @t0_shl(i32 %x, i8 %shamt) {
 ; CHECK-LABEL: @t0_shl(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext i8 [[SHAMT:%.*]] to i32
-; CHECK-NEXT:    [[R:%.*]] = shl i32 [[X:%.*]], [[SHAMT_WIDE1]]
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext i8 [[SHAMT:%.*]] to i32
+; CHECK-NEXT:    [[R:%.*]] = shl i32 [[X:%.*]], [[SHAMT_WIDE]]
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %shamt_wide = sext i8 %shamt to i32
@@ -16,8 +16,8 @@ define i32 @t0_shl(i32 %x, i8 %shamt) {
 }
 define i32 @t1_lshr(i32 %x, i8 %shamt) {
 ; CHECK-LABEL: @t1_lshr(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext i8 [[SHAMT:%.*]] to i32
-; CHECK-NEXT:    [[R:%.*]] = lshr i32 [[X:%.*]], [[SHAMT_WIDE1]]
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext i8 [[SHAMT:%.*]] to i32
+; CHECK-NEXT:    [[R:%.*]] = lshr i32 [[X:%.*]], [[SHAMT_WIDE]]
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %shamt_wide = sext i8 %shamt to i32
@@ -26,8 +26,8 @@ define i32 @t1_lshr(i32 %x, i8 %shamt) {
 }
 define i32 @t2_ashr(i32 %x, i8 %shamt) {
 ; CHECK-LABEL: @t2_ashr(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext i8 [[SHAMT:%.*]] to i32
-; CHECK-NEXT:    [[R:%.*]] = ashr i32 [[X:%.*]], [[SHAMT_WIDE1]]
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext i8 [[SHAMT:%.*]] to i32
+; CHECK-NEXT:    [[R:%.*]] = ashr i32 [[X:%.*]], [[SHAMT_WIDE]]
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %shamt_wide = sext i8 %shamt to i32
@@ -37,8 +37,8 @@ define i32 @t2_ashr(i32 %x, i8 %shamt) {
 
 define <2 x i32> @t3_vec_shl(<2 x i32> %x, <2 x i8> %shamt) {
 ; CHECK-LABEL: @t3_vec_shl(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext <2 x i8> [[SHAMT:%.*]] to <2 x i32>
-; CHECK-NEXT:    [[R:%.*]] = shl <2 x i32> [[X:%.*]], [[SHAMT_WIDE1]]
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext <2 x i8> [[SHAMT:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[R:%.*]] = shl <2 x i32> [[X:%.*]], [[SHAMT_WIDE]]
 ; CHECK-NEXT:    ret <2 x i32> [[R]]
 ;
   %shamt_wide = sext <2 x i8> %shamt to <2 x i32>
@@ -47,8 +47,8 @@ define <2 x i32> @t3_vec_shl(<2 x i32> %x, <2 x i8> %shamt) {
 }
 define <2 x i32> @t4_vec_lshr(<2 x i32> %x, <2 x i8> %shamt) {
 ; CHECK-LABEL: @t4_vec_lshr(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext <2 x i8> [[SHAMT:%.*]] to <2 x i32>
-; CHECK-NEXT:    [[R:%.*]] = lshr <2 x i32> [[X:%.*]], [[SHAMT_WIDE1]]
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext <2 x i8> [[SHAMT:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[R:%.*]] = lshr <2 x i32> [[X:%.*]], [[SHAMT_WIDE]]
 ; CHECK-NEXT:    ret <2 x i32> [[R]]
 ;
   %shamt_wide = sext <2 x i8> %shamt to <2 x i32>
@@ -57,8 +57,8 @@ define <2 x i32> @t4_vec_lshr(<2 x i32> %x, <2 x i8> %shamt) {
 }
 define <2 x i32> @t5_vec_ashr(<2 x i32> %x, <2 x i8> %shamt) {
 ; CHECK-LABEL: @t5_vec_ashr(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext <2 x i8> [[SHAMT:%.*]] to <2 x i32>
-; CHECK-NEXT:    [[R:%.*]] = ashr <2 x i32> [[X:%.*]], [[SHAMT_WIDE1]]
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext <2 x i8> [[SHAMT:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[R:%.*]] = ashr <2 x i32> [[X:%.*]], [[SHAMT_WIDE]]
 ; CHECK-NEXT:    ret <2 x i32> [[R]]
 ;
   %shamt_wide = sext <2 x i8> %shamt to <2 x i32>
@@ -117,8 +117,8 @@ declare i8 @llvm.fshl.i8(i8 %a, i8 %b, i8 %c)
 declare i8 @llvm.fshr.i8(i8 %a, i8 %b, i8 %c)
 define i8 @t9_fshl(i8 %x, i8 %y, i6 %shamt) {
 ; CHECK-LABEL: @t9_fshl(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext i6 [[SHAMT:%.*]] to i8
-; CHECK-NEXT:    [[R:%.*]] = call i8 @llvm.fshl.i8(i8 [[X:%.*]], i8 [[Y:%.*]], i8 [[SHAMT_WIDE1]])
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext i6 [[SHAMT:%.*]] to i8
+; CHECK-NEXT:    [[R:%.*]] = call i8 @llvm.fshl.i8(i8 [[X:%.*]], i8 [[Y:%.*]], i8 [[SHAMT_WIDE]])
 ; CHECK-NEXT:    ret i8 [[R]]
 ;
   %shamt_wide = sext i6 %shamt to i8
@@ -127,8 +127,8 @@ define i8 @t9_fshl(i8 %x, i8 %y, i6 %shamt) {
 }
 define i8 @t10_fshr(i8 %x, i8 %y, i6 %shamt) {
 ; CHECK-LABEL: @t10_fshr(
-; CHECK-NEXT:    [[SHAMT_WIDE1:%.*]] = zext i6 [[SHAMT:%.*]] to i8
-; CHECK-NEXT:    [[R:%.*]] = call i8 @llvm.fshr.i8(i8 [[X:%.*]], i8 [[Y:%.*]], i8 [[SHAMT_WIDE1]])
+; CHECK-NEXT:    [[SHAMT_WIDE:%.*]] = sext i6 [[SHAMT:%.*]] to i8
+; CHECK-NEXT:    [[R:%.*]] = call i8 @llvm.fshr.i8(i8 [[X:%.*]], i8 [[Y:%.*]], i8 [[SHAMT_WIDE]])
 ; CHECK-NEXT:    ret i8 [[R]]
 ;
   %shamt_wide = sext i6 %shamt to i8

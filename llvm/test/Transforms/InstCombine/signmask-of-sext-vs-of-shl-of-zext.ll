@@ -12,8 +12,9 @@ declare void @use32(i32)
 
 define i32 @t0(i16 %x) {
 ; CHECK-LABEL: @t0(
-; CHECK-NEXT:    [[X_SIGNEXT:%.*]] = sext i16 [[X:%.*]] to i32
-; CHECK-NEXT:    [[R:%.*]] = and i32 [[X_SIGNEXT]], -2147483648
+; CHECK-NEXT:    [[I01:%.*]] = sext i16 [[X:%.*]] to i32
+; CHECK-NEXT:    [[I1:%.*]] = shl nsw i32 [[I01]], 16
+; CHECK-NEXT:    [[R:%.*]] = and i32 [[I1]], -2147483648
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %i0 = zext i16 %x to i32
@@ -23,8 +24,9 @@ define i32 @t0(i16 %x) {
 }
 define i32 @t1(i8 %x) {
 ; CHECK-LABEL: @t1(
-; CHECK-NEXT:    [[X_SIGNEXT:%.*]] = sext i8 [[X:%.*]] to i32
-; CHECK-NEXT:    [[R:%.*]] = and i32 [[X_SIGNEXT]], -2147483648
+; CHECK-NEXT:    [[I01:%.*]] = sext i8 [[X:%.*]] to i32
+; CHECK-NEXT:    [[I1:%.*]] = shl nsw i32 [[I01]], 24
+; CHECK-NEXT:    [[R:%.*]] = and i32 [[I1]], -2147483648
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %i0 = zext i8 %x to i32
@@ -46,8 +48,8 @@ define i32 @n2(i16 %x) {
 }
 define i32 @n3(i16 %x) {
 ; CHECK-LABEL: @n3(
-; CHECK-NEXT:    [[I0:%.*]] = zext i16 [[X:%.*]] to i32
-; CHECK-NEXT:    [[I1:%.*]] = shl i32 [[I0]], 17
+; CHECK-NEXT:    [[I01:%.*]] = sext i16 [[X:%.*]] to i32
+; CHECK-NEXT:    [[I1:%.*]] = shl i32 [[I01]], 17
 ; CHECK-NEXT:    [[R:%.*]] = and i32 [[I1]], -2147483648
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
@@ -58,8 +60,8 @@ define i32 @n3(i16 %x) {
 }
 define i32 @n4(i16 %x) {
 ; CHECK-LABEL: @n4(
-; CHECK-NEXT:    [[I0:%.*]] = zext i16 [[X:%.*]] to i32
-; CHECK-NEXT:    [[I1:%.*]] = shl nuw i32 [[I0]], 16
+; CHECK-NEXT:    [[I01:%.*]] = sext i16 [[X:%.*]] to i32
+; CHECK-NEXT:    [[I1:%.*]] = shl nsw i32 [[I01]], 16
 ; CHECK-NEXT:    [[R:%.*]] = and i32 [[I1]], -1073741824
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
@@ -87,8 +89,8 @@ define i32 @t5(i16 %x) {
 }
 define i32 @n6(i16 %x) {
 ; CHECK-LABEL: @n6(
-; CHECK-NEXT:    [[I0:%.*]] = zext i16 [[X:%.*]] to i32
-; CHECK-NEXT:    [[I1:%.*]] = shl nuw i32 [[I0]], 16
+; CHECK-NEXT:    [[I01:%.*]] = sext i16 [[X:%.*]] to i32
+; CHECK-NEXT:    [[I1:%.*]] = shl nsw i32 [[I01]], 16
 ; CHECK-NEXT:    call void @use32(i32 [[I1]])
 ; CHECK-NEXT:    [[R:%.*]] = and i32 [[I1]], -2147483648
 ; CHECK-NEXT:    ret i32 [[R]]
@@ -120,8 +122,9 @@ define i32 @n7(i16 %x) {
 
 define <2 x i32> @t8(<2 x i16> %x) {
 ; CHECK-LABEL: @t8(
-; CHECK-NEXT:    [[X_SIGNEXT:%.*]] = sext <2 x i16> [[X:%.*]] to <2 x i32>
-; CHECK-NEXT:    [[R:%.*]] = and <2 x i32> [[X_SIGNEXT]], <i32 -2147483648, i32 -2147483648>
+; CHECK-NEXT:    [[I01:%.*]] = sext <2 x i16> [[X:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[I1:%.*]] = shl nsw <2 x i32> [[I01]], <i32 16, i32 16>
+; CHECK-NEXT:    [[R:%.*]] = and <2 x i32> [[I1]], <i32 -2147483648, i32 -2147483648>
 ; CHECK-NEXT:    ret <2 x i32> [[R]]
 ;
   %i0 = zext <2 x i16> %x to <2 x i32>
@@ -143,8 +146,9 @@ define <2 x i32> @t9(<2 x i16> %x) {
 }
 define <2 x i32> @t10(<2 x i16> %x) {
 ; CHECK-LABEL: @t10(
-; CHECK-NEXT:    [[X_SIGNEXT:%.*]] = sext <2 x i16> [[X:%.*]] to <2 x i32>
-; CHECK-NEXT:    [[R:%.*]] = and <2 x i32> [[X_SIGNEXT]], <i32 -2147483648, i32 0>
+; CHECK-NEXT:    [[I01:%.*]] = sext <2 x i16> [[X:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[I1:%.*]] = shl nsw <2 x i32> [[I01]], <i32 16, i32 16>
+; CHECK-NEXT:    [[R:%.*]] = and <2 x i32> [[I1]], <i32 -2147483648, i32 undef>
 ; CHECK-NEXT:    ret <2 x i32> [[R]]
 ;
   %i0 = zext <2 x i16> %x to <2 x i32>

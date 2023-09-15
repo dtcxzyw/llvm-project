@@ -476,8 +476,9 @@ define i32 @ashr_not_lowmask3_use(i32 %x) {
 
 define i32 @test29(i8 %X) {
 ; CHECK-LABEL: @test29(
-; CHECK-NEXT:    [[Y:%.*]] = zext i8 [[X:%.*]] to i32
-; CHECK-NEXT:    ret i32 [[Y]]
+; CHECK-NEXT:    [[Y1:%.*]] = sext i8 [[X:%.*]] to i32
+; CHECK-NEXT:    [[Z:%.*]] = and i32 [[Y1]], 255
+; CHECK-NEXT:    ret i32 [[Z]]
 ;
   %Y = zext i8 %X to i32
   ;; Zero extend makes this unneeded.
@@ -487,8 +488,8 @@ define i32 @test29(i8 %X) {
 
 define i32 @test30(i1 %X) {
 ; CHECK-LABEL: @test30(
-; CHECK-NEXT:    [[Y:%.*]] = zext i1 [[X:%.*]] to i32
-; CHECK-NEXT:    ret i32 [[Y]]
+; CHECK-NEXT:    [[Z:%.*]] = zext i1 [[X:%.*]] to i32
+; CHECK-NEXT:    ret i32 [[Z]]
 ;
   %Y = zext i1 %X to i32
   %Z = and i32 %Y, 1
@@ -525,7 +526,7 @@ define <2 x i32> @and_demanded_bits_splat_vec(<2 x i32> %x) {
 define i32 @and_zext_demanded(i16 %x, i32 %y) {
 ; CHECK-LABEL: @and_zext_demanded(
 ; CHECK-NEXT:    [[S:%.*]] = lshr i16 [[X:%.*]], 8
-; CHECK-NEXT:    [[Z:%.*]] = zext i16 [[S]] to i32
+; CHECK-NEXT:    [[Z:%.*]] = sext i16 [[S]] to i32
 ; CHECK-NEXT:    ret i32 [[Z]]
 ;
   %s = lshr i16 %x, 8
@@ -616,9 +617,9 @@ define <2 x i32> @PR24942(<2 x i32> %x) {
 
 define i64 @test35(i32 %X) {
 ; CHECK-LABEL: @test35(
-; CHECK-NEXT:    [[TMP1:%.*]] = sub i32 0, [[X:%.*]]
-; CHECK-NEXT:    [[TMP2:%.*]] = and i32 [[TMP1]], 240
-; CHECK-NEXT:    [[RES:%.*]] = zext i32 [[TMP2]] to i64
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext i32 [[X:%.*]] to i64
+; CHECK-NEXT:    [[ZSUB:%.*]] = sub nsw i64 0, [[ZEXT1]]
+; CHECK-NEXT:    [[RES:%.*]] = and i64 [[ZSUB]], 240
 ; CHECK-NEXT:    ret i64 [[RES]]
 ;
   %zext = zext i32 %X to i64
@@ -629,9 +630,9 @@ define i64 @test35(i32 %X) {
 
 define <2 x i64> @test35_uniform(<2 x i32> %X) {
 ; CHECK-LABEL: @test35_uniform(
-; CHECK-NEXT:    [[TMP1:%.*]] = sub <2 x i32> zeroinitializer, [[X:%.*]]
-; CHECK-NEXT:    [[TMP2:%.*]] = and <2 x i32> [[TMP1]], <i32 240, i32 240>
-; CHECK-NEXT:    [[RES:%.*]] = zext <2 x i32> [[TMP2]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext <2 x i32> [[X:%.*]] to <2 x i64>
+; CHECK-NEXT:    [[ZSUB:%.*]] = sub nsw <2 x i64> zeroinitializer, [[ZEXT1]]
+; CHECK-NEXT:    [[RES:%.*]] = and <2 x i64> [[ZSUB]], <i64 240, i64 240>
 ; CHECK-NEXT:    ret <2 x i64> [[RES]]
 ;
   %zext = zext <2 x i32> %X to <2 x i64>
@@ -642,9 +643,9 @@ define <2 x i64> @test35_uniform(<2 x i32> %X) {
 
 define i64 @test36(i32 %X) {
 ; CHECK-LABEL: @test36(
-; CHECK-NEXT:    [[TMP1:%.*]] = add i32 [[X:%.*]], 7
-; CHECK-NEXT:    [[TMP2:%.*]] = and i32 [[TMP1]], 240
-; CHECK-NEXT:    [[RES:%.*]] = zext i32 [[TMP2]] to i64
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext i32 [[X:%.*]] to i64
+; CHECK-NEXT:    [[ZSUB:%.*]] = add nsw i64 [[ZEXT1]], 7
+; CHECK-NEXT:    [[RES:%.*]] = and i64 [[ZSUB]], 240
 ; CHECK-NEXT:    ret i64 [[RES]]
 ;
   %zext = zext i32 %X to i64
@@ -655,9 +656,9 @@ define i64 @test36(i32 %X) {
 
 define <2 x i64> @test36_uniform(<2 x i32> %X) {
 ; CHECK-LABEL: @test36_uniform(
-; CHECK-NEXT:    [[TMP1:%.*]] = add <2 x i32> [[X:%.*]], <i32 7, i32 7>
-; CHECK-NEXT:    [[TMP2:%.*]] = and <2 x i32> [[TMP1]], <i32 240, i32 240>
-; CHECK-NEXT:    [[RES:%.*]] = zext <2 x i32> [[TMP2]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext <2 x i32> [[X:%.*]] to <2 x i64>
+; CHECK-NEXT:    [[ZSUB:%.*]] = add nsw <2 x i64> [[ZEXT1]], <i64 7, i64 7>
+; CHECK-NEXT:    [[RES:%.*]] = and <2 x i64> [[ZSUB]], <i64 240, i64 240>
 ; CHECK-NEXT:    ret <2 x i64> [[RES]]
 ;
   %zext = zext <2 x i32> %X to <2 x i64>
@@ -681,9 +682,9 @@ define <2 x i64> @test36_undef(<2 x i32> %X) {
 
 define i64 @test37(i32 %X) {
 ; CHECK-LABEL: @test37(
-; CHECK-NEXT:    [[TMP1:%.*]] = mul i32 [[X:%.*]], 7
-; CHECK-NEXT:    [[TMP2:%.*]] = and i32 [[TMP1]], 240
-; CHECK-NEXT:    [[RES:%.*]] = zext i32 [[TMP2]] to i64
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext i32 [[X:%.*]] to i64
+; CHECK-NEXT:    [[ZSUB:%.*]] = mul nsw i64 [[ZEXT1]], 7
+; CHECK-NEXT:    [[RES:%.*]] = and i64 [[ZSUB]], 240
 ; CHECK-NEXT:    ret i64 [[RES]]
 ;
   %zext = zext i32 %X to i64
@@ -694,9 +695,9 @@ define i64 @test37(i32 %X) {
 
 define <2 x i64> @test37_uniform(<2 x i32> %X) {
 ; CHECK-LABEL: @test37_uniform(
-; CHECK-NEXT:    [[TMP1:%.*]] = mul <2 x i32> [[X:%.*]], <i32 7, i32 7>
-; CHECK-NEXT:    [[TMP2:%.*]] = and <2 x i32> [[TMP1]], <i32 240, i32 240>
-; CHECK-NEXT:    [[RES:%.*]] = zext <2 x i32> [[TMP2]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext <2 x i32> [[X:%.*]] to <2 x i64>
+; CHECK-NEXT:    [[ZSUB:%.*]] = mul nsw <2 x i64> [[ZEXT1]], <i64 7, i64 7>
+; CHECK-NEXT:    [[RES:%.*]] = and <2 x i64> [[ZSUB]], <i64 240, i64 240>
 ; CHECK-NEXT:    ret <2 x i64> [[RES]]
 ;
   %zext = zext <2 x i32> %X to <2 x i64>
@@ -707,8 +708,8 @@ define <2 x i64> @test37_uniform(<2 x i32> %X) {
 
 define <2 x i64> @test37_nonuniform(<2 x i32> %X) {
 ; CHECK-LABEL: @test37_nonuniform(
-; CHECK-NEXT:    [[ZEXT:%.*]] = zext <2 x i32> [[X:%.*]] to <2 x i64>
-; CHECK-NEXT:    [[ZSUB:%.*]] = mul nuw nsw <2 x i64> [[ZEXT]], <i64 7, i64 9>
+; CHECK-NEXT:    [[ZEXT1:%.*]] = sext <2 x i32> [[X:%.*]] to <2 x i64>
+; CHECK-NEXT:    [[ZSUB:%.*]] = mul nsw <2 x i64> [[ZEXT1]], <i64 7, i64 9>
 ; CHECK-NEXT:    [[RES:%.*]] = and <2 x i64> [[ZSUB]], <i64 240, i64 110>
 ; CHECK-NEXT:    ret <2 x i64> [[RES]]
 ;
@@ -721,7 +722,7 @@ define <2 x i64> @test37_nonuniform(<2 x i32> %X) {
 define i64 @test38(i32 %X) {
 ; CHECK-LABEL: @test38(
 ; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[X:%.*]], 240
-; CHECK-NEXT:    [[RES:%.*]] = zext i32 [[TMP1]] to i64
+; CHECK-NEXT:    [[RES:%.*]] = sext i32 [[TMP1]] to i64
 ; CHECK-NEXT:    ret i64 [[RES]]
 ;
   %zext = zext i32 %X to i64
@@ -733,7 +734,7 @@ define i64 @test38(i32 %X) {
 define i64 @test39(i32 %X) {
 ; CHECK-LABEL: @test39(
 ; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[X:%.*]], 240
-; CHECK-NEXT:    [[RES:%.*]] = zext i32 [[TMP1]] to i64
+; CHECK-NEXT:    [[RES:%.*]] = sext i32 [[TMP1]] to i64
 ; CHECK-NEXT:    ret i64 [[RES]]
 ;
   %zext = zext i32 %X to i64
@@ -744,9 +745,9 @@ define i64 @test39(i32 %X) {
 
 define i32 @lowmask_add_zext(i8 %x, i32 %y) {
 ; CHECK-LABEL: @lowmask_add_zext(
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc i32 [[Y:%.*]] to i8
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = add i8 [[Y_TR]], [[X:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = zext i8 [[BO_NARROW]] to i32
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i8 [[X:%.*]] to i32
+; CHECK-NEXT:    [[BO:%.*]] = add i32 [[ZX1]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = and i32 [[BO]], 255
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %zx = zext i8 %x to i32
@@ -758,9 +759,9 @@ define i32 @lowmask_add_zext(i8 %x, i32 %y) {
 define i32 @lowmask_add_zext_commute(i16 %x, i32 %p) {
 ; CHECK-LABEL: @lowmask_add_zext_commute(
 ; CHECK-NEXT:    [[Y:%.*]] = mul i32 [[P:%.*]], [[P]]
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc i32 [[Y]] to i16
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = add i16 [[Y_TR]], [[X:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = zext i16 [[BO_NARROW]] to i32
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i16 [[X:%.*]] to i32
+; CHECK-NEXT:    [[BO:%.*]] = add i32 [[Y]], [[ZX1]]
+; CHECK-NEXT:    [[R:%.*]] = and i32 [[BO]], 65535
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %y = mul i32 %p, %p ; thwart complexity-based canonicalization
@@ -823,9 +824,9 @@ define i32 @lowmask_add_zext_use2(i8 %x, i32 %y) {
 
 define <2 x i32> @lowmask_sub_zext(<2 x i4> %x, <2 x i32> %y) {
 ; CHECK-LABEL: @lowmask_sub_zext(
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc <2 x i32> [[Y:%.*]] to <2 x i4>
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = sub <2 x i4> [[X:%.*]], [[Y_TR]]
-; CHECK-NEXT:    [[R:%.*]] = zext <2 x i4> [[BO_NARROW]] to <2 x i32>
+; CHECK-NEXT:    [[ZX1:%.*]] = sext <2 x i4> [[X:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[BO:%.*]] = sub <2 x i32> [[ZX1]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = and <2 x i32> [[BO]], <i32 15, i32 15>
 ; CHECK-NEXT:    ret <2 x i32> [[R]]
 ;
   %zx = zext <2 x i4> %x to <2 x i32>
@@ -838,9 +839,9 @@ define <2 x i32> @lowmask_sub_zext(<2 x i4> %x, <2 x i32> %y) {
 
 define i17 @lowmask_sub_zext_commute(i5 %x, i17 %y) {
 ; CHECK-LABEL: @lowmask_sub_zext_commute(
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc i17 [[Y:%.*]] to i5
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = sub i5 [[Y_TR]], [[X:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = zext i5 [[BO_NARROW]] to i17
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i5 [[X:%.*]] to i17
+; CHECK-NEXT:    [[BO:%.*]] = sub i17 [[Y:%.*]], [[ZX1]]
+; CHECK-NEXT:    [[R:%.*]] = and i17 [[BO]], 31
 ; CHECK-NEXT:    ret i17 [[R]]
 ;
   %zx = zext i5 %x to i17
@@ -851,9 +852,9 @@ define i17 @lowmask_sub_zext_commute(i5 %x, i17 %y) {
 
 define i32 @lowmask_mul_zext(i8 %x, i32 %y) {
 ; CHECK-LABEL: @lowmask_mul_zext(
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc i32 [[Y:%.*]] to i8
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = mul i8 [[Y_TR]], [[X:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = zext i8 [[BO_NARROW]] to i32
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i8 [[X:%.*]] to i32
+; CHECK-NEXT:    [[BO:%.*]] = mul i32 [[ZX1]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = and i32 [[BO]], 255
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %zx = zext i8 %x to i32
@@ -865,9 +866,9 @@ define i32 @lowmask_mul_zext(i8 %x, i32 %y) {
 define i32 @lowmask_xor_zext_commute(i8 %x, i32 %p) {
 ; CHECK-LABEL: @lowmask_xor_zext_commute(
 ; CHECK-NEXT:    [[Y:%.*]] = mul i32 [[P:%.*]], [[P]]
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc i32 [[Y]] to i8
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = xor i8 [[Y_TR]], [[X:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = zext i8 [[BO_NARROW]] to i32
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i8 [[X:%.*]] to i32
+; CHECK-NEXT:    [[BO:%.*]] = xor i32 [[Y]], [[ZX1]]
+; CHECK-NEXT:    [[R:%.*]] = and i32 [[BO]], 255
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %y = mul i32 %p, %p ; thwart complexity-based canonicalization
@@ -879,9 +880,9 @@ define i32 @lowmask_xor_zext_commute(i8 %x, i32 %p) {
 
 define i24 @lowmask_or_zext_commute(i16 %x, i24 %y) {
 ; CHECK-LABEL: @lowmask_or_zext_commute(
-; CHECK-NEXT:    [[Y_TR:%.*]] = trunc i24 [[Y:%.*]] to i16
-; CHECK-NEXT:    [[BO_NARROW:%.*]] = or i16 [[Y_TR]], [[X:%.*]]
-; CHECK-NEXT:    [[R:%.*]] = zext i16 [[BO_NARROW]] to i24
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i16 [[X:%.*]] to i24
+; CHECK-NEXT:    [[BO:%.*]] = or i24 [[ZX1]], [[Y:%.*]]
+; CHECK-NEXT:    [[R:%.*]] = and i24 [[BO]], 65535
 ; CHECK-NEXT:    ret i24 [[R]]
 ;
   %zx = zext i16 %x to i24

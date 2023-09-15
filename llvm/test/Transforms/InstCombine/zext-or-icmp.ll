@@ -176,7 +176,7 @@ define i8 @PR49475_infloop(i32 %t0, i16 %insert, i64 %e, i8 %i162) {
 ; CHECK-NEXT:    [[EXT:%.*]] = zext i1 [[T1]] to i32
 ; CHECK-NEXT:    [[AND:%.*]] = and i32 [[EXT]], [[T0]]
 ; CHECK-NEXT:    [[TMP1:%.*]] = or i32 [[AND]], 140
-; CHECK-NEXT:    [[XOR1:%.*]] = zext i32 [[TMP1]] to i64
+; CHECK-NEXT:    [[XOR1:%.*]] = sext i32 [[TMP1]] to i64
 ; CHECK-NEXT:    [[CONV16:%.*]] = sext i8 [[I162:%.*]] to i64
 ; CHECK-NEXT:    [[SUB17:%.*]] = sub i64 [[CONV16]], [[E:%.*]]
 ; CHECK-NEXT:    [[SEXT:%.*]] = shl i64 [[SUB17]], 32
@@ -242,7 +242,7 @@ define i1 @PR51762(ptr %i, i32 %t0, i16 %t1, ptr %p, ptr %d, ptr %f, i32 %p2, i1
 ; CHECK-NEXT:    [[ADD:%.*]] = add nsw i32 [[T3]], [[CONV17]]
 ; CHECK-NEXT:    store i32 [[ADD]], ptr [[F]], align 4
 ; CHECK-NEXT:    [[REM18:%.*]] = srem i32 [[LOR_EXT]], [[ADD]]
-; CHECK-NEXT:    [[CONV19:%.*]] = zext i32 [[REM18]] to i64
+; CHECK-NEXT:    [[CONV19:%.*]] = sext i32 [[REM18]] to i64
 ; CHECK-NEXT:    store i32 0, ptr [[D]], align 8
 ; CHECK-NEXT:    [[R:%.*]] = icmp ult i64 [[INSERT_INSERT41]], [[CONV19]]
 ; CHECK-NEXT:    call void @llvm.assume(i1 [[R]])

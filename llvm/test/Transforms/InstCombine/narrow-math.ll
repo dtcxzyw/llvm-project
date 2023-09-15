@@ -27,9 +27,8 @@ define i64 @sext_zext_add_mismatched_exts(i32 %A) {
 ; CHECK-LABEL: @sext_zext_add_mismatched_exts(
 ; CHECK-NEXT:    [[B:%.*]] = ashr i32 [[A:%.*]], 7
 ; CHECK-NEXT:    [[C:%.*]] = lshr i32 [[A]], 9
-; CHECK-NEXT:    [[D:%.*]] = sext i32 [[B]] to i64
-; CHECK-NEXT:    [[E:%.*]] = zext i32 [[C]] to i64
-; CHECK-NEXT:    [[F:%.*]] = add nsw i64 [[D]], [[E]]
+; CHECK-NEXT:    [[NARROW:%.*]] = add nsw i32 [[B]], [[C]]
+; CHECK-NEXT:    [[F:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[F]]
 ;
   %B = ashr i32 %A, 7
@@ -125,7 +124,7 @@ define i64 @test1(i32 %V) {
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG0:![0-9]+]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[NARROW:%.*]] = add nuw nsw i32 [[CALL1]], [[CALL2]]
-; CHECK-NEXT:    [[ADD:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ADD:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[ADD]]
 ;
   %call1 = call i32 @callee(), !range !0
@@ -141,7 +140,7 @@ define i64 @test2(i32 %V) {
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[ADD:%.*]] = add nuw nsw i32 [[CALL1]], [[CALL2]]
-; CHECK-NEXT:    [[ZEXT:%.*]] = zext i32 [[ADD]] to i64
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext i32 [[ADD]] to i64
 ; CHECK-NEXT:    ret i64 [[ZEXT]]
 ;
   %call1 = call i32 @callee(), !range !0
@@ -156,7 +155,7 @@ define i64 @test3(i32 %V) {
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[NARROW:%.*]] = mul nuw nsw i32 [[CALL1]], [[CALL2]]
-; CHECK-NEXT:    [[ADD:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ADD:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[ADD]]
 ;
   %call1 = call i32 @callee(), !range !0
@@ -172,7 +171,7 @@ define i64 @test4(i32 %V) {
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[ADD:%.*]] = mul nuw nsw i32 [[CALL1]], [[CALL2]]
-; CHECK-NEXT:    [[ZEXT:%.*]] = zext i32 [[ADD]] to i64
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext i32 [[ADD]] to i64
 ; CHECK-NEXT:    ret i64 [[ZEXT]]
 ;
   %call1 = call i32 @callee(), !range !0
@@ -293,8 +292,8 @@ define <2 x i64> @test6_vec2(<2 x i32> %V) {
 define i64 @test7(i32 %V) {
 ; CHECK-LABEL: @test7(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr i32 [[V:%.*]], 1
-; CHECK-NEXT:    [[NARROW:%.*]] = add nuw i32 [[LSHR]], 2147483647
-; CHECK-NEXT:    [[ADD:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext i32 [[LSHR]] to i64
+; CHECK-NEXT:    [[ADD:%.*]] = add nuw nsw i64 [[ZEXT]], 2147483647
 ; CHECK-NEXT:    ret i64 [[ADD]]
 ;
   %lshr = lshr i32 %V, 1
@@ -306,8 +305,8 @@ define i64 @test7(i32 %V) {
 define <2 x i64> @test7_splat(<2 x i32> %V) {
 ; CHECK-LABEL: @test7_splat(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr <2 x i32> [[V:%.*]], <i32 1, i32 1>
-; CHECK-NEXT:    [[NARROW:%.*]] = add nuw <2 x i32> [[LSHR]], <i32 2147483647, i32 2147483647>
-; CHECK-NEXT:    [[ADD:%.*]] = zext <2 x i32> [[NARROW]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[LSHR]] to <2 x i64>
+; CHECK-NEXT:    [[ADD:%.*]] = add nuw nsw <2 x i64> [[ZEXT]], <i64 2147483647, i64 2147483647>
 ; CHECK-NEXT:    ret <2 x i64> [[ADD]]
 ;
   %lshr = lshr <2 x i32> %V, <i32 1, i32 1>
@@ -319,8 +318,8 @@ define <2 x i64> @test7_splat(<2 x i32> %V) {
 define <2 x i64> @test7_vec(<2 x i32> %V) {
 ; CHECK-LABEL: @test7_vec(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr <2 x i32> [[V:%.*]], <i32 1, i32 1>
-; CHECK-NEXT:    [[NARROW:%.*]] = add nuw <2 x i32> [[LSHR]], <i32 1, i32 2>
-; CHECK-NEXT:    [[ADD:%.*]] = zext <2 x i32> [[NARROW]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[LSHR]] to <2 x i64>
+; CHECK-NEXT:    [[ADD:%.*]] = add nuw nsw <2 x i64> [[ZEXT]], <i64 1, i64 2>
 ; CHECK-NEXT:    ret <2 x i64> [[ADD]]
 ;
   %lshr = lshr <2 x i32> %V, <i32 1, i32 1>
@@ -423,8 +422,8 @@ define <2 x i64> @test9_vec(<2 x i32> %V) {
 define i64 @test10(i32 %V) {
 ; CHECK-LABEL: @test10(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr i32 [[V:%.*]], 16
-; CHECK-NEXT:    [[NARROW:%.*]] = mul nuw i32 [[LSHR]], 65535
-; CHECK-NEXT:    [[MUL:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext i32 [[LSHR]] to i64
+; CHECK-NEXT:    [[MUL:%.*]] = mul nuw nsw i64 [[ZEXT]], 65535
 ; CHECK-NEXT:    ret i64 [[MUL]]
 ;
   %lshr = lshr i32 %V, 16
@@ -436,8 +435,8 @@ define i64 @test10(i32 %V) {
 define <2 x i64> @test10_splat(<2 x i32> %V) {
 ; CHECK-LABEL: @test10_splat(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr <2 x i32> [[V:%.*]], <i32 16, i32 16>
-; CHECK-NEXT:    [[NARROW:%.*]] = mul nuw <2 x i32> [[LSHR]], <i32 65535, i32 65535>
-; CHECK-NEXT:    [[MUL:%.*]] = zext <2 x i32> [[NARROW]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[LSHR]] to <2 x i64>
+; CHECK-NEXT:    [[MUL:%.*]] = mul nuw nsw <2 x i64> [[ZEXT]], <i64 65535, i64 65535>
 ; CHECK-NEXT:    ret <2 x i64> [[MUL]]
 ;
   %lshr = lshr <2 x i32> %V, <i32 16, i32 16>
@@ -449,8 +448,8 @@ define <2 x i64> @test10_splat(<2 x i32> %V) {
 define <2 x i64> @test10_vec(<2 x i32> %V) {
 ; CHECK-LABEL: @test10_vec(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr <2 x i32> [[V:%.*]], <i32 16, i32 16>
-; CHECK-NEXT:    [[NARROW:%.*]] = mul nuw <2 x i32> [[LSHR]], <i32 65535, i32 2>
-; CHECK-NEXT:    [[MUL:%.*]] = zext <2 x i32> [[NARROW]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[LSHR]] to <2 x i64>
+; CHECK-NEXT:    [[MUL:%.*]] = mul nuw nsw <2 x i64> [[ZEXT]], <i64 65535, i64 2>
 ; CHECK-NEXT:    ret <2 x i64> [[MUL]]
 ;
   %lshr = lshr <2 x i32> %V, <i32 16, i32 16>
@@ -480,7 +479,7 @@ define i64 @test12(i32 %V) {
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG1]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG1]]
 ; CHECK-NEXT:    [[NARROW:%.*]] = mul nsw i32 [[CALL1]], [[CALL2]]
-; CHECK-NEXT:    [[ADD:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ADD:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[ADD]]
 ;
   %call1 = call i32 @callee(), !range !1
@@ -511,8 +510,9 @@ define i64 @test14(i32 %V) {
 ; CHECK-LABEL: @test14(
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG2]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG0]]
-; CHECK-NEXT:    [[NARROW:%.*]] = sub nuw nsw i32 [[CALL1]], [[CALL2]]
-; CHECK-NEXT:    [[SUB:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ZEXT1:%.*]] = zext i32 [[CALL1]] to i64
+; CHECK-NEXT:    [[ZEXT2:%.*]] = sext i32 [[CALL2]] to i64
+; CHECK-NEXT:    [[SUB:%.*]] = sub nuw nsw i64 [[ZEXT1]], [[ZEXT2]]
 ; CHECK-NEXT:    ret i64 [[SUB]]
 ;
   %call1 = call i32 @callee(), !range !2
@@ -552,8 +552,8 @@ define <2 x i64> @test15vec(<2 x i32> %V) {
 define i64 @test16(i32 %V) {
 ; CHECK-LABEL: @test16(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr i32 [[V:%.*]], 1
-; CHECK-NEXT:    [[NARROW:%.*]] = sub nuw i32 -2, [[LSHR]]
-; CHECK-NEXT:    [[SUB:%.*]] = zext i32 [[NARROW]] to i64
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext i32 [[LSHR]] to i64
+; CHECK-NEXT:    [[SUB:%.*]] = sub nuw nsw i64 4294967294, [[ZEXT]]
 ; CHECK-NEXT:    ret i64 [[SUB]]
 ;
   %lshr = lshr i32 %V, 1
@@ -565,8 +565,8 @@ define i64 @test16(i32 %V) {
 define <2 x i64> @test16vec(<2 x i32> %V) {
 ; CHECK-LABEL: @test16vec(
 ; CHECK-NEXT:    [[LSHR:%.*]] = lshr <2 x i32> [[V:%.*]], <i32 1, i32 1>
-; CHECK-NEXT:    [[NARROW:%.*]] = sub nuw <2 x i32> <i32 -2, i32 -2>, [[LSHR]]
-; CHECK-NEXT:    [[SUB:%.*]] = zext <2 x i32> [[NARROW]] to <2 x i64>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[LSHR]] to <2 x i64>
+; CHECK-NEXT:    [[SUB:%.*]] = sub nuw nsw <2 x i64> <i64 4294967294, i64 4294967294>, [[ZEXT]]
 ; CHECK-NEXT:    ret <2 x i64> [[SUB]]
 ;
   %lshr = lshr <2 x i32> %V, <i32 1, i32 1>
@@ -581,9 +581,8 @@ define i64 @test17(i32 %V) {
 ; CHECK-LABEL: @test17(
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG0]]
 ; CHECK-NEXT:    [[CALL2:%.*]] = call i32 @callee(), !range [[RNG0]]
-; CHECK-NEXT:    [[SEXT1:%.*]] = zext i32 [[CALL1]] to i64
-; CHECK-NEXT:    [[SEXT2:%.*]] = zext i32 [[CALL2]] to i64
-; CHECK-NEXT:    [[SUB:%.*]] = sub nsw i64 [[SEXT1]], [[SEXT2]]
+; CHECK-NEXT:    [[NARROW:%.*]] = sub nsw i32 [[CALL1]], [[CALL2]]
+; CHECK-NEXT:    [[SUB:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[SUB]]
 ;
   %call1 = call i32 @callee(), !range !0
@@ -614,8 +613,8 @@ define i64 @test18(i32 %V) {
 define i64 @test19(i32 %V) {
 ; CHECK-LABEL: @test19(
 ; CHECK-NEXT:    [[CALL1:%.*]] = call i32 @callee(), !range [[RNG0]]
-; CHECK-NEXT:    [[SEXT1:%.*]] = zext i32 [[CALL1]] to i64
-; CHECK-NEXT:    [[SUB:%.*]] = sub nuw nsw i64 -2147481648, [[SEXT1]]
+; CHECK-NEXT:    [[NARROW:%.*]] = sub nuw nsw i32 -2147481648, [[CALL1]]
+; CHECK-NEXT:    [[SUB:%.*]] = sext i32 [[NARROW]] to i64
 ; CHECK-NEXT:    ret i64 [[SUB]]
 ;
   %call1 = call i32 @callee(), !range !0

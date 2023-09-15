@@ -674,9 +674,8 @@ define i1 @constantexpr() {
 ; CHECK-LABEL: @constantexpr(
 ; CHECK-NEXT:  entry:
 ; CHECK-NEXT:    [[TMP0:%.*]] = load i16, ptr @f.a, align 2
-; CHECK-NEXT:    [[TMP1:%.*]] = lshr i16 [[TMP0]], 1
-; CHECK-NEXT:    [[TMP2:%.*]] = and i16 [[TMP1]], shl (i16 1, i16 zext (i1 icmp ne (i16 ptrtoint (ptr @f.a to i16), i16 1) to i16))
-; CHECK-NEXT:    [[TOBOOL:%.*]] = icmp ne i16 [[TMP2]], 0
+; CHECK-NEXT:    [[TMP1:%.*]] = and i16 [[TMP0]], 2
+; CHECK-NEXT:    [[TOBOOL:%.*]] = icmp ne i16 [[TMP1]], 0
 ; CHECK-NEXT:    ret i1 [[TOBOOL]]
 ;
 entry:

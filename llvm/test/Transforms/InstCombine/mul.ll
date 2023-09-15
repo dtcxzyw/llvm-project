@@ -1695,8 +1695,8 @@ define i32 @mulnot_extrause(i32 %a0) {
 define i32 @zext_negpow2(i8 %x) {
 ; CHECK-LABEL: @zext_negpow2(
 ; CHECK-NEXT:    [[X_NEG:%.*]] = sub i8 0, [[X:%.*]]
-; CHECK-NEXT:    [[X_NEG_Z:%.*]] = zext i8 [[X_NEG]] to i32
-; CHECK-NEXT:    [[R:%.*]] = shl nuw i32 [[X_NEG_Z]], 24
+; CHECK-NEXT:    [[X_NEG_Z1:%.*]] = sext i8 [[X_NEG]] to i32
+; CHECK-NEXT:    [[R:%.*]] = shl nsw i32 [[X_NEG_Z1]], 24
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %zx = zext i8 %x to i32
@@ -1709,8 +1709,8 @@ define i32 @zext_negpow2(i8 %x) {
 define <2 x i14> @zext_negpow2_vec(<2 x i5> %x) {
 ; CHECK-LABEL: @zext_negpow2_vec(
 ; CHECK-NEXT:    [[X_NEG:%.*]] = sub <2 x i5> zeroinitializer, [[X:%.*]]
-; CHECK-NEXT:    [[X_NEG_Z:%.*]] = zext <2 x i5> [[X_NEG]] to <2 x i14>
-; CHECK-NEXT:    [[R:%.*]] = shl <2 x i14> [[X_NEG_Z]], <i14 11, i14 11>
+; CHECK-NEXT:    [[X_NEG_Z1:%.*]] = sext <2 x i5> [[X_NEG]] to <2 x i14>
+; CHECK-NEXT:    [[R:%.*]] = shl <2 x i14> [[X_NEG_Z1]], <i14 11, i14 11>
 ; CHECK-NEXT:    ret <2 x i14> [[R]]
 ;
   %zx = zext <2 x i5> %x to <2 x i14>
@@ -1734,8 +1734,8 @@ define i32 @zext_negpow2_too_small(i8 %x) {
 define i16 @sext_negpow2(i9 %x) {
 ; CHECK-LABEL: @sext_negpow2(
 ; CHECK-NEXT:    [[X_NEG:%.*]] = sub i9 0, [[X:%.*]]
-; CHECK-NEXT:    [[X_NEG_Z:%.*]] = zext i9 [[X_NEG]] to i16
-; CHECK-NEXT:    [[R:%.*]] = shl i16 [[X_NEG_Z]], 10
+; CHECK-NEXT:    [[X_NEG_Z1:%.*]] = sext i9 [[X_NEG]] to i16
+; CHECK-NEXT:    [[R:%.*]] = shl i16 [[X_NEG_Z1]], 10
 ; CHECK-NEXT:    ret i16 [[R]]
 ;
   %sx = sext i9 %x to i16
@@ -1748,8 +1748,8 @@ define i16 @sext_negpow2(i9 %x) {
 define <2 x i16> @sext_negpow2_vec(<2 x i8> %x) {
 ; CHECK-LABEL: @sext_negpow2_vec(
 ; CHECK-NEXT:    [[X_NEG:%.*]] = sub <2 x i8> zeroinitializer, [[X:%.*]]
-; CHECK-NEXT:    [[X_NEG_Z:%.*]] = zext <2 x i8> [[X_NEG]] to <2 x i16>
-; CHECK-NEXT:    [[R:%.*]] = shl nuw <2 x i16> [[X_NEG_Z]], <i16 8, i16 8>
+; CHECK-NEXT:    [[X_NEG_Z1:%.*]] = sext <2 x i8> [[X_NEG]] to <2 x i16>
+; CHECK-NEXT:    [[R:%.*]] = shl nsw <2 x i16> [[X_NEG_Z1]], <i16 8, i16 8>
 ; CHECK-NEXT:    ret <2 x i16> [[R]]
 ;
   %sx = sext <2 x i8> %x to <2 x i16>

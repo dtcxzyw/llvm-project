@@ -606,8 +606,8 @@ define i32 @loadCombine_4consecutive_3412(ptr %p) {
 ; CHECK-NEXT:    [[L1:%.*]] = load i8, ptr [[P]], align 1
 ; CHECK-NEXT:    [[L2:%.*]] = load i8, ptr [[P1]], align 1
 ; CHECK-NEXT:    [[L3:%.*]] = load i16, ptr [[P2]], align 1
-; CHECK-NEXT:    [[TMP1:%.*]] = zext i16 [[L3]] to i32
-; CHECK-NEXT:    [[TMP2:%.*]] = shl nuw i32 [[TMP1]], 16
+; CHECK-NEXT:    [[TMP1:%.*]] = sext i16 [[L3]] to i32
+; CHECK-NEXT:    [[TMP2:%.*]] = shl nsw i32 [[TMP1]], 16
 ; CHECK-NEXT:    [[E1:%.*]] = zext i8 [[L1]] to i32
 ; CHECK-NEXT:    [[E2:%.*]] = zext i8 [[L2]] to i32
 ; CHECK-NEXT:    [[S2:%.*]] = shl nuw nsw i32 [[E2]], 8
@@ -849,8 +849,8 @@ define i32 @loadCombine_4consecutive_4312(ptr %p) {
 ; CHECK-NEXT:    [[L1:%.*]] = load i8, ptr [[P]], align 1
 ; CHECK-NEXT:    [[L2:%.*]] = load i8, ptr [[P1]], align 1
 ; CHECK-NEXT:    [[L3:%.*]] = load i16, ptr [[P2]], align 1
-; CHECK-NEXT:    [[TMP1:%.*]] = zext i16 [[L3]] to i32
-; CHECK-NEXT:    [[TMP2:%.*]] = shl nuw i32 [[TMP1]], 16
+; CHECK-NEXT:    [[TMP1:%.*]] = sext i16 [[L3]] to i32
+; CHECK-NEXT:    [[TMP2:%.*]] = shl nsw i32 [[TMP1]], 16
 ; CHECK-NEXT:    [[E1:%.*]] = zext i8 [[L1]] to i32
 ; CHECK-NEXT:    [[E2:%.*]] = zext i8 [[L2]] to i32
 ; CHECK-NEXT:    [[S2:%.*]] = shl nuw nsw i32 [[E2]], 8

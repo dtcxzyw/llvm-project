@@ -970,8 +970,9 @@ define i1 @test53(i32 %a, i32 %b) {
 
 define i1 @test54(i8 %a) {
 ; CHECK-LABEL: @test54(
-; CHECK-NEXT:    [[TMP1:%.*]] = and i8 [[A:%.*]], -64
-; CHECK-NEXT:    [[RET:%.*]] = icmp eq i8 [[TMP1]], -128
+; CHECK-NEXT:    [[EXT1:%.*]] = sext i8 [[A:%.*]] to i32
+; CHECK-NEXT:    [[AND:%.*]] = and i32 [[EXT1]], 192
+; CHECK-NEXT:    [[RET:%.*]] = icmp eq i32 [[AND]], 128
 ; CHECK-NEXT:    ret i1 [[RET]]
 ;
   %ext = zext i8 %a to i32

@@ -413,6 +413,18 @@ Value *InstCombinerImpl::SimplifyDemandedUseBits(Value *V, APInt DemandedMask,
     KnownBits InputKnown(SrcBitWidth);
     if (SimplifyDemandedBits(I, 0, InputDemandedMask, InputKnown, Depth + 1))
       return I;
+
+    if (I->getOpcode() == Instruction::ZExt) {
+      // If the input sign bit is known zero, or if the NewBits are not demanded
+      // convert this into a sign extension.
+      if (InputKnown.isNonNegative() ||
+          DemandedMask.getActiveBits() <= SrcBitWidth) {
+        // Convert to SExt cast.
+        CastInst *NewCast = new SExtInst(I->getOperand(0), VTy, I->getName());
+        return InsertNewInstWith(NewCast, I->getIterator());
+      }
+    }
+
     assert(InputKnown.getBitWidth() == SrcBitWidth && "Src width changed?");
     Known = InputKnown.zextOrTrunc(BitWidth);
     assert(!Known.hasConflict() && "Bits known to be one AND zero?");
@@ -455,15 +467,6 @@ Value *InstCombinerImpl::SimplifyDemandedUseBits(Value *V, APInt DemandedMask,
     KnownBits InputKnown(SrcBitWidth);
     if (SimplifyDemandedBits(I, 0, InputDemandedBits, InputKnown, Depth + 1))
       return I;
-
-    // If the input sign bit is known zero, or if the NewBits are not demanded
-    // convert this into a zero extension.
-    if (InputKnown.isNonNegative() ||
-        DemandedMask.getActiveBits() <= SrcBitWidth) {
-      // Convert to ZExt cast.
-      CastInst *NewCast = new ZExtInst(I->getOperand(0), VTy, I->getName());
-      return InsertNewInstWith(NewCast, I->getIterator());
-     }
 
     // If the sign bit of the input is known set or clear, then we know the
     // top bits of the result.

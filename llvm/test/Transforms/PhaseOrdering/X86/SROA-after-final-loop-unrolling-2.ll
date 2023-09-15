@@ -25,32 +25,28 @@ define dso_local void @foo(i32 noundef %arg, ptr noundef nonnull align 4 derefer
 ; CHECK-NEXT:    [[I9:%.*]] = sdiv i32 [[ARG:%.*]], 128
 ; CHECK-NEXT:    [[I10:%.*]] = shl nsw i32 [[I9]], 7
 ; CHECK-NEXT:    [[ARG_OFF:%.*]] = add i32 [[ARG]], 127
-; CHECK-NEXT:    [[TMP0:%.*]] = icmp ult i32 [[ARG_OFF]], 255
-; CHECK-NEXT:    br i1 [[TMP0]], label [[BB12:%.*]], label [[BB13:%.*]]
+; CHECK-NEXT:    [[I11_NOT4:%.*]] = icmp ult i32 [[ARG_OFF]], 255
+; CHECK-NEXT:    br i1 [[I11_NOT4]], label [[BB12:%.*]], label [[BB13:%.*]]
 ; CHECK:       bb12.loopexit:
-; CHECK-NEXT:    [[I3_SROA_8_0_INSERT_EXT:%.*]] = zext i32 [[I21_3:%.*]] to i64
-; CHECK-NEXT:    [[I3_SROA_8_0_INSERT_SHIFT:%.*]] = shl nuw i64 [[I3_SROA_8_0_INSERT_EXT]], 32
-; CHECK-NEXT:    [[I3_SROA_0_0_INSERT_EXT:%.*]] = zext i32 [[I21_2:%.*]] to i64
-; CHECK-NEXT:    [[I3_SROA_0_0_INSERT_INSERT:%.*]] = or i64 [[I3_SROA_8_0_INSERT_SHIFT]], [[I3_SROA_0_0_INSERT_EXT]]
+; CHECK-NEXT:    [[I3_SROA_6_0_INSERT_EXT:%.*]] = sext i32 [[I21_1:%.*]] to i64
+; CHECK-NEXT:    [[I3_SROA_6_0_INSERT_SHIFT:%.*]] = shl nuw nsw i64 [[I3_SROA_6_0_INSERT_EXT]], 32
+; CHECK-NEXT:    [[I3_SROA_0_0_INSERT_EXT:%.*]] = sext i32 [[I21:%.*]] to i64
+; CHECK-NEXT:    [[I3_SROA_0_0_INSERT_INSERT:%.*]] = or i64 [[I3_SROA_6_0_INSERT_SHIFT]], [[I3_SROA_0_0_INSERT_EXT]]
 ; CHECK-NEXT:    br label [[BB12]]
 ; CHECK:       bb12:
-; CHECK-NEXT:    [[TMP1:%.*]] = phi i64 [ [[I3_SROA_0_0_INSERT_INSERT]], [[BB12_LOOPEXIT:%.*]] ], [ 180388626456, [[BB:%.*]] ]
-; CHECK-NEXT:    store i64 [[TMP1]], ptr [[ARG1:%.*]], align 4, !tbaa [[TBAA5:![0-9]+]]
+; CHECK-NEXT:    [[TMP0:%.*]] = phi i64 [ [[I3_SROA_0_0_INSERT_INSERT]], [[BB12_LOOPEXIT:%.*]] ], [ 180388626456, [[BB:%.*]] ]
+; CHECK-NEXT:    store i64 [[TMP0]], ptr [[ARG1:%.*]], align 4, !tbaa [[TBAA5:![0-9]+]]
 ; CHECK-NEXT:    ret void
 ; CHECK:       bb13:
-; CHECK-NEXT:    [[I3_SROA_8_0:%.*]] = phi i32 [ [[I21_3]], [[BB13]] ], [ 42, [[BB]] ]
-; CHECK-NEXT:    [[I3_SROA_0_0:%.*]] = phi i32 [ [[I21_2]], [[BB13]] ], [ 24, [[BB]] ]
-; CHECK-NEXT:    [[I4_05:%.*]] = phi i32 [ [[I24_3:%.*]], [[BB13]] ], [ 0, [[BB]] ]
-; CHECK-NEXT:    [[I21:%.*]] = mul nsw i32 [[I3_SROA_0_0]], [[I4_05]]
+; CHECK-NEXT:    [[I3_SROA_6_0:%.*]] = phi i32 [ [[I21_1]], [[BB13]] ], [ 42, [[BB]] ]
+; CHECK-NEXT:    [[I3_SROA_0_0:%.*]] = phi i32 [ [[I21]], [[BB13]] ], [ 24, [[BB]] ]
+; CHECK-NEXT:    [[I4_05:%.*]] = phi i32 [ [[I24_1:%.*]], [[BB13]] ], [ 0, [[BB]] ]
+; CHECK-NEXT:    [[I21]] = mul nsw i32 [[I3_SROA_0_0]], [[I4_05]]
 ; CHECK-NEXT:    [[I24:%.*]] = or i32 [[I4_05]], 1
-; CHECK-NEXT:    [[I21_1:%.*]] = mul nsw i32 [[I3_SROA_8_0]], [[I24]]
-; CHECK-NEXT:    [[I24_1:%.*]] = or i32 [[I4_05]], 2
-; CHECK-NEXT:    [[I21_2]] = mul nsw i32 [[I21]], [[I24_1]]
-; CHECK-NEXT:    [[I24_2:%.*]] = or i32 [[I4_05]], 3
-; CHECK-NEXT:    [[I21_3]] = mul nsw i32 [[I21_1]], [[I24_2]]
-; CHECK-NEXT:    [[I24_3]] = add nuw nsw i32 [[I4_05]], 4
-; CHECK-NEXT:    [[I11_NOT_3:%.*]] = icmp eq i32 [[I24_3]], [[I10]]
-; CHECK-NEXT:    br i1 [[I11_NOT_3]], label [[BB12_LOOPEXIT]], label [[BB13]], !llvm.loop [[LOOP8:![0-9]+]]
+; CHECK-NEXT:    [[I21_1]] = mul nsw i32 [[I3_SROA_6_0]], [[I24]]
+; CHECK-NEXT:    [[I24_1]] = add nuw nsw i32 [[I4_05]], 2
+; CHECK-NEXT:    [[I11_NOT_1:%.*]] = icmp eq i32 [[I24_1]], [[I10]]
+; CHECK-NEXT:    br i1 [[I11_NOT_1]], label [[BB12_LOOPEXIT]], label [[BB13]], !llvm.loop [[LOOP8:![0-9]+]]
 ;
 bb:
   %i = alloca i32, align 4

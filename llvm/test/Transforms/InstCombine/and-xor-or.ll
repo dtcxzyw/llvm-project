@@ -630,9 +630,9 @@ define i64 @sext_and_chain(i64 %a, i16 %b, i16 %c) {
 define i64 @zext_and_chain(i64 %a, i16 %b, i16 %c) {
 ; CHECK-LABEL: define {{[^@]+}}@zext_and_chain
 ; CHECK-SAME: (i64 [[A:%.*]], i16 [[B:%.*]], i16 [[C:%.*]]) {
-; CHECK-NEXT:    [[CONV:%.*]] = zext i16 [[B]] to i64
+; CHECK-NEXT:    [[CONV1:%.*]] = sext i16 [[B]] to i64
 ; CHECK-NEXT:    [[CONV2:%.*]] = zext i16 [[C]] to i64
-; CHECK-NEXT:    [[AND:%.*]] = and i64 [[CONV]], [[A]]
+; CHECK-NEXT:    [[AND:%.*]] = and i64 [[CONV1]], [[A]]
 ; CHECK-NEXT:    [[AND2:%.*]] = and i64 [[AND]], [[CONV2]]
 ; CHECK-NEXT:    ret i64 [[AND2]]
 ;
@@ -4205,9 +4205,9 @@ define i32 @trunc_trunc_xor_uses(i65 %x, i65 %y) {
 define i16 @and_zext_zext(i8 %x, i4 %y) {
 ; CHECK-LABEL: define {{[^@]+}}@and_zext_zext
 ; CHECK-SAME: (i8 [[X:%.*]], i4 [[Y:%.*]]) {
-; CHECK-NEXT:    [[TMP1:%.*]] = zext i4 [[Y]] to i8
-; CHECK-NEXT:    [[TMP2:%.*]] = and i8 [[TMP1]], [[X]]
-; CHECK-NEXT:    [[R:%.*]] = zext i8 [[TMP2]] to i16
+; CHECK-NEXT:    [[ZX1:%.*]] = sext i8 [[X]] to i16
+; CHECK-NEXT:    [[ZY:%.*]] = zext i4 [[Y]] to i16
+; CHECK-NEXT:    [[R:%.*]] = and i16 [[ZX1]], [[ZY]]
 ; CHECK-NEXT:    ret i16 [[R]]
 ;
   %zx = zext i8 %x to i16

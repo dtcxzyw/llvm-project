@@ -28,7 +28,9 @@ define <2 x i64> @test2(<2 x i1> %A) {
 
 define <2 x i64> @test3(<2 x i64> %A) {
 ; CHECK-LABEL: @test3(
-; CHECK-NEXT:    [[ZEXT:%.*]] = and <2 x i64> [[A:%.*]], <i64 23, i64 42>
+; CHECK-NEXT:    [[TRUNC:%.*]] = trunc <2 x i64> [[A:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[AND:%.*]] = and <2 x i32> [[TRUNC]], <i32 23, i32 42>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[AND]] to <2 x i64>
 ; CHECK-NEXT:    ret <2 x i64> [[ZEXT]]
 ;
   %trunc = trunc <2 x i64> %A to <2 x i32>
@@ -39,8 +41,10 @@ define <2 x i64> @test3(<2 x i64> %A) {
 
 define <2 x i64> @test4(<2 x i64> %A) {
 ; CHECK-LABEL: @test4(
-; CHECK-NEXT:    [[TMP1:%.*]] = and <2 x i64> [[A:%.*]], <i64 23, i64 42>
-; CHECK-NEXT:    [[ZEXT:%.*]] = xor <2 x i64> [[TMP1]], <i64 23, i64 42>
+; CHECK-NEXT:    [[TRUNC:%.*]] = trunc <2 x i64> [[A:%.*]] to <2 x i32>
+; CHECK-NEXT:    [[AND:%.*]] = and <2 x i32> [[TRUNC]], <i32 23, i32 42>
+; CHECK-NEXT:    [[XOR:%.*]] = xor <2 x i32> [[AND]], <i32 23, i32 42>
+; CHECK-NEXT:    [[ZEXT:%.*]] = sext <2 x i32> [[XOR]] to <2 x i64>
 ; CHECK-NEXT:    ret <2 x i64> [[ZEXT]]
 ;
   %trunc = trunc <2 x i64> %A to <2 x i32>
@@ -80,9 +84,9 @@ define i8 @fold_and_zext_icmp(i64 %a, i64 %b, i64 %c) {
 ; CHECK-LABEL: @fold_and_zext_icmp(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp sgt i64 [[A:%.*]], [[B:%.*]]
 ; CHECK-NEXT:    [[TMP2:%.*]] = icmp slt i64 [[A]], [[C:%.*]]
-; CHECK-NEXT:    [[TMP3:%.*]] = and i1 [[TMP1]], [[TMP2]]
-; CHECK-NEXT:    [[TMP4:%.*]] = zext i1 [[TMP3]] to i8
-; CHECK-NEXT:    ret i8 [[TMP4]]
+; CHECK-NEXT:    [[NARROW:%.*]] = select i1 [[TMP1]], i1 [[TMP2]], i1 false
+; CHECK-NEXT:    [[TMP3:%.*]] = zext i1 [[NARROW]] to i8
+; CHECK-NEXT:    ret i8 [[TMP3]]
 ;
   %1 = icmp sgt i64 %a, %b
   %2 = zext i1 %1 to i8
@@ -135,11 +139,11 @@ define i8 @fold_nested_logic_zext_icmp(i64 %a, i64 %b, i64 %c, i64 %d) {
 ; CHECK-LABEL: @fold_nested_logic_zext_icmp(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp sgt i64 [[A:%.*]], [[B:%.*]]
 ; CHECK-NEXT:    [[TMP2:%.*]] = icmp slt i64 [[A]], [[C:%.*]]
-; CHECK-NEXT:    [[TMP3:%.*]] = and i1 [[TMP1]], [[TMP2]]
-; CHECK-NEXT:    [[TMP4:%.*]] = icmp eq i64 [[A]], [[D:%.*]]
-; CHECK-NEXT:    [[TMP5:%.*]] = or i1 [[TMP3]], [[TMP4]]
-; CHECK-NEXT:    [[TMP6:%.*]] = zext i1 [[TMP5]] to i8
-; CHECK-NEXT:    ret i8 [[TMP6]]
+; CHECK-NEXT:    [[NARROW:%.*]] = select i1 [[TMP1]], i1 [[TMP2]], i1 false
+; CHECK-NEXT:    [[TMP3:%.*]] = icmp eq i64 [[A]], [[D:%.*]]
+; CHECK-NEXT:    [[TMP4:%.*]] = or i1 [[NARROW]], [[TMP3]]
+; CHECK-NEXT:    [[TMP5:%.*]] = zext i1 [[TMP4]] to i8
+; CHECK-NEXT:    ret i8 [[TMP5]]
 ;
   %1 = icmp sgt i64 %a, %b
   %2 = zext i1 %1 to i8
@@ -597,7 +601,7 @@ define i64 @and_trunc_extra_use2_constant(i64 %x) {
 ; CHECK-NEXT:    [[T:%.*]] = trunc i64 [[X:%.*]] to i32
 ; CHECK-NEXT:    [[A:%.*]] = and i32 [[T]], 42
 ; CHECK-NEXT:    call void @use32(i32 [[A]])
-; CHECK-NEXT:    [[Z:%.*]] = and i64 [[X]], 42
+; CHECK-NEXT:    [[Z:%.*]] = sext i32 [[A]] to i64
 ; CHECK-NEXT:    ret i64 [[Z]]
 ;
   %t = trunc i64 %x to i32

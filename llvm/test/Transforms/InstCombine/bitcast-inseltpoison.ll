@@ -379,8 +379,11 @@ define double @bitcast_extelt4(i128 %A) {
 
 define <2 x i32> @test4(i32 %A, i32 %B){
 ; CHECK-LABEL: @test4(
-; CHECK-NEXT:    [[TMP1:%.*]] = insertelement <2 x i32> poison, i32 [[A:%.*]], i64 0
-; CHECK-NEXT:    [[T43:%.*]] = insertelement <2 x i32> [[TMP1]], i32 [[B:%.*]], i64 1
+; CHECK-NEXT:    [[T38:%.*]] = zext i32 [[A:%.*]] to i64
+; CHECK-NEXT:    [[T321:%.*]] = sext i32 [[B:%.*]] to i64
+; CHECK-NEXT:    [[T33:%.*]] = shl nsw i64 [[T321]], 32
+; CHECK-NEXT:    [[INS35:%.*]] = or i64 [[T33]], [[T38]]
+; CHECK-NEXT:    [[T43:%.*]] = bitcast i64 [[INS35]] to <2 x i32>
 ; CHECK-NEXT:    ret <2 x i32> [[T43]]
 ;
   %t38 = zext i32 %A to i64
@@ -394,8 +397,13 @@ define <2 x i32> @test4(i32 %A, i32 %B){
 ; rdar://8360454
 define <2 x float> @test5(float %A, float %B) {
 ; CHECK-LABEL: @test5(
-; CHECK-NEXT:    [[TMP1:%.*]] = insertelement <2 x float> poison, float [[A:%.*]], i64 0
-; CHECK-NEXT:    [[T43:%.*]] = insertelement <2 x float> [[TMP1]], float [[B:%.*]], i64 1
+; CHECK-NEXT:    [[T37:%.*]] = bitcast float [[A:%.*]] to i32
+; CHECK-NEXT:    [[T38:%.*]] = zext i32 [[T37]] to i64
+; CHECK-NEXT:    [[T31:%.*]] = bitcast float [[B:%.*]] to i32
+; CHECK-NEXT:    [[T321:%.*]] = sext i32 [[T31]] to i64
+; CHECK-NEXT:    [[T33:%.*]] = shl nsw i64 [[T321]], 32
+; CHECK-NEXT:    [[INS35:%.*]] = or i64 [[T33]], [[T38]]
+; CHECK-NEXT:    [[T43:%.*]] = bitcast i64 [[INS35]] to <2 x float>
 ; CHECK-NEXT:    ret <2 x float> [[T43]]
 ;
   %t37 = bitcast float %A to i32
@@ -410,7 +418,11 @@ define <2 x float> @test5(float %A, float %B) {
 
 define <2 x float> @test6(float %A){
 ; CHECK-LABEL: @test6(
-; CHECK-NEXT:    [[T35:%.*]] = insertelement <2 x float> <float 4.200000e+01, float poison>, float [[A:%.*]], i64 1
+; CHECK-NEXT:    [[T23:%.*]] = bitcast float [[A:%.*]] to i32
+; CHECK-NEXT:    [[T241:%.*]] = sext i32 [[T23]] to i64
+; CHECK-NEXT:    [[T25:%.*]] = shl nsw i64 [[T241]], 32
+; CHECK-NEXT:    [[MASK20:%.*]] = or i64 [[T25]], 1109917696
+; CHECK-NEXT:    [[T35:%.*]] = bitcast i64 [[MASK20]] to <2 x float>
 ; CHECK-NEXT:    ret <2 x float> [[T35]]
 ;
   %t23 = bitcast float %A to i32

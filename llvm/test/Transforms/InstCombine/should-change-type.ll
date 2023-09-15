@@ -43,9 +43,9 @@ define i32 @test3(i32 %x, i32 %y) {
 
 define i9 @test4(i9 %x, i9 %y) {
 ; CHECK-LABEL: @test4(
-; CHECK-NEXT:    [[XZ:%.*]] = zext i9 [[X:%.*]] to i64
-; CHECK-NEXT:    [[YZ:%.*]] = zext i9 [[Y:%.*]] to i64
-; CHECK-NEXT:    [[C:%.*]] = add nuw nsw i64 [[XZ]], [[YZ]]
+; CHECK-NEXT:    [[XZ2:%.*]] = sext i9 [[X:%.*]] to i64
+; CHECK-NEXT:    [[YZ1:%.*]] = sext i9 [[Y:%.*]] to i64
+; CHECK-NEXT:    [[C:%.*]] = add nsw i64 [[XZ2]], [[YZ1]]
 ; CHECK-NEXT:    [[D:%.*]] = trunc i64 [[C]] to i9
 ; CHECK-NEXT:    ret i9 [[D]]
 ;

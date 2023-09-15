@@ -188,9 +188,12 @@ define i64 @t3_notrunc_redundant_sext(i64 %data, i64 %nbits) {
 define <2 x i32> @t4_vec(<2 x i64> %data, <2 x i32> %nbits) {
 ; CHECK-LABEL: @t4_vec(
 ; CHECK-NEXT:    [[SKIP_HIGH:%.*]] = sub <2 x i32> <i32 64, i32 64>, [[NBITS:%.*]]
-; CHECK-NEXT:    [[SKIP_HIGH_WIDE:%.*]] = zext <2 x i32> [[SKIP_HIGH]] to <2 x i64>
-; CHECK-NEXT:    [[TMP1:%.*]] = ashr <2 x i64> [[DATA:%.*]], [[SKIP_HIGH_WIDE]]
-; CHECK-NEXT:    [[SIGNEXTENDED:%.*]] = trunc <2 x i64> [[TMP1]] to <2 x i32>
+; CHECK-NEXT:    [[SKIP_HIGH_WIDE1:%.*]] = sext <2 x i32> [[SKIP_HIGH]] to <2 x i64>
+; CHECK-NEXT:    [[EXTRACTED:%.*]] = lshr <2 x i64> [[DATA:%.*]], [[SKIP_HIGH_WIDE1]]
+; CHECK-NEXT:    [[EXTRACTED_NARROW:%.*]] = trunc <2 x i64> [[EXTRACTED]] to <2 x i32>
+; CHECK-NEXT:    [[NUM_HIGH_BITS_TO_SMEAR_NARROW:%.*]] = sub <2 x i32> <i32 32, i32 32>, [[NBITS]]
+; CHECK-NEXT:    [[SIGNBIT_POSITIONED:%.*]] = shl <2 x i32> [[EXTRACTED_NARROW]], [[NUM_HIGH_BITS_TO_SMEAR_NARROW]]
+; CHECK-NEXT:    [[SIGNEXTENDED:%.*]] = ashr <2 x i32> [[SIGNBIT_POSITIONED]], [[NUM_HIGH_BITS_TO_SMEAR_NARROW]]
 ; CHECK-NEXT:    ret <2 x i32> [[SIGNEXTENDED]]
 ;
   %skip_high = sub <2 x i32> <i32 64, i32 64>, %nbits
@@ -206,9 +209,13 @@ define <2 x i32> @t4_vec(<2 x i64> %data, <2 x i32> %nbits) {
 define <3 x i32> @t5_vec_undef(<3 x i64> %data, <3 x i32> %nbits) {
 ; CHECK-LABEL: @t5_vec_undef(
 ; CHECK-NEXT:    [[SKIP_HIGH:%.*]] = sub <3 x i32> <i32 64, i32 64, i32 undef>, [[NBITS:%.*]]
-; CHECK-NEXT:    [[SKIP_HIGH_WIDE:%.*]] = zext <3 x i32> [[SKIP_HIGH]] to <3 x i64>
-; CHECK-NEXT:    [[TMP1:%.*]] = ashr <3 x i64> [[DATA:%.*]], [[SKIP_HIGH_WIDE]]
-; CHECK-NEXT:    [[SIGNEXTENDED:%.*]] = trunc <3 x i64> [[TMP1]] to <3 x i32>
+; CHECK-NEXT:    [[SKIP_HIGH_WIDE1:%.*]] = sext <3 x i32> [[SKIP_HIGH]] to <3 x i64>
+; CHECK-NEXT:    [[EXTRACTED:%.*]] = lshr <3 x i64> [[DATA:%.*]], [[SKIP_HIGH_WIDE1]]
+; CHECK-NEXT:    [[EXTRACTED_NARROW:%.*]] = trunc <3 x i64> [[EXTRACTED]] to <3 x i32>
+; CHECK-NEXT:    [[NUM_HIGH_BITS_TO_SMEAR_NARROW0:%.*]] = sub <3 x i32> <i32 32, i32 32, i32 undef>, [[NBITS]]
+; CHECK-NEXT:    [[NUM_HIGH_BITS_TO_SMEAR_NARROW1:%.*]] = sub <3 x i32> <i32 undef, i32 32, i32 32>, [[NBITS]]
+; CHECK-NEXT:    [[SIGNBIT_POSITIONED:%.*]] = shl <3 x i32> [[EXTRACTED_NARROW]], [[NUM_HIGH_BITS_TO_SMEAR_NARROW0]]
+; CHECK-NEXT:    [[SIGNEXTENDED:%.*]] = ashr <3 x i32> [[SIGNBIT_POSITIONED]], [[NUM_HIGH_BITS_TO_SMEAR_NARROW1]]
 ; CHECK-NEXT:    ret <3 x i32> [[SIGNEXTENDED]]
 ;
   %skip_high = sub <3 x i32> <i32 64, i32 64, i32 undef>, %nbits

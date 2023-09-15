@@ -175,7 +175,8 @@ define i32 @add-shl-sdiv-negative1(i32 %x) {
 define i32 @add-shl-sdiv-negative2(i32 %x) {
 ; CHECK-LABEL: @add-shl-sdiv-negative2(
 ; CHECK-NEXT:    [[TMP1:%.*]] = icmp eq i32 [[X:%.*]], -2147483648
-; CHECK-NEXT:    [[SL:%.*]] = select i1 [[TMP1]], i32 -2147483648, i32 0
+; CHECK-NEXT:    [[SD1:%.*]] = sext i1 [[TMP1]] to i32
+; CHECK-NEXT:    [[SL:%.*]] = shl nsw i32 [[SD1]], 31
 ; CHECK-NEXT:    [[RZ:%.*]] = add i32 [[SL]], [[X]]
 ; CHECK-NEXT:    ret i32 [[RZ]]
 ;

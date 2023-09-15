@@ -48,7 +48,7 @@ define void @loop(ptr %X, ptr %Y) {
 ; CHECK-NEXT:    br i1 [[DIFF_CHECK]], label [[FOR_BODY:%.*]], label [[VECTOR_BODY:%.*]]
 ; CHECK:       vector.body:
 ; CHECK-NEXT:    [[INDEX:%.*]] = phi i32 [ [[INDEX_NEXT:%.*]], [[VECTOR_BODY]] ], [ 0, [[ENTRY:%.*]] ]
-; CHECK-NEXT:    [[TMP1:%.*]] = zext i32 [[INDEX]] to i64
+; CHECK-NEXT:    [[TMP1:%.*]] = sext i32 [[INDEX]] to i64
 ; CHECK-NEXT:    [[TMP2:%.*]] = getelementptr inbounds double, ptr [[Y]], i64 [[TMP1]]
 ; CHECK-NEXT:    [[WIDE_LOAD:%.*]] = load <2 x double>, ptr [[TMP2]], align 8
 ; CHECK-NEXT:    [[TMP3:%.*]] = getelementptr inbounds double, ptr [[TMP2]], i64 2
@@ -72,7 +72,7 @@ define void @loop(ptr %X, ptr %Y) {
 ; CHECK-NEXT:    ret void
 ; CHECK:       for.body:
 ; CHECK-NEXT:    [[I_04:%.*]] = phi i32 [ [[INC:%.*]], [[FOR_BODY]] ], [ 0, [[ENTRY]] ]
-; CHECK-NEXT:    [[IDXPROM:%.*]] = zext i32 [[I_04]] to i64
+; CHECK-NEXT:    [[IDXPROM:%.*]] = sext i32 [[I_04]] to i64
 ; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr inbounds double, ptr [[Y]], i64 [[IDXPROM]]
 ; CHECK-NEXT:    [[TMP15:%.*]] = load double, ptr [[ARRAYIDX]], align 8
 ; CHECK-NEXT:    [[CMP_I:%.*]] = fcmp olt double [[TMP15]], 0.000000e+00

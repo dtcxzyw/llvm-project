@@ -193,18 +193,18 @@ define void @test_shrink_zext_in_preheader(ptr noalias %src, ptr noalias %dst, i
 ; CHECK-NEXT:    [[TMP13:%.*]] = insertelement <8 x i16> undef, i16 [[B]], i64 0
 ; CHECK-NEXT:    br label [[VEC_EPILOG_VECTOR_BODY:%.*]]
 ; CHECK:       vec.epilog.vector.body:
-; CHECK-NEXT:    [[INDEX4:%.*]] = phi i32 [ 992, [[VEC_EPILOG_PH]] ], [ [[INDEX_NEXT9:%.*]], [[VEC_EPILOG_VECTOR_BODY]] ]
+; CHECK-NEXT:    [[INDEX3:%.*]] = phi i32 [ 992, [[VEC_EPILOG_PH]] ], [ [[INDEX_NEXT8:%.*]], [[VEC_EPILOG_VECTOR_BODY]] ]
 ; CHECK-NEXT:    [[TMP14:%.*]] = trunc i32 [[A]] to i16
 ; CHECK-NEXT:    [[TMP15:%.*]] = insertelement <8 x i16> undef, i16 [[TMP14]], i64 0
 ; CHECK-NEXT:    [[TMP16:%.*]] = mul <8 x i16> [[TMP15]], [[TMP13]]
 ; CHECK-NEXT:    [[TMP17:%.*]] = lshr <8 x i16> [[TMP16]], <i16 8, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0, i16 0>
 ; CHECK-NEXT:    [[TMP18:%.*]] = trunc <8 x i16> [[TMP17]] to <8 x i8>
 ; CHECK-NEXT:    [[TMP19:%.*]] = shufflevector <8 x i8> [[TMP18]], <8 x i8> poison, <8 x i32> zeroinitializer
-; CHECK-NEXT:    [[TMP20:%.*]] = sext i32 [[INDEX4]] to i64
+; CHECK-NEXT:    [[TMP20:%.*]] = sext i32 [[INDEX3]] to i64
 ; CHECK-NEXT:    [[TMP21:%.*]] = getelementptr inbounds i8, ptr [[DST]], i64 [[TMP20]]
 ; CHECK-NEXT:    store <8 x i8> [[TMP19]], ptr [[TMP21]], align 1
-; CHECK-NEXT:    [[INDEX_NEXT9]] = add nuw i32 [[INDEX4]], 8
-; CHECK-NEXT:    [[TMP22:%.*]] = icmp eq i32 [[INDEX_NEXT9]], 1000
+; CHECK-NEXT:    [[INDEX_NEXT8]] = add nuw i32 [[INDEX3]], 8
+; CHECK-NEXT:    [[TMP22:%.*]] = icmp eq i32 [[INDEX_NEXT8]], 1000
 ; CHECK-NEXT:    br i1 [[TMP22]], label [[VEC_EPILOG_MIDDLE_BLOCK:%.*]], label [[VEC_EPILOG_VECTOR_BODY]], !llvm.loop [[LOOP6:![0-9]+]]
 ; CHECK:       vec.epilog.middle.block:
 ; CHECK-NEXT:    br i1 true, label [[EXIT]], label [[VEC_EPILOG_SCALAR_PH]]
@@ -268,7 +268,7 @@ define void @test_shrink_select(ptr noalias %src, ptr noalias %dst, i32 %A, i1 %
 ; CHECK:       vec.epilog.ph:
 ; CHECK-NEXT:    br label [[VEC_EPILOG_VECTOR_BODY:%.*]]
 ; CHECK:       vec.epilog.vector.body:
-; CHECK-NEXT:    [[INDEX2:%.*]] = phi i32 [ 992, [[VEC_EPILOG_PH]] ], [ [[INDEX_NEXT5:%.*]], [[VEC_EPILOG_VECTOR_BODY]] ]
+; CHECK-NEXT:    [[INDEX1:%.*]] = phi i32 [ 992, [[VEC_EPILOG_PH]] ], [ [[INDEX_NEXT4:%.*]], [[VEC_EPILOG_VECTOR_BODY]] ]
 ; CHECK-NEXT:    [[TMP10:%.*]] = trunc i32 [[A]] to i16
 ; CHECK-NEXT:    [[TMP11:%.*]] = insertelement <8 x i16> undef, i16 [[TMP10]], i64 0
 ; CHECK-NEXT:    [[TMP12:%.*]] = mul <8 x i16> [[TMP11]], <i16 99, i16 poison, i16 poison, i16 poison, i16 poison, i16 poison, i16 poison, i16 poison>
@@ -276,11 +276,11 @@ define void @test_shrink_select(ptr noalias %src, ptr noalias %dst, i32 %A, i1 %
 ; CHECK-NEXT:    [[TMP14:%.*]] = lshr <8 x i16> [[TMP13]], <i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8, i16 8>
 ; CHECK-NEXT:    [[TMP15:%.*]] = select i1 [[C]], <8 x i16> [[TMP14]], <8 x i16> [[TMP13]]
 ; CHECK-NEXT:    [[TMP16:%.*]] = trunc <8 x i16> [[TMP15]] to <8 x i8>
-; CHECK-NEXT:    [[TMP17:%.*]] = sext i32 [[INDEX2]] to i64
+; CHECK-NEXT:    [[TMP17:%.*]] = sext i32 [[INDEX1]] to i64
 ; CHECK-NEXT:    [[TMP18:%.*]] = getelementptr inbounds i8, ptr [[DST]], i64 [[TMP17]]
 ; CHECK-NEXT:    store <8 x i8> [[TMP16]], ptr [[TMP18]], align 1
-; CHECK-NEXT:    [[INDEX_NEXT5]] = add nuw i32 [[INDEX2]], 8
-; CHECK-NEXT:    [[TMP19:%.*]] = icmp eq i32 [[INDEX_NEXT5]], 1000
+; CHECK-NEXT:    [[INDEX_NEXT4]] = add nuw i32 [[INDEX1]], 8
+; CHECK-NEXT:    [[TMP19:%.*]] = icmp eq i32 [[INDEX_NEXT4]], 1000
 ; CHECK-NEXT:    br i1 [[TMP19]], label [[VEC_EPILOG_MIDDLE_BLOCK:%.*]], label [[VEC_EPILOG_VECTOR_BODY]], !llvm.loop [[LOOP9:![0-9]+]]
 ; CHECK:       vec.epilog.middle.block:
 ; CHECK-NEXT:    br i1 true, label [[EXIT]], label [[VEC_EPILOG_SCALAR_PH]]

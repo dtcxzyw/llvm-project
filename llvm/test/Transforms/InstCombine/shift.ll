@@ -581,10 +581,12 @@ define i128 @test36(i128 %A, i128 %B) {
 
 define i64 @test37(i128 %A, i32 %B) {
 ; CHECK-LABEL: @test37(
-; CHECK-NEXT:    [[I22:%.*]] = zext i32 [[B:%.*]] to i128
-; CHECK-NEXT:    [[I23:%.*]] = shl nuw nsw i128 [[I22]], 32
-; CHECK-NEXT:    [[INS:%.*]] = or i128 [[I23]], [[A:%.*]]
-; CHECK-NEXT:    [[I46:%.*]] = trunc i128 [[INS]] to i64
+; CHECK-NEXT:    [[I27:%.*]] = shl i128 [[A:%.*]], 64
+; CHECK-NEXT:    [[I221:%.*]] = sext i32 [[B:%.*]] to i128
+; CHECK-NEXT:    [[I23:%.*]] = shl nsw i128 [[I221]], 96
+; CHECK-NEXT:    [[INS:%.*]] = or i128 [[I23]], [[I27]]
+; CHECK-NEXT:    [[I45:%.*]] = lshr exact i128 [[INS]], 64
+; CHECK-NEXT:    [[I46:%.*]] = trunc i128 [[I45]] to i64
 ; CHECK-NEXT:    ret i64 [[I46]]
 ;
   %i27 = shl i128 %A, 64
@@ -1191,8 +1193,8 @@ define <4 x i32> @test62_non_splat_vector(<4 x i32> %a) {
 
 define <2 x i65> @test_63(<2 x i64> %t) {
 ; CHECK-LABEL: @test_63(
-; CHECK-NEXT:    [[A:%.*]] = zext <2 x i64> [[T:%.*]] to <2 x i65>
-; CHECK-NEXT:    [[SEXT:%.*]] = shl <2 x i65> [[A]], <i65 33, i65 33>
+; CHECK-NEXT:    [[A1:%.*]] = sext <2 x i64> [[T:%.*]] to <2 x i65>
+; CHECK-NEXT:    [[SEXT:%.*]] = shl <2 x i65> [[A1]], <i65 33, i65 33>
 ; CHECK-NEXT:    [[B:%.*]] = ashr exact <2 x i65> [[SEXT]], <i65 33, i65 33>
 ; CHECK-NEXT:    ret <2 x i65> [[B]]
 ;
@@ -1245,8 +1247,9 @@ define i32 @test_shl_zext_bool_not_constant(i1 %cmp, i32 %shamt) {
 
 define i64 @shl_zext(i32 %t) {
 ; CHECK-LABEL: @shl_zext(
-; CHECK-NEXT:    [[TMP1:%.*]] = shl i32 [[T:%.*]], 8
-; CHECK-NEXT:    [[SHL:%.*]] = zext i32 [[TMP1]] to i64
+; CHECK-NEXT:    [[AND:%.*]] = and i32 [[T:%.*]], 16777215
+; CHECK-NEXT:    [[EXT:%.*]] = sext i32 [[AND]] to i64
+; CHECK-NEXT:    [[SHL:%.*]] = shl nuw nsw i64 [[EXT]], 8
 ; CHECK-NEXT:    ret i64 [[SHL]]
 ;
   %and = and i32 %t, 16777215
@@ -1258,7 +1261,7 @@ define i64 @shl_zext(i32 %t) {
 define i64 @shl_zext_extra_use(i32 %t) {
 ; CHECK-LABEL: @shl_zext_extra_use(
 ; CHECK-NEXT:    [[AND:%.*]] = and i32 [[T:%.*]], 16777215
-; CHECK-NEXT:    [[EXT:%.*]] = zext i32 [[AND]] to i64
+; CHECK-NEXT:    [[EXT:%.*]] = sext i32 [[AND]] to i64
 ; CHECK-NEXT:    call void @use(i64 [[EXT]])
 ; CHECK-NEXT:    [[SHL:%.*]] = shl nuw nsw i64 [[EXT]], 8
 ; CHECK-NEXT:    ret i64 [[SHL]]
@@ -1272,8 +1275,9 @@ define i64 @shl_zext_extra_use(i32 %t) {
 
 define <2 x i64> @shl_zext_splat_vec(<2 x i32> %t) {
 ; CHECK-LABEL: @shl_zext_splat_vec(
-; CHECK-NEXT:    [[TMP1:%.*]] = shl <2 x i32> [[T:%.*]], <i32 8, i32 8>
-; CHECK-NEXT:    [[SHL:%.*]] = zext <2 x i32> [[TMP1]] to <2 x i64>
+; CHECK-NEXT:    [[AND:%.*]] = and <2 x i32> [[T:%.*]], <i32 16777215, i32 16777215>
+; CHECK-NEXT:    [[EXT:%.*]] = sext <2 x i32> [[AND]] to <2 x i64>
+; CHECK-NEXT:    [[SHL:%.*]] = shl nuw nsw <2 x i64> [[EXT]], <i64 8, i64 8>
 ; CHECK-NEXT:    ret <2 x i64> [[SHL]]
 ;
   %and = and <2 x i32> %t, <i32 16777215, i32 16777215>
@@ -1285,8 +1289,8 @@ define <2 x i64> @shl_zext_splat_vec(<2 x i32> %t) {
 define i64 @shl_zext_mul(i32 %t) {
 ; CHECK-LABEL: @shl_zext_mul(
 ; CHECK-NEXT:    [[MUL:%.*]] = mul i32 [[T:%.*]], 16777215
-; CHECK-NEXT:    [[EXT:%.*]] = zext i32 [[MUL]] to i64
-; CHECK-NEXT:    [[SHL:%.*]] = shl nuw i64 [[EXT]], 32
+; CHECK-NEXT:    [[EXT1:%.*]] = sext i32 [[MUL]] to i64
+; CHECK-NEXT:    [[SHL:%.*]] = shl nsw i64 [[EXT1]], 32
 ; CHECK-NEXT:    ret i64 [[SHL]]
 ;
   %mul = mul i32 %t, 16777215
@@ -1298,8 +1302,8 @@ define i64 @shl_zext_mul(i32 %t) {
 define <3 x i17> @shl_zext_mul_splat(<3 x i5> %t) {
 ; CHECK-LABEL: @shl_zext_mul_splat(
 ; CHECK-NEXT:    [[MUL:%.*]] = mul <3 x i5> [[T:%.*]], <i5 13, i5 13, i5 13>
-; CHECK-NEXT:    [[EXT:%.*]] = zext <3 x i5> [[MUL]] to <3 x i17>
-; CHECK-NEXT:    [[SHL:%.*]] = shl nuw <3 x i17> [[EXT]], <i17 12, i17 12, i17 12>
+; CHECK-NEXT:    [[EXT1:%.*]] = sext <3 x i5> [[MUL]] to <3 x i17>
+; CHECK-NEXT:    [[SHL:%.*]] = shl nsw <3 x i17> [[EXT1]], <i17 12, i17 12, i17 12>
 ; CHECK-NEXT:    ret <3 x i17> [[SHL]]
 ;
   %mul = mul <3 x i5> %t, <i5 13, i5 13, i5 13>
@@ -1340,8 +1344,8 @@ define i64 @shl_zext_mul_extra_use2(i32 %t) {
 ; CHECK-LABEL: @shl_zext_mul_extra_use2(
 ; CHECK-NEXT:    [[MUL:%.*]] = mul i32 [[T:%.*]], 16777215
 ; CHECK-NEXT:    call void @use_i32(i32 [[MUL]])
-; CHECK-NEXT:    [[EXT:%.*]] = zext i32 [[MUL]] to i64
-; CHECK-NEXT:    [[SHL:%.*]] = shl nuw i64 [[EXT]], 32
+; CHECK-NEXT:    [[EXT1:%.*]] = sext i32 [[MUL]] to i64
+; CHECK-NEXT:    [[SHL:%.*]] = shl nsw i64 [[EXT1]], 32
 ; CHECK-NEXT:    ret i64 [[SHL]]
 ;
   %mul = mul i32 %t, 16777215

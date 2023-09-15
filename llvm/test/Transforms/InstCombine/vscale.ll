@@ -30,9 +30,10 @@ define i64 @pomote_zext_shl_vscale_i32_to_i64() {
 ; vscale_range attribute so that the 'and' is folded away.
 define i64 @free_zext_vscale_shl_i32_to_i64() #0 {
 ; CHECK-LABEL: @free_zext_vscale_shl_i32_to_i64(
-; CHECK-NEXT:    [[VSCALE:%.*]] = call i64 @llvm.vscale.i64()
-; CHECK-NEXT:    [[SHL:%.*]] = shl nuw nsw i64 [[VSCALE]], 3
-; CHECK-NEXT:    ret i64 [[SHL]]
+; CHECK-NEXT:    [[VSCALE:%.*]] = call i32 @llvm.vscale.i32()
+; CHECK-NEXT:    [[SHL:%.*]] = shl nuw nsw i32 [[VSCALE]], 3
+; CHECK-NEXT:    [[EXT:%.*]] = sext i32 [[SHL]] to i64
+; CHECK-NEXT:    ret i64 [[EXT]]
 ;
   %vscale = call i32 @llvm.vscale.i32()
   %shl = shl i32 %vscale, 3

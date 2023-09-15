@@ -243,7 +243,7 @@ define <2 x i16> @fshl_commute_16bit_vec(<2 x i16> %x, <2 x i16> %y, <2 x i32> %
 
 define i8 @fshr_8bit(i8 %x, i8 %y, i3 %shift) {
 ; CHECK-LABEL: @fshr_8bit(
-; CHECK-NEXT:    [[TMP1:%.*]] = zext i3 [[SHIFT:%.*]] to i8
+; CHECK-NEXT:    [[TMP1:%.*]] = sext i3 [[SHIFT:%.*]] to i8
 ; CHECK-NEXT:    [[CONV2:%.*]] = call i8 @llvm.fshr.i8(i8 [[Y:%.*]], i8 [[X:%.*]], i8 [[TMP1]])
 ; CHECK-NEXT:    ret i8 [[CONV2]]
 ;

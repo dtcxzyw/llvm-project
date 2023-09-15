@@ -53,9 +53,9 @@ define <2 x i32> @OrZextOrVec(<2 x i2> %a) {
 
 define i5 @AndZextAnd(i3 %a) {
 ; CHECK-LABEL: @AndZextAnd(
-; CHECK-NEXT:    [[TMP1:%.*]] = and i3 [[A:%.*]], 2
-; CHECK-NEXT:    [[OP2:%.*]] = zext i3 [[TMP1]] to i5
-; CHECK-NEXT:    ret i5 [[OP2]]
+; CHECK-NEXT:    [[OP1:%.*]] = and i3 [[A:%.*]], 2
+; CHECK-NEXT:    [[CAST:%.*]] = sext i3 [[OP1]] to i5
+; CHECK-NEXT:    ret i5 [[CAST]]
 ;
   %op1 = and i3 %a, 3
   %cast = zext i3 %op1 to i5
@@ -65,8 +65,9 @@ define i5 @AndZextAnd(i3 %a) {
 
 define <2 x i32> @AndZextAndVec(<2 x i8> %a) {
 ; CHECK-LABEL: @AndZextAndVec(
-; CHECK-NEXT:    [[TMP1:%.*]] = and <2 x i8> [[A:%.*]], <i8 5, i8 0>
-; CHECK-NEXT:    [[OP2:%.*]] = zext <2 x i8> [[TMP1]] to <2 x i32>
+; CHECK-NEXT:    [[OP1:%.*]] = and <2 x i8> [[A:%.*]], <i8 7, i8 0>
+; CHECK-NEXT:    [[CAST:%.*]] = sext <2 x i8> [[OP1]] to <2 x i32>
+; CHECK-NEXT:    [[OP2:%.*]] = and <2 x i32> [[CAST]], <i32 261, i32 1>
 ; CHECK-NEXT:    ret <2 x i32> [[OP2]]
 ;
   %op1 = and <2 x i8> %a, <i8 7, i8 0>

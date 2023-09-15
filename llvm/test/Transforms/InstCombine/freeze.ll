@@ -493,10 +493,10 @@ define i1 @fully_propagate_freeze(i32 %0, i32 noundef %1) {
 ; CHECK-LABEL: @fully_propagate_freeze(
 ; CHECK-NEXT:    [[DOTFR:%.*]] = freeze i32 [[TMP0:%.*]]
 ; CHECK-NEXT:    [[DR:%.*]] = lshr i32 [[DOTFR]], 2
-; CHECK-NEXT:    [[IDX1:%.*]] = zext i32 [[DR]] to i64
+; CHECK-NEXT:    [[IDX1:%.*]] = sext i32 [[DR]] to i64
 ; CHECK-NEXT:    [[ADD:%.*]] = add nuw nsw i32 [[DR]], 1
 ; CHECK-NEXT:    [[CMP:%.*]] = icmp slt i32 [[ADD]], [[TMP1:%.*]]
-; CHECK-NEXT:    [[IDX2:%.*]] = zext i32 [[DR]] to i64
+; CHECK-NEXT:    [[IDX2:%.*]] = sext i32 [[DR]] to i64
 ; CHECK-NEXT:    [[V:%.*]] = call i1 @mock_use(i64 [[IDX1]], i64 [[IDX2]])
 ; CHECK-NEXT:    [[RET:%.*]] = and i1 [[V]], [[CMP]]
 ; CHECK-NEXT:    ret i1 [[RET]]

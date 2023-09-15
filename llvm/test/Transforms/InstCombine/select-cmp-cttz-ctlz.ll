@@ -142,8 +142,8 @@ define i64 @test6b(i64 %x) {
 define i32 @test1c(i16 %x) {
 ; CHECK-LABEL: @test1c(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i16 @llvm.cttz.i16(i16 [[X:%.*]], i1 false), !range [[RNG0]]
-; CHECK-NEXT:    [[CAST2:%.*]] = zext i16 [[CT]] to i32
-; CHECK-NEXT:    ret i32 [[CAST2]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i16 [[CT]] to i32
+; CHECK-NEXT:    ret i32 [[COND]]
 ;
   %ct = tail call i16 @llvm.cttz.i16(i16 %x, i1 true)
   %cast2 = zext i16 %ct to i32
@@ -155,8 +155,8 @@ define i32 @test1c(i16 %x) {
 define i64 @test2c(i16 %x) {
 ; CHECK-LABEL: @test2c(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i16 @llvm.cttz.i16(i16 [[X:%.*]], i1 false), !range [[RNG0]]
-; CHECK-NEXT:    [[CONV:%.*]] = zext i16 [[CT]] to i64
-; CHECK-NEXT:    ret i64 [[CONV]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i16 [[CT]] to i64
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i16 @llvm.cttz.i16(i16 %x, i1 true)
   %conv = zext i16 %ct to i64
@@ -168,8 +168,8 @@ define i64 @test2c(i16 %x) {
 define i64 @test3c(i32 %x) {
 ; CHECK-LABEL: @test3c(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i32 @llvm.cttz.i32(i32 [[X:%.*]], i1 false), !range [[RNG1]]
-; CHECK-NEXT:    [[CONV:%.*]] = zext i32 [[CT]] to i64
-; CHECK-NEXT:    ret i64 [[CONV]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i32 [[CT]] to i64
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i32 @llvm.cttz.i32(i32 %x, i1 true)
   %conv = zext i32 %ct to i64
@@ -181,8 +181,8 @@ define i64 @test3c(i32 %x) {
 define i32 @test4c(i16 %x) {
 ; CHECK-LABEL: @test4c(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i16 @llvm.ctlz.i16(i16 [[X:%.*]], i1 false), !range [[RNG0]]
-; CHECK-NEXT:    [[CAST:%.*]] = zext i16 [[CT]] to i32
-; CHECK-NEXT:    ret i32 [[CAST]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i16 [[CT]] to i32
+; CHECK-NEXT:    ret i32 [[COND]]
 ;
   %ct = tail call i16 @llvm.ctlz.i16(i16 %x, i1 true)
   %cast = zext i16 %ct to i32
@@ -194,8 +194,8 @@ define i32 @test4c(i16 %x) {
 define i64 @test5c(i16 %x) {
 ; CHECK-LABEL: @test5c(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i16 @llvm.ctlz.i16(i16 [[X:%.*]], i1 false), !range [[RNG0]]
-; CHECK-NEXT:    [[CAST:%.*]] = zext i16 [[CT]] to i64
-; CHECK-NEXT:    ret i64 [[CAST]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i16 [[CT]] to i64
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i16 @llvm.ctlz.i16(i16 %x, i1 true)
   %cast = zext i16 %ct to i64
@@ -207,8 +207,8 @@ define i64 @test5c(i16 %x) {
 define i64 @test6c(i32 %x) {
 ; CHECK-LABEL: @test6c(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i32 @llvm.ctlz.i32(i32 [[X:%.*]], i1 false), !range [[RNG1]]
-; CHECK-NEXT:    [[CAST:%.*]] = zext i32 [[CT]] to i64
-; CHECK-NEXT:    ret i64 [[CAST]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i32 [[CT]] to i64
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i32 @llvm.ctlz.i32(i32 %x, i1 true)
   %cast = zext i32 %ct to i64
@@ -387,8 +387,8 @@ define i16 @test6d(i32 %x) {
 define i64 @select_bug1(i32 %x) {
 ; CHECK-LABEL: @select_bug1(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i32 @llvm.cttz.i32(i32 [[X:%.*]], i1 false), !range [[RNG1]]
-; CHECK-NEXT:    [[CONV:%.*]] = zext i32 [[CT]] to i64
-; CHECK-NEXT:    ret i64 [[CONV]]
+; CHECK-NEXT:    [[COND:%.*]] = sext i32 [[CT]] to i64
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i32 @llvm.cttz.i32(i32 %x, i1 false)
   %conv = zext i32 %ct to i64
@@ -565,9 +565,11 @@ define i32 @test_multiuse_undef(i32 %x, ptr %p) {
 define i64 @test_multiuse_zext_def(i32 %x, ptr %p) {
 ; CHECK-LABEL: @test_multiuse_zext_def(
 ; CHECK-NEXT:    [[CT:%.*]] = tail call i32 @llvm.cttz.i32(i32 [[X:%.*]], i1 false), !range [[RNG1]]
-; CHECK-NEXT:    [[CONV:%.*]] = zext i32 [[CT]] to i64
+; CHECK-NEXT:    [[CONV:%.*]] = sext i32 [[CT]] to i64
+; CHECK-NEXT:    [[TOBOOL_NOT:%.*]] = icmp eq i32 [[X]], 0
+; CHECK-NEXT:    [[COND:%.*]] = select i1 [[TOBOOL_NOT]], i64 32, i64 [[CONV]]
 ; CHECK-NEXT:    store i64 [[CONV]], ptr [[P:%.*]], align 4
-; CHECK-NEXT:    ret i64 [[CONV]]
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i32 @llvm.cttz.i32(i32 %x, i1 false)
   %conv = zext i32 %ct to i64
@@ -579,10 +581,12 @@ define i64 @test_multiuse_zext_def(i32 %x, ptr %p) {
 
 define i64 @test_multiuse_zext_undef(i32 %x, ptr %p) {
 ; CHECK-LABEL: @test_multiuse_zext_undef(
-; CHECK-NEXT:    [[CT:%.*]] = tail call i32 @llvm.cttz.i32(i32 [[X:%.*]], i1 false), !range [[RNG1]]
-; CHECK-NEXT:    [[CONV:%.*]] = zext i32 [[CT]] to i64
+; CHECK-NEXT:    [[CT:%.*]] = tail call i32 @llvm.cttz.i32(i32 [[X:%.*]], i1 true), !range [[RNG1]]
+; CHECK-NEXT:    [[CONV:%.*]] = sext i32 [[CT]] to i64
+; CHECK-NEXT:    [[TOBOOL_NOT:%.*]] = icmp eq i32 [[X]], 0
+; CHECK-NEXT:    [[COND:%.*]] = select i1 [[TOBOOL_NOT]], i64 32, i64 [[CONV]]
 ; CHECK-NEXT:    store i64 [[CONV]], ptr [[P:%.*]], align 4
-; CHECK-NEXT:    ret i64 [[CONV]]
+; CHECK-NEXT:    ret i64 [[COND]]
 ;
   %ct = tail call i32 @llvm.cttz.i32(i32 %x, i1 true)
   %conv = zext i32 %ct to i64

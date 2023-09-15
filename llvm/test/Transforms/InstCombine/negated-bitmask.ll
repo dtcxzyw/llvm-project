@@ -87,7 +87,7 @@ define i32 @sub_sext_mask1_trunc_lshr(i64 %a0) {
 ; CHECK-NEXT:    [[TMP2:%.*]] = ashr i64 [[TMP1]], 63
 ; CHECK-NEXT:    [[TMP3:%.*]] = trunc i64 [[TMP2]] to i8
 ; CHECK-NEXT:    [[NARROW:%.*]] = add nsw i8 [[TMP3]], 10
-; CHECK-NEXT:    [[NEG:%.*]] = zext i8 [[NARROW]] to i32
+; CHECK-NEXT:    [[NEG:%.*]] = sext i8 [[NARROW]] to i32
 ; CHECK-NEXT:    ret i32 [[NEG]]
 ;
   %shift = lshr i64 %a0, 15
@@ -186,9 +186,9 @@ define <2 x i32> @neg_mask1_lshr_extrause_lshr(<2 x i32> %a0) {
 
 define i32 @neg_signbit(i8 %x) {
 ; CHECK-LABEL: @neg_signbit(
-; CHECK-NEXT:    [[TMP1:%.*]] = ashr i8 [[X:%.*]], 7
-; CHECK-NEXT:    [[TMP2:%.*]] = sext i8 [[TMP1]] to i32
-; CHECK-NEXT:    ret i32 [[TMP2]]
+; CHECK-NEXT:    [[S_NEG:%.*]] = ashr i8 [[X:%.*]], 7
+; CHECK-NEXT:    [[R:%.*]] = sext i8 [[S_NEG]] to i32
+; CHECK-NEXT:    ret i32 [[R]]
 ;
   %s = lshr i8 %x, 7
   %z = zext i8 %s to i32
@@ -216,7 +216,7 @@ define <2 x i64> @neg_signbit_use1(<2 x i32> %x) {
 define i8 @neg_signbit_use2(i5 %x) {
 ; CHECK-LABEL: @neg_signbit_use2(
 ; CHECK-NEXT:    [[S:%.*]] = lshr i5 [[X:%.*]], 4
-; CHECK-NEXT:    [[Z:%.*]] = zext i5 [[S]] to i8
+; CHECK-NEXT:    [[Z:%.*]] = sext i5 [[S]] to i8
 ; CHECK-NEXT:    call void @usei8(i8 [[Z]])
 ; CHECK-NEXT:    [[R:%.*]] = sub nsw i8 0, [[Z]]
 ; CHECK-NEXT:    ret i8 [[R]]
@@ -248,8 +248,8 @@ define i32 @neg_not_signbit1(i8 %x) {
 define i32 @neg_not_signbit2(i8 %x) {
 ; CHECK-LABEL: @neg_not_signbit2(
 ; CHECK-NEXT:    [[S:%.*]] = lshr i8 [[X:%.*]], 6
-; CHECK-NEXT:    [[Z:%.*]] = zext i8 [[S]] to i32
-; CHECK-NEXT:    [[R:%.*]] = sub nsw i32 0, [[Z]]
+; CHECK-NEXT:    [[NARROW:%.*]] = sub nsw i8 0, [[S]]
+; CHECK-NEXT:    [[R:%.*]] = sext i8 [[NARROW]] to i32
 ; CHECK-NEXT:    ret i32 [[R]]
 ;
   %s = lshr i8 %x, 6

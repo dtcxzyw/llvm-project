@@ -18,10 +18,22 @@ target datalayout = "n32"
 
 define i32 @allclear(i32 %a) {
 ; CHECK-LABEL: @allclear(
-; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], 15
-; CHECK-NEXT:    [[TMP2:%.*]] = icmp eq i32 [[TMP1]], 0
-; CHECK-NEXT:    [[TMP3:%.*]] = zext i1 [[TMP2]] to i32
-; CHECK-NEXT:    ret i32 [[TMP3]]
+; CHECK-NEXT:    [[A_SROA_0_0_TRUNC:%.*]] = trunc i32 [[A:%.*]] to i8
+; CHECK-NEXT:    [[BF_CLEAR:%.*]] = and i32 [[A]], 1
+; CHECK-NEXT:    [[BF_LSHR:%.*]] = lshr i8 [[A_SROA_0_0_TRUNC]], 1
+; CHECK-NEXT:    [[BF_CLEAR2:%.*]] = and i8 [[BF_LSHR]], 1
+; CHECK-NEXT:    [[BF_CAST3:%.*]] = sext i8 [[BF_CLEAR2]] to i32
+; CHECK-NEXT:    [[OR:%.*]] = or i32 [[BF_CLEAR]], [[BF_CAST3]]
+; CHECK-NEXT:    [[BF_LSHR5:%.*]] = lshr i8 [[A_SROA_0_0_TRUNC]], 2
+; CHECK-NEXT:    [[BF_CLEAR6:%.*]] = and i8 [[BF_LSHR5]], 1
+; CHECK-NEXT:    [[BF_CAST7:%.*]] = sext i8 [[BF_CLEAR6]] to i32
+; CHECK-NEXT:    [[OR8:%.*]] = or i32 [[OR]], [[BF_CAST7]]
+; CHECK-NEXT:    [[BF_LSHR10:%.*]] = lshr i8 [[A_SROA_0_0_TRUNC]], 3
+; CHECK-NEXT:    [[BF_CLEAR11:%.*]] = and i8 [[BF_LSHR10]], 1
+; CHECK-NEXT:    [[BF_CAST12:%.*]] = sext i8 [[BF_CLEAR11]] to i32
+; CHECK-NEXT:    [[OR13:%.*]] = or i32 [[OR8]], [[BF_CAST12]]
+; CHECK-NEXT:    [[CONV:%.*]] = xor i32 [[OR13]], 1
+; CHECK-NEXT:    ret i32 [[CONV]]
 ;
   %a.sroa.0.0.trunc = trunc i32 %a to i8
   %a.sroa.5.0.shift = lshr i32 %a, 8
@@ -46,10 +58,21 @@ define i32 @allclear(i32 %a) {
 
 define i32 @anyset(i32 %a) {
 ; CHECK-LABEL: @anyset(
-; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], 15
-; CHECK-NEXT:    [[TMP2:%.*]] = icmp ne i32 [[TMP1]], 0
-; CHECK-NEXT:    [[TMP3:%.*]] = zext i1 [[TMP2]] to i32
-; CHECK-NEXT:    ret i32 [[TMP3]]
+; CHECK-NEXT:    [[A_SROA_0_0_TRUNC:%.*]] = trunc i32 [[A:%.*]] to i8
+; CHECK-NEXT:    [[BF_CLEAR:%.*]] = and i32 [[A]], 1
+; CHECK-NEXT:    [[BF_LSHR:%.*]] = lshr i8 [[A_SROA_0_0_TRUNC]], 1
+; CHECK-NEXT:    [[BF_CLEAR2:%.*]] = and i8 [[BF_LSHR]], 1
+; CHECK-NEXT:    [[BF_CAST3:%.*]] = sext i8 [[BF_CLEAR2]] to i32
+; CHECK-NEXT:    [[OR:%.*]] = or i32 [[BF_CLEAR]], [[BF_CAST3]]
+; CHECK-NEXT:    [[BF_LSHR5:%.*]] = lshr i8 [[A_SROA_0_0_TRUNC]], 2
+; CHECK-NEXT:    [[BF_CLEAR6:%.*]] = and i8 [[BF_LSHR5]], 1
+; CHECK-NEXT:    [[BF_CAST7:%.*]] = sext i8 [[BF_CLEAR6]] to i32
+; CHECK-NEXT:    [[OR8:%.*]] = or i32 [[OR]], [[BF_CAST7]]
+; CHECK-NEXT:    [[BF_LSHR10:%.*]] = lshr i8 [[A_SROA_0_0_TRUNC]], 3
+; CHECK-NEXT:    [[BF_CLEAR11:%.*]] = and i8 [[BF_LSHR10]], 1
+; CHECK-NEXT:    [[BF_CAST12:%.*]] = sext i8 [[BF_CLEAR11]] to i32
+; CHECK-NEXT:    [[OR13:%.*]] = or i32 [[OR8]], [[BF_CAST12]]
+; CHECK-NEXT:    ret i32 [[OR13]]
 ;
   %a.sroa.0.0.trunc = trunc i32 %a to i8
   %a.sroa.5.0.shift = lshr i32 %a, 8
@@ -74,10 +97,11 @@ define i32 @anyset(i32 %a) {
 
 define i32 @allset(i32 %a) {
 ; CHECK-LABEL: @allset(
-; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], 15
-; CHECK-NEXT:    [[TMP2:%.*]] = icmp eq i32 [[TMP1]], 15
+; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], 14
+; CHECK-NEXT:    [[TMP2:%.*]] = icmp eq i32 [[TMP1]], 14
 ; CHECK-NEXT:    [[TMP3:%.*]] = zext i1 [[TMP2]] to i32
-; CHECK-NEXT:    ret i32 [[TMP3]]
+; CHECK-NEXT:    [[AND13:%.*]] = and i32 [[TMP3]], [[A]]
+; CHECK-NEXT:    ret i32 [[AND13]]
 ;
   %a.sroa.0.0.trunc = trunc i32 %a to i8
   %a.sroa.5.0.shift = lshr i32 %a, 8
@@ -102,10 +126,12 @@ define i32 @allset(i32 %a) {
 
 define i32 @anyclear(i32 %a) {
 ; CHECK-LABEL: @anyclear(
-; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], 15
-; CHECK-NEXT:    [[TMP2:%.*]] = icmp ne i32 [[TMP1]], 15
+; CHECK-NEXT:    [[TMP1:%.*]] = and i32 [[A:%.*]], 14
+; CHECK-NEXT:    [[TMP2:%.*]] = icmp eq i32 [[TMP1]], 14
 ; CHECK-NEXT:    [[TMP3:%.*]] = zext i1 [[TMP2]] to i32
-; CHECK-NEXT:    ret i32 [[TMP3]]
+; CHECK-NEXT:    [[AND13:%.*]] = and i32 [[TMP3]], [[A]]
+; CHECK-NEXT:    [[CONV:%.*]] = xor i32 [[AND13]], 1
+; CHECK-NEXT:    ret i32 [[CONV]]
 ;
   %a.sroa.0.0.trunc = trunc i32 %a to i8
   %a.sroa.5.0.shift = lshr i32 %a, 8
