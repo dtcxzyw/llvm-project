@@ -255,4 +255,5 @@ def XIANGSHAN_KUNMINGHU : RISCVProcessorModel<"xiangshan-kunminghu",
                                            FeatureStdExtZksh,
                                            FeatureStdExtSvinval,
                                            FeatureStdExtZicbom,
-                                           FeatureStdExtZicboz]>;
+                                           FeatureStdExtZicboz],
+                                           [TuneLUIADDIFusion]>;
