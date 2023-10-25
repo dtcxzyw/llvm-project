@@ -60,10 +60,8 @@ void RegisterFileStatistics::updateMoveElimInfo(const Instruction &Inst) {
   if (!Inst.isOptimizableMove())
     return;
 
-  if (Inst.getDefs().size() != Inst.getUses().size())
-    return;
-
-  for (size_t I = 0, E = Inst.getDefs().size(); I < E; ++I) {
+  for (size_t I = 0, E = std::min(Inst.getUses().size(), Inst.getDefs().size());
+       I < E; ++I) {
     const WriteState &WS = Inst.getDefs()[I];
     const ReadState &RS = Inst.getUses()[E - (I + 1)];
 

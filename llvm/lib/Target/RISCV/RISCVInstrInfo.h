@@ -242,6 +242,9 @@ public:
   ArrayRef<std::pair<MachineMemOperand::Flags, const char *>>
   getSerializableMachineMemOperandTargetFlags() const override;
 
+#define GET_INSTRINFO_HELPER_DECLS
+#include "RISCVGenInstrInfo.inc"
+
 protected:
   const RISCVSubtarget &STI;
 

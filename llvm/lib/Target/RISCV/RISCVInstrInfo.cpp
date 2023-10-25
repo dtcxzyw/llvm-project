@@ -40,6 +40,7 @@ using namespace llvm;
 
 #define GET_INSTRINFO_CTOR_DTOR
 #define GET_INSTRINFO_NAMED_OPS
+#define GET_INSTRINFO_HELPERS
 #include "RISCVGenInstrInfo.inc"
 
 static cl::opt<bool> PreferWholeRegisterMove(
@@ -1356,30 +1357,8 @@ bool RISCVInstrInfo::isAsCheapAsAMove(const MachineInstr &MI) const {
 
 std::optional<DestSourcePair>
 RISCVInstrInfo::isCopyInstrImpl(const MachineInstr &MI) const {
-  if (MI.isMoveReg())
+  if (isCopyIdiom(MI))
     return DestSourcePair{MI.getOperand(0), MI.getOperand(1)};
-  switch (MI.getOpcode()) {
-  default:
-    break;
-  case RISCV::ADDI:
-    // Operand 1 can be a frameindex but callers expect registers
-    if (MI.getOperand(1).isReg() && MI.getOperand(2).isImm() &&
-        MI.getOperand(2).getImm() == 0)
-      return DestSourcePair{MI.getOperand(0), MI.getOperand(1)};
-    break;
-  case RISCV::FSGNJ_D:
-  case RISCV::FSGNJ_S:
-  case RISCV::FSGNJ_H:
-  case RISCV::FSGNJ_D_INX:
-  case RISCV::FSGNJ_D_IN32X:
-  case RISCV::FSGNJ_S_INX:
-  case RISCV::FSGNJ_H_INX:
-    // The canonical floating-point move is fsgnj rd, rs, rs.
-    if (MI.getOperand(1).isReg() && MI.getOperand(2).isReg() &&
-        MI.getOperand(1).getReg() == MI.getOperand(2).getReg())
-      return DestSourcePair{MI.getOperand(0), MI.getOperand(1)};
-    break;
-  }
   return std::nullopt;
 }
 

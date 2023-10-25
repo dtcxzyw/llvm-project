@@ -425,9 +425,6 @@ bool RegisterFile::canEliminateMove(const WriteState &WS, const ReadState &RS,
 
 bool RegisterFile::tryEliminateMoveOrSwap(MutableArrayRef<WriteState> Writes,
                                           MutableArrayRef<ReadState> Reads) {
-  if (Writes.size() != Reads.size())
-    return false;
-
   // This logic assumes that writes and reads are contributed by a register move
   // or a register swap operation. In particular, it assumes a simple register
   // move if there is only one write.  It assumes a swap operation if there are
@@ -446,14 +443,15 @@ bool RegisterFile::tryEliminateMoveOrSwap(MutableArrayRef<WriteState> Writes,
       (RMT.NumMoveEliminated + Writes.size()) > RMT.MaxMoveEliminatedPerCycle)
     return false;
 
-  for (size_t I = 0, E = Writes.size(); I < E; ++I) {
+  size_t E = std::min(Reads.size(), Writes.size());
+  for (size_t I = 0; I < E; ++I) {
     const ReadState &RS = Reads[I];
     const WriteState &WS = Writes[E - (I + 1)];
     if (!canEliminateMove(WS, RS, RegisterFileIndex))
       return false;
   }
 
-  for (size_t I = 0, E = Writes.size(); I < E; ++I) {
+  for (size_t I = 0; I < E; ++I) {
     ReadState &RS = Reads[I];
     WriteState &WS = Writes[E - (I + 1)];
 

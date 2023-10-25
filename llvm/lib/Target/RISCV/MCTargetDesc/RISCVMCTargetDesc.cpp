@@ -34,6 +34,7 @@
 #include <bitset>
 
 #define GET_INSTRINFO_MC_DESC
+#define GET_INSTRINFO_MC_HELPERS
 #define ENABLE_INSTR_PREDICATE_VERIFIER
 #include "RISCVGenInstrInfo.inc"
 
@@ -155,6 +156,9 @@ class RISCVMCInstrAnalysis : public MCInstrAnalysis {
 public:
   explicit RISCVMCInstrAnalysis(const MCInstrInfo *Info)
       : MCInstrAnalysis(Info) {}
+
+#define GET_STIPREDICATE_DECLS_FOR_MC_ANALYSIS
+#include "RISCVGenSubtargetInfo.inc"
 
   void resetState() override { GPRValidMask.reset(); }
 
@@ -312,6 +316,9 @@ private:
     }
   }
 };
+
+#define GET_STIPREDICATE_DEFS_FOR_MC_ANALYSIS
+#include "RISCVGenSubtargetInfo.inc"
 
 } // end anonymous namespace
 
