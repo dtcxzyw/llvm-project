@@ -2082,6 +2082,21 @@ Instruction *InstCombinerImpl::visitSub(BinaryOperator &I) {
 
   Value *Op0 = I.getOperand(0), *Op1 = I.getOperand(1);
 
+  // (X +nsw/nuw C1) - C2 --> X +nsw/nuw (C1 - C2)
+  const APInt *C1, *C2;
+  Value *X;
+  if (match(Op0, m_Add(m_Value(X), m_APInt(C1))) && match(Op1, m_APInt(C2))) {
+    APInt C = *C1 - *C2;
+    BinaryOperator *Res =
+        BinaryOperator::CreateAdd(X, ConstantInt::get(I.getType(), C));
+    Res->setHasNoUnsignedWrap(cast<Instruction>(Op0)->hasNoUnsignedWrap() &&
+                              C1->uge(*C2));
+    Res->setHasNoSignedWrap(
+        cast<Instruction>(Op0)->hasNoSignedWrap() &&
+        (C2->isZero() || (C2->isNonNegative() ? C1->sge(*C2) : C1->sle(*C2))));
+    return Res;
+  }
+
   // If this is a 'B = x-(-A)', change to B = x+A.
   // We deal with this without involving Negator to preserve NSW flag.
   if (Value *V = dyn_castNegVal(Op1)) {
@@ -2106,7 +2121,6 @@ Instruction *InstCombinerImpl::visitSub(BinaryOperator &I) {
 
   Constant *C;
   if (match(Op0, m_ImmConstant(C))) {
-    Value *X;
     Constant *C2;
 
     // C-(X+C2) --> (C-C2)-X
@@ -2172,7 +2186,7 @@ Instruction *InstCombinerImpl::visitSub(BinaryOperator &I) {
     return BinaryOperator::CreateNot(Op1);
 
   // (X + -1) - Y --> ~Y + X
-  Value *X, *Y;
+  Value *Y;
   if (match(Op0, m_OneUse(m_Add(m_Value(X), m_AllOnes()))))
     return BinaryOperator::CreateAdd(Builder.CreateNot(Op1), X);
 

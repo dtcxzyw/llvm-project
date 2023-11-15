@@ -957,7 +957,7 @@ define i8 @test_scalar_ssub_always_overflows_high(i8 %a) {
 
 define i8 @test_scalar_usub_add_nuw_no_ov(i8 %a) {
 ; CHECK-LABEL: @test_scalar_usub_add_nuw_no_ov(
-; CHECK-NEXT:    [[R:%.*]] = add i8 [[A:%.*]], 1
+; CHECK-NEXT:    [[R:%.*]] = add nuw i8 [[A:%.*]], 1
 ; CHECK-NEXT:    ret i8 [[R]]
 ;
   %b = add nuw i8 %a, 10
@@ -967,7 +967,7 @@ define i8 @test_scalar_usub_add_nuw_no_ov(i8 %a) {
 
 define i8 @test_scalar_usub_add_nuw_nsw_no_ov(i8 %a) {
 ; CHECK-LABEL: @test_scalar_usub_add_nuw_nsw_no_ov(
-; CHECK-NEXT:    [[R:%.*]] = add i8 [[A:%.*]], 1
+; CHECK-NEXT:    [[R:%.*]] = add nuw nsw i8 [[A:%.*]], 1
 ; CHECK-NEXT:    ret i8 [[R]]
 ;
   %b = add nuw nsw i8 %a, 10
@@ -1044,7 +1044,7 @@ define i8 @test_scalar_usub_add_nuw_inferred(i8 %a) {
 
 define <2 x i8> @test_vector_usub_add_nuw_no_ov(<2 x i8> %a) {
 ; CHECK-LABEL: @test_vector_usub_add_nuw_no_ov(
-; CHECK-NEXT:    [[R:%.*]] = add <2 x i8> [[A:%.*]], <i8 1, i8 1>
+; CHECK-NEXT:    [[R:%.*]] = add nuw <2 x i8> [[A:%.*]], <i8 1, i8 1>
 ; CHECK-NEXT:    ret <2 x i8> [[R]]
 ;
   %b = add nuw <2 x i8> %a, <i8 10, i8 10>
