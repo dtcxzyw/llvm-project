@@ -16,7 +16,7 @@ define i8 @mul_selectp2_x(i8 %x, i1 %c) {
 define i8 @mul_selectp2_x_propegate_nuw(i8 %x, i1 %c) {
 ; CHECK-LABEL: @mul_selectp2_x_propegate_nuw(
 ; CHECK-NEXT:    [[TMP1:%.*]] = select i1 [[C:%.*]], i8 1, i8 2
-; CHECK-NEXT:    [[R:%.*]] = shl nuw i8 [[X:%.*]], [[TMP1]]
+; CHECK-NEXT:    [[R:%.*]] = shl nuw nsw i8 [[X:%.*]], [[TMP1]]
 ; CHECK-NEXT:    ret i8 [[R]]
 ;
   %s = select i1 %c, i8 2, i8 4

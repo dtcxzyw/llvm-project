@@ -499,8 +499,9 @@ Instruction *InstCombinerImpl::visitMul(BinaryOperator &I) {
     Value *Res = takeLog2(Builder, Op0, /*Depth*/ 0, /*AssumeNonZero*/ false,
                           /*DoFold*/ true);
     BinaryOperator *Shl = BinaryOperator::CreateShl(Op1, Res);
-    // We can only propegate nuw flag.
     Shl->setHasNoUnsignedWrap(HasNUW);
+    Shl->setHasNoSignedWrap(HasNSW &&
+                            isKnownNonNegative(Op0, DL, 0, &AC, &I, &DT));
     return Shl;
   }
   if (takeLog2(Builder, Op1, /*Depth*/ 0, /*AssumeNonZero*/ false,
@@ -508,8 +509,9 @@ Instruction *InstCombinerImpl::visitMul(BinaryOperator &I) {
     Value *Res = takeLog2(Builder, Op1, /*Depth*/ 0, /*AssumeNonZero*/ false,
                           /*DoFold*/ true);
     BinaryOperator *Shl = BinaryOperator::CreateShl(Op0, Res);
-    // We can only propegate nuw flag.
     Shl->setHasNoUnsignedWrap(HasNUW);
+    Shl->setHasNoSignedWrap(HasNSW &&
+                            isKnownNonNegative(Op0, DL, 0, &AC, &I, &DT));
     return Shl;
   }
 
