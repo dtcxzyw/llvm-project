@@ -12,6 +12,7 @@
 
 #include "InstCombineInternal.h"
 #include "llvm/Analysis/InstructionSimplify.h"
+#include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/Transforms/InstCombine/InstCombiner.h"
@@ -962,16 +963,13 @@ static bool setShiftFlags(BinaryOperator &I, const SimplifyQuery &Q) {
   }
 
   // Compute what we know about shift count.
-  KnownBits KnownCnt =
-      computeKnownBits(I.getOperand(1), Q.DL, /*Depth*/ 0, Q.AC, Q.CxtI, Q.DT);
-  // If we know nothing about shift count or its a poison shift, we won't be
-  // able to prove anything so return before computing shift amount.
-  if (KnownCnt.isUnknown())
-    return false;
+  ConstantRange KnownCnt = computeConstantRangeIncludingKnownBits(
+      I.getOperand(1), /* ForSigned */ false, Q);
   unsigned BitWidth = KnownCnt.getBitWidth();
-  APInt MaxCnt = KnownCnt.getMaxValue();
-  if (MaxCnt.uge(BitWidth))
-    return false;
+  // Since shift produces a poison value if RHS is equal to or larger than the
+  // bit width, we can safely assume that RHS is less than the bit width.
+  APInt MaxCnt(BitWidth, BitWidth - 1);
+  MaxCnt = APIntOps::umin(MaxCnt, KnownCnt.getUnsignedMax());
 
   KnownBits KnownAmt =
       computeKnownBits(I.getOperand(0), Q.DL, /*Depth*/ 0, Q.AC, Q.CxtI, Q.DT);
