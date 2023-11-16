@@ -6307,6 +6307,11 @@ computeConstantRangeIncludingKnownBits(const WithCache<const Value *> &V,
 OverflowResult llvm::computeOverflowForUnsignedMul(const Value *LHS,
                                                    const Value *RHS,
                                                    const SimplifyQuery &SQ) {
+  // Idiom X / Y * Y never overflows.
+  if (match(LHS, m_UDiv(m_Value(), m_Specific(RHS))) ||
+      match(RHS, m_UDiv(m_Value(), m_Specific(LHS))))
+    return OverflowResult::NeverOverflows;
+
   KnownBits LHSKnown = computeKnownBits(LHS, /*Depth=*/0, SQ);
   KnownBits RHSKnown = computeKnownBits(RHS, /*Depth=*/0, SQ);
   ConstantRange LHSRange = ConstantRange::fromKnownBits(LHSKnown, false);
@@ -6317,6 +6322,11 @@ OverflowResult llvm::computeOverflowForUnsignedMul(const Value *LHS,
 OverflowResult llvm::computeOverflowForSignedMul(const Value *LHS,
                                                  const Value *RHS,
                                                  const SimplifyQuery &SQ) {
+  // Idiom X / Y * Y never overflows.
+  if (match(LHS, m_SDiv(m_Value(), m_Specific(RHS))) ||
+      match(RHS, m_SDiv(m_Value(), m_Specific(LHS))))
+    return OverflowResult::NeverOverflows;
+
   // Multiplying n * m significant bits yields a result of n + m significant
   // bits. If the total number of significant bits does not exceed the
   // result bit width (minus 1), there is no overflow.
@@ -6426,7 +6436,7 @@ computeOverflowForSignedAdd(const WithCache<const Value *> &LHS,
 OverflowResult llvm::computeOverflowForUnsignedSub(const Value *LHS,
                                                    const Value *RHS,
                                                    const SimplifyQuery &SQ) {
-  // X - (X % ?)
+  // X - (X % ?) and X - (X / ? * ?)
   // The remainder of a value can't have greater magnitude than itself,
   // so the subtraction can't overflow.
 
@@ -6437,8 +6447,10 @@ OverflowResult llvm::computeOverflowForUnsignedSub(const Value *LHS,
 
   // TODO: There are other patterns like this.
   //       See simplifyICmpWithBinOpOnLHS() for candidates.
+  Value *X;
   if (match(RHS, m_URem(m_Specific(LHS), m_Value())) ||
-      match(RHS, m_NUWSub(m_Specific(LHS), m_Value())))
+      match(RHS, m_NUWSub(m_Specific(LHS), m_Value())) ||
+      match(RHS, m_c_Mul(m_UDiv(m_Specific(LHS), m_Value(X)), m_Deferred(X))))
     if (isGuaranteedNotToBeUndefOrPoison(LHS, SQ.AC, SQ.CxtI, SQ.DT))
       return OverflowResult::NeverOverflows;
 
@@ -6462,7 +6474,7 @@ OverflowResult llvm::computeOverflowForUnsignedSub(const Value *LHS,
 OverflowResult llvm::computeOverflowForSignedSub(const Value *LHS,
                                                  const Value *RHS,
                                                  const SimplifyQuery &SQ) {
-  // X - (X % ?)
+  // X - (X % ?) and X - (X / ? * ?)
   // The remainder of a value can't have greater magnitude than itself,
   // so the subtraction can't overflow.
 
@@ -6470,8 +6482,10 @@ OverflowResult llvm::computeOverflowForSignedSub(const Value *LHS,
   // In the minimal case, this would simplify to "?", so there's no subtract
   // at all. But if this analysis is used to peek through casts, for example,
   // then determining no-overflow may allow other transforms.
+  Value *X;
   if (match(RHS, m_SRem(m_Specific(LHS), m_Value())) ||
-      match(RHS, m_NSWSub(m_Specific(LHS), m_Value())))
+      match(RHS, m_NSWSub(m_Specific(LHS), m_Value())) ||
+      match(RHS, m_c_Mul(m_SDiv(m_Specific(LHS), m_Value(X)), m_Deferred(X))))
     if (isGuaranteedNotToBeUndefOrPoison(LHS, SQ.AC, SQ.CxtI, SQ.DT))
       return OverflowResult::NeverOverflows;
 

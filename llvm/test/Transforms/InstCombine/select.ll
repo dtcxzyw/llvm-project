@@ -2880,7 +2880,7 @@ define i8 @select_replacement_loop(i8 %x, i8 %y, i8 %z) {
 define i32 @select_replacement_loop2(i32 %arg, i32 %arg2) {
 ; CHECK-LABEL: @select_replacement_loop2(
 ; CHECK-NEXT:    [[DIV:%.*]] = udiv i32 [[ARG:%.*]], [[ARG2:%.*]]
-; CHECK-NEXT:    [[MUL:%.*]] = mul nsw i32 [[DIV]], [[ARG2]]
+; CHECK-NEXT:    [[MUL:%.*]] = mul nuw nsw i32 [[DIV]], [[ARG2]]
 ; CHECK-NEXT:    [[CMP:%.*]] = icmp eq i32 [[MUL]], [[ARG]]
 ; CHECK-NEXT:    [[SEL:%.*]] = select i1 [[CMP]], i32 [[DIV]], i32 undef
 ; CHECK-NEXT:    ret i32 [[SEL]]

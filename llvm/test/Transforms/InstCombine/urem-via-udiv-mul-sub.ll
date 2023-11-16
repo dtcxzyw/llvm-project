@@ -18,7 +18,7 @@ define i8 @t0_basic(i8 %x, i8 %y) {
 ; CHECK-LABEL: @t0_basic(
 ; CHECK-NEXT:    [[DIV:%.*]] = udiv i8 [[X:%.*]], [[Y:%.*]]
 ; CHECK-NEXT:    call void @use8(i8 [[DIV]])
-; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul i8 [[DIV]], [[Y]]
+; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul nuw i8 [[DIV]], [[Y]]
 ; CHECK-NEXT:    [[REM:%.*]] = sub i8 [[X]], [[ROUNDXDOWNTOMULTIPLEOFY]]
 ; CHECK-NEXT:    ret i8 [[REM]]
 ;
@@ -33,7 +33,7 @@ define <2 x i8> @t1_vector(<2 x i8> %x, <2 x i8> %y) {
 ; CHECK-LABEL: @t1_vector(
 ; CHECK-NEXT:    [[DIV:%.*]] = udiv <2 x i8> [[X:%.*]], [[Y:%.*]]
 ; CHECK-NEXT:    call void @use2xi8(<2 x i8> [[DIV]])
-; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul <2 x i8> [[DIV]], [[Y]]
+; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul nuw <2 x i8> [[DIV]], [[Y]]
 ; CHECK-NEXT:    [[REM:%.*]] = sub <2 x i8> [[X]], [[ROUNDXDOWNTOMULTIPLEOFY]]
 ; CHECK-NEXT:    ret <2 x i8> [[REM]]
 ;
@@ -50,7 +50,7 @@ define i8 @t4_extrause(i8 %x, i8 %y) {
 ; CHECK-LABEL: @t4_extrause(
 ; CHECK-NEXT:    [[DIV:%.*]] = udiv i8 [[X:%.*]], [[Y:%.*]]
 ; CHECK-NEXT:    call void @use8(i8 [[DIV]])
-; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul i8 [[DIV]], [[Y]]
+; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul nuw i8 [[DIV]], [[Y]]
 ; CHECK-NEXT:    call void @use8(i8 [[ROUNDXDOWNTOMULTIPLEOFY]])
 ; CHECK-NEXT:    [[REM:%.*]] = sub i8 [[X]], [[ROUNDXDOWNTOMULTIPLEOFY]]
 ; CHECK-NEXT:    ret i8 [[REM]]
@@ -72,7 +72,7 @@ define i8 @t5_commutative(i8 %x) {
 ; CHECK-NEXT:    [[Y:%.*]] = call i8 @gen8()
 ; CHECK-NEXT:    [[DIV:%.*]] = udiv i8 [[X:%.*]], [[Y]]
 ; CHECK-NEXT:    call void @use8(i8 [[DIV]])
-; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul i8 [[Y]], [[DIV]]
+; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul nuw i8 [[Y]], [[DIV]]
 ; CHECK-NEXT:    [[REM:%.*]] = sub i8 [[X]], [[ROUNDXDOWNTOMULTIPLEOFY]]
 ; CHECK-NEXT:    ret i8 [[REM]]
 ;
@@ -90,7 +90,7 @@ define i8 @n6_different_x(i8 %x0, i8 %x1, i8 %y) {
 ; CHECK-LABEL: @n6_different_x(
 ; CHECK-NEXT:    [[DIV:%.*]] = udiv i8 [[X0:%.*]], [[Y:%.*]]
 ; CHECK-NEXT:    call void @use8(i8 [[DIV]])
-; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul i8 [[DIV]], [[Y]]
+; CHECK-NEXT:    [[ROUNDXDOWNTOMULTIPLEOFY:%.*]] = mul nuw i8 [[DIV]], [[Y]]
 ; CHECK-NEXT:    [[REM:%.*]] = sub i8 [[X1:%.*]], [[ROUNDXDOWNTOMULTIPLEOFY]]
 ; CHECK-NEXT:    ret i8 [[REM]]
 ;
