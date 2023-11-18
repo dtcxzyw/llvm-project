@@ -1123,6 +1123,52 @@ else:
   ret i1 true
 }
 
+define i16 @cttz_zero_is_poison(i16 %x) {
+; CHECK-LABEL: @cttz_zero_is_poison(
+; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i16 [[X:%.*]], 256
+; CHECK-NEXT:    br i1 [[CMP]], label [[IF:%.*]], label [[ELSE:%.*]]
+; CHECK:       if:
+; CHECK-NEXT:    [[CTTZ1:%.*]] = call i16 @llvm.cttz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    ret i16 [[CTTZ1]]
+; CHECK:       else:
+; CHECK-NEXT:    [[CTTZ2:%.*]] = call i16 @llvm.cttz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    ret i16 [[CTTZ2]]
+;
+  %cmp = icmp ult i16 %x, 256
+  br i1 %cmp, label %if, label %else
+
+if:
+  %cttz1 = call i16 @llvm.cttz.i16(i16 %x, i1 false)
+  ret i16 %cttz1
+
+else:
+  %cttz2 = call i16 @llvm.cttz.i16(i16 %x, i1 false)
+  ret i16 %cttz2
+}
+
+define i16 @ctlz_zero_is_poison(i16 %x) {
+; CHECK-LABEL: @ctlz_zero_is_poison(
+; CHECK-NEXT:    [[CMP:%.*]] = icmp ult i16 [[X:%.*]], 256
+; CHECK-NEXT:    br i1 [[CMP]], label [[IF:%.*]], label [[ELSE:%.*]]
+; CHECK:       if:
+; CHECK-NEXT:    [[CTLZ1:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    ret i16 [[CTLZ1]]
+; CHECK:       else:
+; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    ret i16 [[CTLZ2]]
+;
+  %cmp = icmp ult i16 %x, 256
+  br i1 %cmp, label %if, label %else
+
+if:
+  %ctlz1 = call i16 @llvm.ctlz.i16(i16 %x, i1 false)
+  ret i16 %ctlz1
+
+else:
+  %ctlz2 = call i16 @llvm.ctlz.i16(i16 %x, i1 false)
+  ret i16 %ctlz2
+}
+
 declare i16 @llvm.ctlz.i16(i16, i1)
 declare i16 @llvm.cttz.i16(i16, i1)
 declare i16 @llvm.ctpop.i16(i16)
