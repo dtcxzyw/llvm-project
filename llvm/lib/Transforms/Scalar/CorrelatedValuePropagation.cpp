@@ -516,6 +516,25 @@ static bool processAbsIntrinsic(IntrinsicInst *II, LazyValueInfo *LVI) {
   return false;
 }
 
+// See if @llvm.cttz/ctlz argument is always non-zero.
+static bool processCttzCtlzIntrinsic(IntrinsicInst *II, LazyValueInfo *LVI) {
+  Value *X = II->getArgOperand(0);
+  Type *Ty = X->getType();
+
+  bool IsZeroPoison = cast<ConstantInt>(II->getArgOperand(1))->isOne();
+  if (IsZeroPoison)
+    return false;
+  ConstantRange Range =
+      LVI->getConstantRangeAtUse(II->getOperandUse(0), /*UndefAllowed*/ false);
+
+  // Check that the argument is non-zero?
+  if (!Range.contains(APInt::getZero(Ty->getScalarSizeInBits()))) {
+    II->setArgOperand(1, ConstantInt::getTrue(II->getContext()));
+    return true;
+  }
+  return false;
+}
+
 // See if this min/max intrinsic always picks it's one specific operand.
 static bool processMinMaxIntrinsic(MinMaxIntrinsic *MM, LazyValueInfo *LVI) {
   CmpInst::Predicate Pred = CmpInst::getNonStrictPredicate(MM->getPredicate());
@@ -580,9 +599,13 @@ static bool processSaturatingInst(SaturatingInst *SI, LazyValueInfo *LVI) {
 /// Infer nonnull attributes for the arguments at the specified callsite.
 static bool processCallSite(CallBase &CB, LazyValueInfo *LVI) {
 
-  if (CB.getIntrinsicID() == Intrinsic::abs) {
+  unsigned ID = CB.getIntrinsicID();
+  if (ID == Intrinsic::abs) {
     return processAbsIntrinsic(&cast<IntrinsicInst>(CB), LVI);
   }
+
+  if (ID == Intrinsic::cttz || CB.getIntrinsicID() == Intrinsic::ctlz)
+    return processCttzCtlzIntrinsic(&cast<IntrinsicInst>(CB), LVI);
 
   if (auto *MM = dyn_cast<MinMaxIntrinsic>(&CB)) {
     return processMinMaxIntrinsic(MM, LVI);

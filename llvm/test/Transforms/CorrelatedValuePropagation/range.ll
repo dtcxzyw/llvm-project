@@ -966,7 +966,7 @@ define i1 @ctlz_fold(i16 %x) {
 ; CHECK-NEXT:    [[CTLZ:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
 ; CHECK-NEXT:    ret i1 true
 ; CHECK:       else:
-; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 true)
 ; CHECK-NEXT:    ret i1 true
 ;
   %cmp = icmp ult i16 %x, 256
@@ -992,7 +992,7 @@ define i1 @ctlz_nofold(i16 %x) {
 ; CHECK-NEXT:    [[RES:%.*]] = icmp uge i16 [[CTLZ]], 9
 ; CHECK-NEXT:    ret i1 [[RES]]
 ; CHECK:       else:
-; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 true)
 ; CHECK-NEXT:    [[RES2:%.*]] = icmp ult i16 [[CTLZ2]], 7
 ; CHECK-NEXT:    ret i1 [[RES2]]
 ;
@@ -1131,7 +1131,7 @@ define i16 @cttz_zero_is_poison(i16 %x) {
 ; CHECK-NEXT:    [[CTTZ1:%.*]] = call i16 @llvm.cttz.i16(i16 [[X]], i1 false)
 ; CHECK-NEXT:    ret i16 [[CTTZ1]]
 ; CHECK:       else:
-; CHECK-NEXT:    [[CTTZ2:%.*]] = call i16 @llvm.cttz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    [[CTTZ2:%.*]] = call i16 @llvm.cttz.i16(i16 [[X]], i1 true)
 ; CHECK-NEXT:    ret i16 [[CTTZ2]]
 ;
   %cmp = icmp ult i16 %x, 256
@@ -1154,7 +1154,7 @@ define i16 @ctlz_zero_is_poison(i16 %x) {
 ; CHECK-NEXT:    [[CTLZ1:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
 ; CHECK-NEXT:    ret i16 [[CTLZ1]]
 ; CHECK:       else:
-; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 false)
+; CHECK-NEXT:    [[CTLZ2:%.*]] = call i16 @llvm.ctlz.i16(i16 [[X]], i1 true)
 ; CHECK-NEXT:    ret i16 [[CTLZ2]]
 ;
   %cmp = icmp ult i16 %x, 256
