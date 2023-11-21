@@ -2147,12 +2147,27 @@ Instruction *InstCombinerImpl::foldBinOpOfDisplacedShifts(BinaryOperator &I) {
   // Both shifts must be the same.
   Instruction::BinaryOps ShiftOp =
       static_cast<Instruction::BinaryOps>(Op0Inst->getOpcode());
-  if (ShiftOp != Op1Inst->getOpcode())
-    return nullptr;
 
   // For adds, only left shifts are supported.
   if (I.getOpcode() == Instruction::Add && ShiftOp != Instruction::Shl)
     return nullptr;
+
+  if (ShiftOp != Op1Inst->getOpcode()) {
+    if (ShiftOp == Instruction::LShr &&
+        Op1Inst->getOpcode() == Instruction::AShr) {
+      if (MaskedValueIsZero(Op0Inst->getOperand(0),
+                            APInt::getSignMask(BitWidth)))
+        ShiftOp = Instruction::AShr;
+      else
+        return nullptr;
+    } else if (ShiftOp == Instruction::AShr &&
+               Op1Inst->getOpcode() == Instruction::LShr) {
+      if (!MaskedValueIsZero(Op1Inst->getOperand(0),
+                             APInt::getSignMask(BitWidth)))
+        return nullptr;
+    } else
+      return nullptr;
+  }
 
   Value *NewC = Builder.CreateBinOp(
       I.getOpcode(), ShiftedC1, Builder.CreateBinOp(ShiftOp, ShiftedC2, AddC));
