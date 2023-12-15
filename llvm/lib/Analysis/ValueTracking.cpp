@@ -8283,40 +8283,6 @@ static std::optional<bool> isImpliedCondICmps(const ICmpInst *LHS,
   return std::nullopt;
 }
 
-/// Return true if LHS implies RHS is true.  Return false if LHS implies RHS is
-/// false.  Otherwise, return std::nullopt if we can't infer anything.  We
-/// expect the RHS to be an icmp and the LHS to be an 'and', 'or', or a 'select'
-/// instruction.
-static std::optional<bool>
-isImpliedCondAndOr(const Instruction *LHS, CmpInst::Predicate RHSPred,
-                   const Value *RHSOp0, const Value *RHSOp1,
-                   const DataLayout &DL, bool LHSIsTrue, unsigned Depth) {
-  // The LHS must be an 'or', 'and', or a 'select' instruction.
-  assert((LHS->getOpcode() == Instruction::And ||
-          LHS->getOpcode() == Instruction::Or ||
-          LHS->getOpcode() == Instruction::Select) &&
-         "Expected LHS to be 'and', 'or', or 'select'.");
-
-  assert(Depth <= MaxAnalysisRecursionDepth && "Hit recursion limit");
-
-  // If the result of an 'or' is false, then we know both legs of the 'or' are
-  // false.  Similarly, if the result of an 'and' is true, then we know both
-  // legs of the 'and' are true.
-  const Value *ALHS, *ARHS;
-  if ((!LHSIsTrue && match(LHS, m_LogicalOr(m_Value(ALHS), m_Value(ARHS)))) ||
-      (LHSIsTrue && match(LHS, m_LogicalAnd(m_Value(ALHS), m_Value(ARHS))))) {
-    // FIXME: Make this non-recursion.
-    if (std::optional<bool> Implication = isImpliedCondition(
-            ALHS, RHSPred, RHSOp0, RHSOp1, DL, LHSIsTrue, Depth + 1))
-      return Implication;
-    if (std::optional<bool> Implication = isImpliedCondition(
-            ARHS, RHSPred, RHSOp0, RHSOp1, DL, LHSIsTrue, Depth + 1))
-      return Implication;
-    return std::nullopt;
-  }
-  return std::nullopt;
-}
-
 std::optional<bool>
 llvm::isImpliedCondition(const Value *LHS, CmpInst::Predicate RHSPred,
                          const Value *RHSOp0, const Value *RHSOp1,
@@ -8333,22 +8299,34 @@ llvm::isImpliedCondition(const Value *LHS, CmpInst::Predicate RHSPred,
   assert(LHS->getType()->isIntOrIntVectorTy(1) &&
          "Expected integer type only!");
 
-  // Both LHS and RHS are icmps.
-  const ICmpInst *LHSCmp = dyn_cast<ICmpInst>(LHS);
-  if (LHSCmp)
-    return isImpliedCondICmps(LHSCmp, RHSPred, RHSOp0, RHSOp1, DL, LHSIsTrue,
-                              Depth);
-
-  /// The LHS should be an 'or', 'and', or a 'select' instruction.  We expect
-  /// the RHS to be an icmp.
-  /// FIXME: Add support for and/or/select on the RHS.
-  if (const Instruction *LHSI = dyn_cast<Instruction>(LHS)) {
-    if ((LHSI->getOpcode() == Instruction::And ||
-         LHSI->getOpcode() == Instruction::Or ||
-         LHSI->getOpcode() == Instruction::Select))
-      return isImpliedCondAndOr(LHSI, RHSPred, RHSOp0, RHSOp1, DL, LHSIsTrue,
-                                Depth);
+  // If the result of an 'or' is false, then we know both legs of the 'or' are
+  // false.  Similarly, if the result of an 'and' is true, then we know both
+  // legs of the 'and' are true.
+  SmallVector<const Value *> CondWorkList;
+  auto QueueValue = [&](const Value *V) -> std::optional<bool> {
+    if (const ICmpInst *LHSCmp = dyn_cast<ICmpInst>(V)) {
+      // Both LHS and RHS are icmps.
+      if (auto Ret = isImpliedCondICmps(LHSCmp, RHSPred, RHSOp0, RHSOp1, DL,
+                                        LHSIsTrue, Depth))
+        return Ret;
+    } else
+      CondWorkList.push_back(V);
+    return std::nullopt;
+  };
+  if (auto Ret = QueueValue(LHS))
+    return Ret;
+  while (!CondWorkList.empty()) {
+    const Value *Cur = CondWorkList.pop_back_val();
+    const Value *ALHS, *ARHS;
+    if (LHSIsTrue ? match(Cur, m_LogicalAnd(m_Value(ALHS), m_Value(ARHS)))
+                  : match(Cur, m_LogicalOr(m_Value(ALHS), m_Value(ARHS)))) {
+      if (auto Ret = QueueValue(ALHS))
+        return Ret;
+      if (auto Ret = QueueValue(ARHS))
+        return Ret;
+    }
   }
+
   return std::nullopt;
 }
 

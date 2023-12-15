@@ -208,9 +208,6 @@ define void @test_and_recurse2(i32 %a, i32 %b, i32 %c, i32 %d, i32 %e, i32 %f,
 ; CHECK-NEXT:    br i1 [[AND7]], label [[TAKEN:%.*]], label [[END:%.*]]
 ; CHECK:       taken:
 ; CHECK-NEXT:    call void @bar()
-; CHECK-NEXT:    [[CMP3:%.*]] = icmp eq i32 [[A]], 0
-; CHECK-NEXT:    br i1 [[CMP3]], label [[IF_THEN:%.*]], label [[END]]
-; CHECK:       if.then:
 ; CHECK-NEXT:    call void @foo()
 ; CHECK-NEXT:    br label [[END]]
 ; CHECK:       end:
