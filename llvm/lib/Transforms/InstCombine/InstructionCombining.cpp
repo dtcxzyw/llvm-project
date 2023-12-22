@@ -2558,6 +2558,23 @@ Instruction *InstCombinerImpl::visitGetElementPtrInst(GetElementPtrInst &GEP) {
   if (Instruction *R = foldSelectGEP(GEP, Builder))
     return R;
 
+  // Canonicalize gep [0 x T], ptr, 0, index -> gep T, ptr, index
+  if (GEP.getNumIndices() > 1) {
+    GTI = gep_type_begin(GEP);
+    for (auto I = Indices.begin(), E = Indices.end(); I != E; ++I, ++GTI) {
+      if (match(*I, m_Zero())) {
+        if (I != Indices.begin()) {
+          GetElementPtrInst *NewGEP = GetElementPtrInst::Create(
+              GTI.getIndexedType(), GEP.getPointerOperand(),
+              makeArrayRef(I, E));
+          NewGEP->setIsInBounds(GEP.isInBounds());
+          return NewGEP;
+        }
+        break;
+      }
+    }
+  }
+
   return nullptr;
 }
 
