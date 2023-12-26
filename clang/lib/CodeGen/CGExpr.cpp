@@ -20,6 +20,7 @@
 #include "CGRecordLayout.h"
 #include "CodeGenFunction.h"
 #include "CodeGenModule.h"
+#include "CodeGenTBAA.h"
 #include "ConstantEmitter.h"
 #include "TargetInfo.h"
 #include "clang/AST/ASTContext.h"
@@ -1776,6 +1777,24 @@ llvm::Value *CodeGenFunction::EmitLoadOfScalar(Address Addr, bool Volatile,
       Load->setMetadata(llvm::LLVMContext::MD_noundef,
                         llvm::MDNode::get(getLLVMContext(), std::nullopt));
     }
+
+  // Emit !align metadata for loads of a pointer type.
+  if (CGM.getCodeGenOpts().OptimizationLevel > 0 && Ty->isAnyPointerType() &&
+      Load->getType()->isPointerTy()) {
+    QualType PointeeTy = Ty->getPointeeType();
+    unsigned Align = CGM.getContext().getTypeAlignIfKnown(PointeeTy);
+    if (Align > 8) {
+      llvm::LLVMContext &Ctx = getLLVMContext();
+      llvm::MDBuilder MDB(Ctx);
+      Load->setMetadata(
+          llvm::LLVMContext::MD_align,
+          llvm::MDNode::get(
+              Ctx,
+              MDB.createConstant(llvm::ConstantInt::get(
+                  Builder.getInt64Ty(),
+                  CGM.getContext().toCharUnitsFromBits(Align).getQuantity()))));
+    }
+  }
 
   return EmitFromMemory(Load, Ty);
 }

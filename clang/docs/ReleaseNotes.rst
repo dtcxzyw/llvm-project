@@ -67,6 +67,7 @@ C/C++ Language Potentially Breaking Changes
 - Fixed a bug in finding matching `operator!=` while adding reversed `operator==` as
   outlined in "The Equality Operator You Are Looking For" (`P2468 <http://wg21.link/p2468r2>`_).
   Fixes (`#68901: <https://github.com/llvm/llvm-project/issues/68901>`_).
+- Added ``!align`` metadata to loads of pointers for better codegen.
 
 C++ Specific Potentially Breaking Changes
 -----------------------------------------

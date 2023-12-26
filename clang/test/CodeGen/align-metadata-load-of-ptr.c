@@ -6,10 +6,7 @@ int *ptr_int;
 // CHECK-LABEL: define dso_local i64 @test_int(
 // CHECK-SAME: ) local_unnamed_addr #[[ATTR0:[0-9]+]] {
 // CHECK-NEXT:  entry:
-// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr @ptr_int, align 8, !tbaa [[TBAA2:![0-9]+]]
-// CHECK-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[TMP0]] to i64
-// CHECK-NEXT:    [[AND:%.*]] = and i64 [[TMP1]], 3
-// CHECK-NEXT:    ret i64 [[AND]]
+// CHECK-NEXT:    ret i64 0
 //
 uintptr_t test_int() {
   return (uintptr_t)ptr_int & 3;
@@ -18,10 +15,7 @@ struct foo { alignas(64) int x[32]; } *ptr_struct_alignas;
 // CHECK-LABEL: define dso_local i64 @test_struct_alignas(
 // CHECK-SAME: ) local_unnamed_addr #[[ATTR0]] {
 // CHECK-NEXT:  entry:
-// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr @ptr_struct_alignas, align 8, !tbaa [[TBAA2]]
-// CHECK-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[TMP0]] to i64
-// CHECK-NEXT:    [[AND:%.*]] = and i64 [[TMP1]], 63
-// CHECK-NEXT:    ret i64 [[AND]]
+// CHECK-NEXT:    ret i64 0
 //
 uintptr_t test_struct_alignas() {
   return (uintptr_t)ptr_struct_alignas & 63;
@@ -31,19 +25,16 @@ aligned_double *ptr_aligned_typedef;
 // CHECK-LABEL: define dso_local i64 @test_aligned_typedef(
 // CHECK-SAME: ) local_unnamed_addr #[[ATTR0]] {
 // CHECK-NEXT:  entry:
-// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr @ptr_aligned_typedef, align 8, !tbaa [[TBAA2]]
-// CHECK-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[TMP0]] to i64
-// CHECK-NEXT:    [[AND:%.*]] = and i64 [[TMP1]], 63
-// CHECK-NEXT:    ret i64 [[AND]]
+// CHECK-NEXT:    ret i64 0
 //
 uintptr_t test_aligned_typedef() {
   return (uintptr_t)ptr_aligned_typedef & 63;
 }
 void *ptr_void;
 // CHECK-LABEL: define dso_local i64 @test_void(
-// CHECK-SAME: ) local_unnamed_addr #[[ATTR0]] {
+// CHECK-SAME: ) local_unnamed_addr #[[ATTR1:[0-9]+]] {
 // CHECK-NEXT:  entry:
-// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr @ptr_void, align 8, !tbaa [[TBAA2]]
+// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr @ptr_void, align 8, !tbaa [[TBAA2:![0-9]+]]
 // CHECK-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[TMP0]] to i64
 // CHECK-NEXT:    [[AND:%.*]] = and i64 [[TMP1]], 1
 // CHECK-NEXT:    ret i64 [[AND]]
@@ -55,10 +46,7 @@ void (*ptr_func)();
 // CHECK-LABEL: define dso_local i64 @test_func(
 // CHECK-SAME: ) local_unnamed_addr #[[ATTR0]] {
 // CHECK-NEXT:  entry:
-// CHECK-NEXT:    [[TMP0:%.*]] = load ptr, ptr @ptr_func, align 8, !tbaa [[TBAA2]]
-// CHECK-NEXT:    [[TMP1:%.*]] = ptrtoint ptr [[TMP0]] to i64
-// CHECK-NEXT:    [[AND:%.*]] = and i64 [[TMP1]], 3
-// CHECK-NEXT:    ret i64 [[AND]]
+// CHECK-NEXT:    ret i64 0
 //
 uintptr_t test_func() {
   return (uintptr_t)ptr_func & 3;
