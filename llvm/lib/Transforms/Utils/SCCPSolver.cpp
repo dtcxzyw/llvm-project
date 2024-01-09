@@ -38,8 +38,9 @@ static const unsigned MaxNumRangeExtensions = 10;
 
 /// Returns MergeOptions with MaxWidenSteps set to MaxNumRangeExtensions.
 static ValueLatticeElement::MergeOptions getMaxWidenStepsOpts() {
-  return ValueLatticeElement::MergeOptions().setMaxWidenSteps(
-      MaxNumRangeExtensions);
+  return ValueLatticeElement::MergeOptions(/*MayIncludeUndef*/ false,
+                                           /*CheckWiden*/ true)
+      .setMaxWidenSteps(MaxNumRangeExtensions);
 }
 
 static ConstantRange getConstantRange(const ValueLatticeElement &LV, Type *Ty,
