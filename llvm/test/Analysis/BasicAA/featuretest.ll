@@ -79,16 +79,10 @@ define i32 @constant_array_index_test() {
 ; Test that if two pointers are spaced out by a constant getelementptr, that
 ; they cannot alias.
 define i32 @gep_distance_test(ptr %A) {
-; NO_ASSUME-LABEL: @gep_distance_test(
-; NO_ASSUME-NEXT:    [[B:%.*]] = getelementptr i32, ptr [[A:%.*]], i64 2
-; NO_ASSUME-NEXT:    store i32 7, ptr [[B]], align 4
-; NO_ASSUME-NEXT:    ret i32 0
-;
-; USE_ASSUME-LABEL: @gep_distance_test(
-; USE_ASSUME-NEXT:    [[B:%.*]] = getelementptr i32, ptr [[A:%.*]], i64 2
-; USE_ASSUME-NEXT:    store i32 7, ptr [[B]], align 4
-; USE_ASSUME-NEXT:    call void @llvm.assume(i1 true) [ "dereferenceable"(ptr [[A]], i64 4), "nonnull"(ptr [[A]]), "align"(ptr [[A]], i64 4) ]
-; USE_ASSUME-NEXT:    ret i32 0
+; CHECK-LABEL: @gep_distance_test(
+; CHECK-NEXT:    [[B:%.*]] = getelementptr i32, ptr [[A:%.*]], i64 2
+; CHECK-NEXT:    store i32 7, ptr [[B]], align 4
+; CHECK-NEXT:    ret i32 0
 ;
   %REMOVEu = load i32, ptr %A
   %B = getelementptr i32, ptr %A, i64 2  ; Cannot alias A
@@ -101,16 +95,10 @@ define i32 @gep_distance_test(ptr %A) {
 ; Test that if two pointers are spaced out by a constant offset, that they
 ; cannot alias, even if there is a variable offset between them...
 define i32 @gep_distance_test2(ptr %A, i64 %distance) {
-; NO_ASSUME-LABEL: @gep_distance_test2(
-; NO_ASSUME-NEXT:    [[B:%.*]] = getelementptr { i32, i32 }, ptr [[A:%.*]], i64 [[DISTANCE:%.*]], i32 1
-; NO_ASSUME-NEXT:    store i32 7, ptr [[B]], align 4
-; NO_ASSUME-NEXT:    ret i32 0
-;
-; USE_ASSUME-LABEL: @gep_distance_test2(
-; USE_ASSUME-NEXT:    [[B:%.*]] = getelementptr { i32, i32 }, ptr [[A:%.*]], i64 [[DISTANCE:%.*]], i32 1
-; USE_ASSUME-NEXT:    store i32 7, ptr [[B]], align 4
-; USE_ASSUME-NEXT:    call void @llvm.assume(i1 true) [ "dereferenceable"(ptr [[A]], i64 4), "nonnull"(ptr [[A]]), "align"(ptr [[A]], i64 4) ]
-; USE_ASSUME-NEXT:    ret i32 0
+; CHECK-LABEL: @gep_distance_test2(
+; CHECK-NEXT:    [[B:%.*]] = getelementptr { i32, i32 }, ptr [[A:%.*]], i64 [[DISTANCE:%.*]], i32 1
+; CHECK-NEXT:    store i32 7, ptr [[B]], align 4
+; CHECK-NEXT:    ret i32 0
 ;
   %A1 = getelementptr {i32,i32}, ptr %A, i64 0, i32 0
   %REMOVEu = load i32, ptr %A1
@@ -124,16 +112,10 @@ define i32 @gep_distance_test2(ptr %A, i64 %distance) {
 ; Test that we can do funny pointer things and that distance calc will still
 ; work.
 define i32 @gep_distance_test3(ptr %A) {
-; NO_ASSUME-LABEL: @gep_distance_test3(
-; NO_ASSUME-NEXT:    [[C:%.*]] = getelementptr i8, ptr [[A:%.*]], i64 4
-; NO_ASSUME-NEXT:    store i8 42, ptr [[C]], align 1
-; NO_ASSUME-NEXT:    ret i32 0
-;
-; USE_ASSUME-LABEL: @gep_distance_test3(
-; USE_ASSUME-NEXT:    [[C:%.*]] = getelementptr i8, ptr [[A:%.*]], i64 4
-; USE_ASSUME-NEXT:    store i8 42, ptr [[C]], align 1
-; USE_ASSUME-NEXT:    call void @llvm.assume(i1 true) [ "dereferenceable"(ptr [[A]], i64 4), "nonnull"(ptr [[A]]), "align"(ptr [[A]], i64 4) ]
-; USE_ASSUME-NEXT:    ret i32 0
+; CHECK-LABEL: @gep_distance_test3(
+; CHECK-NEXT:    [[C:%.*]] = getelementptr i8, ptr [[A:%.*]], i64 4
+; CHECK-NEXT:    store i8 42, ptr [[C]], align 1
+; CHECK-NEXT:    ret i32 0
 ;
   %X = load i32, ptr %A
   %C = getelementptr i8, ptr %A, i64 4

@@ -23,8 +23,6 @@ define void @assume_not() {
 ; CHECK-LABEL: @assume_not(
 ; CHECK-NEXT:  entry-block:
 ; CHECK-NEXT:    [[TMP0:%.*]] = call i1 @get_val()
-; CHECK-NEXT:    [[TMP1:%.*]] = xor i1 [[TMP0]], true
-; CHECK-NEXT:    call void @llvm.assume(i1 [[TMP1]])
 ; CHECK-NEXT:    ret void
 ;
 entry-block:
@@ -39,7 +37,6 @@ declare void @llvm.assume(i1)
 
 define dso_local i1 @test1(ptr readonly %0) {
 ; CHECK-LABEL: @test1(
-; CHECK-NEXT:    call void @llvm.assume(i1 true) [ "nonnull"(ptr [[TMP0:%.*]]) ]
 ; CHECK-NEXT:    ret i1 false
 ;
   call void @llvm.assume(i1 true) ["nonnull"(ptr %0)]
@@ -49,7 +46,6 @@ define dso_local i1 @test1(ptr readonly %0) {
 
 define dso_local i1 @test2(ptr readonly %0) {
 ; CHECK-LABEL: @test2(
-; CHECK-NEXT:    call void @llvm.assume(i1 true) [ "nonnull"(ptr [[TMP0:%.*]]) ]
 ; CHECK-NEXT:    ret i1 false
 ;
   %2 = icmp eq ptr %0, null

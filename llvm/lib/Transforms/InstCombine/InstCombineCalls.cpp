@@ -2969,6 +2969,33 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
       return eraseInstFromFunction(*II);
     }
 
+    // An assume is redundant if it doesn't benefit any instructions dominated
+    // by it.
+    Instruction *Terminator = II->getParent()->getTerminator();
+    if (II->getNextNonDebugInstruction() == Terminator) {
+      auto MayUsedBySuccessors = [&] {
+        switch (Terminator->getOpcode()) {
+        default:
+          return true;
+        case Instruction::Br: {
+          if (cast<BranchInst>(Terminator)->isConditional())
+            return true;
+          DomTreeNode *DTN = DT.getNode(II->getParent());
+          return DTN && !DTN->isLeaf();
+        }
+        case Instruction::Ret: {
+          Value *ReturnValue = cast<ReturnInst>(Terminator)->getReturnValue();
+          return ReturnValue && !isa<Constant>(ReturnValue);
+        }
+        case Instruction::Unreachable:
+          return false;
+        }
+      };
+
+      if (!MayUsedBySuccessors())
+        return eraseInstFromFunction(*II);
+    }
+
     // Update the cache of affected values for this assumption (we might be
     // here because we just simplified the condition).
     AC.updateAffectedValues(cast<AssumeInst>(II));

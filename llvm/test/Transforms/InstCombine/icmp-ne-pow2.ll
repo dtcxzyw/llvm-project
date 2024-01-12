@@ -6,9 +6,6 @@ declare i32 @llvm.ctpop.i32(i32)
 
 define i32 @pow2_32_assume(i32 %x) {
 ; CHECK-LABEL: @pow2_32_assume(
-; CHECK-NEXT:    [[AND:%.*]] = and i32 [[X:%.*]], 4
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ne i32 [[AND]], 0
-; CHECK-NEXT:    call void @llvm.assume(i1 [[CMP]])
 ; CHECK-NEXT:    ret i32 4
 ;
   %and = and i32 %x, 4
@@ -64,9 +61,6 @@ define i64 @not_pow2_64_assume(i64 %x) {
 
 define i16 @pow2_16_assume(i16 %x) {
 ; CHECK-LABEL: @pow2_16_assume(
-; CHECK-NEXT:    [[AND:%.*]] = and i16 [[X:%.*]], 16384
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ne i16 [[AND]], 0
-; CHECK-NEXT:    call void @llvm.assume(i1 [[CMP]])
 ; CHECK-NEXT:    ret i16 16384
 ;
   %and = and i16 %x, 16384

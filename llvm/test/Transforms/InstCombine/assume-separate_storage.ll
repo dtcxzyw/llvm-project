@@ -10,7 +10,6 @@ declare void @llvm.assume(i1 noundef)
 define void @simple_folding(ptr %a, ptr %b) {
 ; CHECK-LABEL: @simple_folding(
 ; CHECK-NEXT:  entry:
-; CHECK-NEXT:    call void @llvm.assume(i1 true) [ "separate_storage"(ptr [[A:%.*]], ptr [[B:%.*]]) ]
 ; CHECK-NEXT:    ret void
 ;
 entry:
@@ -41,7 +40,6 @@ entry:
 
 define void @handles_globals(ptr %a) {
 ; CHECK-LABEL: @handles_globals(
-; CHECK-NEXT:    call void @llvm.assume(i1 true) [ "separate_storage"(ptr [[A:%.*]], ptr @some_global) ]
 ; CHECK-NEXT:    ret void
 ;
   %derived = getelementptr i8, ptr @some_global, i65 3

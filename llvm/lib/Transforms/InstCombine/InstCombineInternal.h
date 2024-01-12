@@ -469,6 +469,13 @@ public:
     SmallVector<Value *> Ops(I.operands());
     Worklist.remove(&I);
     DC.removeValue(&I);
+    // An assume above this instruction may become redundant.
+    if (Instruction *NextI = I.getNextNonDebugInstruction();
+        NextI && NextI->isTerminator())
+      if (Instruction *PrevI = I.getPrevNonDebugInstruction())
+        if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(PrevI);
+            II && II->getIntrinsicID() == Intrinsic::assume)
+          Worklist.push(II);
     I.eraseFromParent();
     for (Value *Op : Ops)
       Worklist.handleUseCountDecrement(Op);

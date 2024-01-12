@@ -73,10 +73,6 @@ define i8 @ctpop_imin_plus1_lshr_nz(i8 %x) {
 
 define i64 @ctpop_x_and_negx_nz(i64 %x) {
 ; CHECK-LABEL: @ctpop_x_and_negx_nz(
-; CHECK-NEXT:    [[V0:%.*]] = sub i64 0, [[X:%.*]]
-; CHECK-NEXT:    [[V1:%.*]] = and i64 [[V0]], [[X]]
-; CHECK-NEXT:    [[CMP:%.*]] = icmp ne i64 [[V1]], 0
-; CHECK-NEXT:    call void @llvm.assume(i1 [[CMP]])
 ; CHECK-NEXT:    ret i64 1
 ;
   %v0 = sub i64 0, %x

@@ -475,14 +475,6 @@ define double @negated_op_extra_use(double %x) {
 ; Testcase from PR 71548.
 define void @pr71548() {
 ; CHECK-LABEL: @pr71548(
-; CHECK-NEXT:    [[C0:%.*]] = load atomic double, ptr addrspace(1) null unordered, align 8
-; CHECK-NEXT:    [[C1:%.*]] = load atomic i32, ptr addrspace(1) null unordered, align 4
-; CHECK-NEXT:    [[C2:%.*]] = sitofp i32 [[C1]] to double
-; CHECK-NEXT:    [[CRES_I:%.*]] = call noundef double @llvm.minimum.f64(double [[C0]], double [[C2]])
-; CHECK-NEXT:    [[C3:%.*]] = fcmp ult double [[CRES_I]], 0.000000e+00
-; CHECK-NEXT:    [[C_NOT16:%.*]] = icmp eq i32 [[C1]], 0
-; CHECK-NEXT:    [[COR_COND45:%.*]] = or i1 [[C3]], [[C_NOT16]]
-; CHECK-NEXT:    call void @llvm.assume(i1 [[COR_COND45]])
 ; CHECK-NEXT:    ret void
 ;
   %c0 = load atomic double, ptr addrspace(1) null unordered, align 8

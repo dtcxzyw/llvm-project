@@ -37,12 +37,6 @@ define <2 x i1> @mul_unkV_oddC_ne_vec(<2 x i64> %v) {
 
 define i1 @mul_assumeoddV_asumeoddV_eq(i16 %v, i16 %v2) {
 ; CHECK-LABEL: @mul_assumeoddV_asumeoddV_eq(
-; CHECK-NEXT:    [[LB:%.*]] = and i16 [[V:%.*]], 1
-; CHECK-NEXT:    [[ODD:%.*]] = icmp ne i16 [[LB]], 0
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ODD]])
-; CHECK-NEXT:    [[LB2:%.*]] = and i16 [[V2:%.*]], 1
-; CHECK-NEXT:    [[ODD2:%.*]] = icmp ne i16 [[LB2]], 0
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ODD2]])
 ; CHECK-NEXT:    ret i1 true
 ;
   %lb = and i16 %v, 1

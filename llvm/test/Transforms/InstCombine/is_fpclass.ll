@@ -2692,8 +2692,6 @@ define i1 @test_class_is_nnormal_onlynorm_src(float nofpclass(nan inf zero sub) 
 ; Make sure assume works
 define i1 @test_class_is_normal_assume_normal(float %x) {
 ; CHECK-LABEL: @test_class_is_normal_assume_normal(
-; CHECK-NEXT:    [[ASSUMED_IS_NORMAL:%.*]] = call i1 @llvm.is.fpclass.f32(float [[X:%.*]], i32 264)
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ASSUMED_IS_NORMAL]])
 ; CHECK-NEXT:    ret i1 true
 ;
   %assumed.is.normal = call i1 @llvm.is.fpclass.f32(float %x, i32 264)
@@ -2704,8 +2702,6 @@ define i1 @test_class_is_normal_assume_normal(float %x) {
 
 define i1 @test_class_is_normal_assume_not_normal(float %x) {
 ; CHECK-LABEL: @test_class_is_normal_assume_not_normal(
-; CHECK-NEXT:    [[ASSUMED_IS_NORMAL:%.*]] = call i1 @llvm.is.fpclass.f32(float [[X:%.*]], i32 264)
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ASSUMED_IS_NORMAL]])
 ; CHECK-NEXT:    ret i1 false
 ;
   %assumed.is.normal = call i1 @llvm.is.fpclass.f32(float %x, i32 264)
@@ -2716,8 +2712,6 @@ define i1 @test_class_is_normal_assume_not_normal(float %x) {
 
 define i1 @test_class_is_nan_assume_ord(float %x) {
 ; CHECK-LABEL: @test_class_is_nan_assume_ord(
-; CHECK-NEXT:    [[ORD:%.*]] = fcmp ord float [[X:%.*]], 0.000000e+00
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ORD]])
 ; CHECK-NEXT:    ret i1 false
 ;
   %ord = fcmp ord float %x, 0.0
@@ -2728,8 +2722,6 @@ define i1 @test_class_is_nan_assume_ord(float %x) {
 
 define i1 @test_class_is_nan_assume_uno(float %x) {
 ; CHECK-LABEL: @test_class_is_nan_assume_uno(
-; CHECK-NEXT:    [[ORD:%.*]] = fcmp uno float [[X:%.*]], 0.000000e+00
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ORD]])
 ; CHECK-NEXT:    ret i1 true
 ;
   %ord = fcmp uno float %x, 0.0
@@ -2740,8 +2732,6 @@ define i1 @test_class_is_nan_assume_uno(float %x) {
 
 define i1 @test_class_is_nan_assume_not_eq_pinf(float %x) {
 ; CHECK-LABEL: @test_class_is_nan_assume_not_eq_pinf(
-; CHECK-NEXT:    [[ORD:%.*]] = fcmp oeq float [[X:%.*]], 0x7FF0000000000000
-; CHECK-NEXT:    call void @llvm.assume(i1 [[ORD]])
 ; CHECK-NEXT:    ret i1 false
 ;
   %ord = fcmp oeq float %x, 0x7FF0000000000000

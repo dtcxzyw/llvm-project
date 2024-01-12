@@ -10,7 +10,6 @@ declare void @llvm.assume(i1)
 
 define dso_local i1 @test1(ptr readonly %0) {
 ; COUNTER1-LABEL: @test1(
-; COUNTER1-NEXT:    call void @llvm.assume(i1 true) [ "nonnull"(ptr [[TMP0:%.*]]) ]
 ; COUNTER1-NEXT:    ret i1 false
 ;
 ; COUNTER2-LABEL: @test1(
@@ -35,11 +34,9 @@ define dso_local i1 @test2(ptr readonly %0) {
 ; COUNTER1-NEXT:    ret i1 [[TMP2]]
 ;
 ; COUNTER2-LABEL: @test2(
-; COUNTER2-NEXT:    call void @llvm.assume(i1 true) [ "nonnull"(ptr [[TMP0:%.*]]) ]
 ; COUNTER2-NEXT:    ret i1 false
 ;
 ; COUNTER3-LABEL: @test2(
-; COUNTER3-NEXT:    call void @llvm.assume(i1 true) [ "nonnull"(ptr [[TMP0:%.*]]) ]
 ; COUNTER3-NEXT:    ret i1 false
 ;
   %2 = icmp eq ptr %0, null
