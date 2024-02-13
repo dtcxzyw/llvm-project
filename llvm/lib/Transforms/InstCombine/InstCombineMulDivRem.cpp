@@ -189,14 +189,14 @@ static Value *takeLog2(IRBuilderBase &Builder, Value *Op, unsigned Depth,
                        bool AssumeNonZero, bool DoFold);
 
 Instruction *InstCombinerImpl::visitMul(BinaryOperator &I) {
+  if (SimplifyAssociativeOrCommutative(I))
+    return &I;
+
   Value *Op0 = I.getOperand(0), *Op1 = I.getOperand(1);
   if (Value *V =
           simplifyMulInst(Op0, Op1, I.hasNoSignedWrap(), I.hasNoUnsignedWrap(),
                           SQ.getWithInstruction(&I)))
     return replaceInstUsesWith(I, V);
-
-  if (SimplifyAssociativeOrCommutative(I))
-    return &I;
 
   if (Instruction *X = foldVectorBinop(I))
     return X;
@@ -746,13 +746,13 @@ Instruction *InstCombinerImpl::foldFMulReassoc(BinaryOperator &I) {
 }
 
 Instruction *InstCombinerImpl::visitFMul(BinaryOperator &I) {
+  if (SimplifyAssociativeOrCommutative(I))
+    return &I;
+
   if (Value *V = simplifyFMulInst(I.getOperand(0), I.getOperand(1),
                                   I.getFastMathFlags(),
                                   SQ.getWithInstruction(&I)))
     return replaceInstUsesWith(I, V);
-
-  if (SimplifyAssociativeOrCommutative(I))
-    return &I;
 
   if (Instruction *X = foldVectorBinop(I))
     return X;

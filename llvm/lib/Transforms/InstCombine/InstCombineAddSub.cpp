@@ -1442,13 +1442,13 @@ static Instruction *foldBoxMultiply(BinaryOperator &I) {
 }
 
 Instruction *InstCombinerImpl::visitAdd(BinaryOperator &I) {
+  if (SimplifyAssociativeOrCommutative(I))
+    return &I;
+
   if (Value *V = simplifyAddInst(I.getOperand(0), I.getOperand(1),
                                  I.hasNoSignedWrap(), I.hasNoUnsignedWrap(),
                                  SQ.getWithInstruction(&I)))
     return replaceInstUsesWith(I, V);
-
-  if (SimplifyAssociativeOrCommutative(I))
-    return &I;
 
   if (Instruction *X = foldVectorBinop(I))
     return X;
@@ -1825,13 +1825,13 @@ static Instruction *factorizeFAddFSub(BinaryOperator &I,
 }
 
 Instruction *InstCombinerImpl::visitFAdd(BinaryOperator &I) {
+  if (SimplifyAssociativeOrCommutative(I))
+    return &I;
+
   if (Value *V = simplifyFAddInst(I.getOperand(0), I.getOperand(1),
                                   I.getFastMathFlags(),
                                   SQ.getWithInstruction(&I)))
     return replaceInstUsesWith(I, V);
-
-  if (SimplifyAssociativeOrCommutative(I))
-    return &I;
 
   if (Instruction *X = foldVectorBinop(I))
     return X;

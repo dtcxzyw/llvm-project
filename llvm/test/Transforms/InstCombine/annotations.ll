@@ -34,7 +34,7 @@ define i32 @do_not_add_annotation_to_existing_instr(i32 %a, i32 %b) {
 ; CHECK-NEXT:    ret i32 [[ADD]]
 ;
   %add = add i32 %a, %b
-  %res = add i32 0, %add, !annotation !0
+  %res = and i32 -1, %add, !annotation !0
   ret i32 %res
 }
 
