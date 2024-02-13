@@ -3194,37 +3194,6 @@ static bool isKnownNonEqual(const Value *V1, const Value *V2, unsigned Depth,
   return false;
 }
 
-// Match a signed min+max clamp pattern like smax(smin(In, CHigh), CLow).
-// Returns the input and lower/upper bounds.
-static bool isSignedMinMaxClamp(const Value *Select, const Value *&In,
-                                const APInt *&CLow, const APInt *&CHigh) {
-  assert(isa<Operator>(Select) &&
-         cast<Operator>(Select)->getOpcode() == Instruction::Select &&
-         "Input should be a Select!");
-
-  const Value *LHS = nullptr, *RHS = nullptr;
-  SelectPatternFlavor SPF = matchSelectPattern(Select, LHS, RHS).Flavor;
-  if (SPF != SPF_SMAX && SPF != SPF_SMIN)
-    return false;
-
-  if (!match(RHS, m_APInt(CLow)))
-    return false;
-
-  const Value *LHS2 = nullptr, *RHS2 = nullptr;
-  SelectPatternFlavor SPF2 = matchSelectPattern(LHS, LHS2, RHS2).Flavor;
-  if (getInverseMinMaxFlavor(SPF) != SPF2)
-    return false;
-
-  if (!match(RHS2, m_APInt(CHigh)))
-    return false;
-
-  if (SPF == SPF_SMIN)
-    std::swap(CLow, CHigh);
-
-  In = LHS2;
-  return CLow->sle(*CHigh);
-}
-
 static bool isSignedMinMaxIntrinsicClamp(const IntrinsicInst *II,
                                          const APInt *&CLow,
                                          const APInt *&CHigh) {
@@ -3419,13 +3388,6 @@ static unsigned ComputeNumSignBitsImpl(const Value *V,
       break;
 
     case Instruction::Select: {
-      // If we have a clamp pattern, we know that the number of sign bits will
-      // be the minimum of the clamp min/max range.
-      const Value *X;
-      const APInt *CLow, *CHigh;
-      if (isSignedMinMaxClamp(U, X, CLow, CHigh))
-        return std::min(CLow->getNumSignBits(), CHigh->getNumSignBits());
-
       Tmp = ComputeNumSignBits(U->getOperand(1), Depth + 1, Q);
       if (Tmp == 1) break;
       Tmp2 = ComputeNumSignBits(U->getOperand(2), Depth + 1, Q);
