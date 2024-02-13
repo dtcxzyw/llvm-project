@@ -1342,15 +1342,6 @@ static void computeKnownBitsFromOperator(const Operator *I,
               Known.makeNegative();
           }
 
-          // (sub nsw non-negative, negative) --> non-negative
-          // (sub nsw negative, non-negative) --> negative
-          else if (Opcode == Instruction::Sub && BO->getOperand(0) == I) {
-            if (Known2.isNonNegative() && Known3.isNegative())
-              Known.makeNonNegative();
-            else if (Known2.isNegative() && Known3.isNonNegative())
-              Known.makeNegative();
-          }
-
           // (mul nsw non-negative, non-negative) --> non-negative
           else if (Opcode == Instruction::Mul && Known2.isNonNegative() &&
                    Known3.isNonNegative())
