@@ -906,36 +906,40 @@ m_Deferred(const BasicBlock *const &BB) {
 }
 
 /// Match constants/specific values first in binop matchers.
-template <typename T> constexpr bool shouldMatchFirst(T *) { return false; }
-template <bool AllowUndefs>
-constexpr bool shouldMatchFirst(specific_intval<AllowUndefs> *) {
-  return true;
-}
-constexpr bool shouldMatchFirst(specific_fpval *) { return true; }
-constexpr bool shouldMatchFirst(specific_bbval *) { return true; }
-constexpr bool shouldMatchFirst(specificval_ty *) { return true; }
-constexpr bool shouldMatchFirst(
+/// Returns the priority of the matcher. A submatcher with higher priority will
+/// be executed first.
+template <typename T> constexpr int getMatchPriority(T *) { return 0; }
+constexpr int getMatchPriority(
     match_combine_and<class_match<Constant>, match_unless<constantexpr_match>>
         *) {
-  return true;
+  return 1;
 }
-template <typename T> constexpr bool shouldMatchFirst(class_match<T> *) {
-  return true;
-}
-constexpr bool shouldMatchFirst(undef_match *) { return true; }
-constexpr bool shouldMatchFirst(is_zero *) { return true; }
+constexpr int getMatchPriority(undef_match *) { return 1; }
 template <typename Predicate, typename ConstantVal>
-constexpr bool shouldMatchFirst(cstval_pred_ty<Predicate, ConstantVal> *) {
-  return true;
+constexpr int getMatchPriority(cstval_pred_ty<Predicate, ConstantVal> *) {
+  return 1;
 }
-// TODO: Match binders first
-template <typename T> constexpr bool shouldMatchFirst() {
-  return shouldMatchFirst(static_cast<T *>(nullptr));
+template <bool AllowUndefs>
+constexpr int getMatchPriority(specific_intval<AllowUndefs> *) {
+  return 2;
 }
-template <typename First, typename Second, typename... Others>
+constexpr int getMatchPriority(specific_fpval *) { return 2; }
+constexpr int getMatchPriority(specific_bbval *) { return 3; }
+constexpr int getMatchPriority(specificval_ty *) { return 3; }
+template <typename T> constexpr int getMatchPriority(class_match<T> *) {
+  return 4;
+}
+constexpr int getMatchPriority(is_zero *) { return 4; }
+// TODO: implement getMatchPriority for binders
+template <typename T> constexpr int getMatchPriority() {
+  return getMatchPriority(static_cast<T *>(nullptr));
+}
+template <typename First, typename... Others>
 constexpr bool shouldMatchFirst() {
-  return shouldMatchFirst<First>() &&
-         !(shouldMatchFirst<Second>() || ... || shouldMatchFirst<Others>());
+  int Priority = getMatchPriority<First>();
+  if (Priority == 0)
+    return false;
+  return ((getMatchPriority<Others>() < Priority) && ...);
 }
 
 //===----------------------------------------------------------------------===//
