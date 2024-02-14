@@ -909,22 +909,23 @@ m_Deferred(const BasicBlock *const &BB) {
 /// Returns the priority of the matcher. A submatcher with higher priority will
 /// be executed first.
 template <typename T> constexpr int getMatchPriority(T *) { return 0; }
-constexpr int getMatchPriority(
-    match_combine_and<class_match<Constant>, match_unless<constantexpr_match>>
-        *) {
-  return 1;
-}
-constexpr int getMatchPriority(undef_match *) { return 1; }
-template <typename Predicate, typename ConstantVal>
-constexpr int getMatchPriority(cstval_pred_ty<Predicate, ConstantVal> *) {
-  return 1;
-}
-template <bool AllowUndefs>
-constexpr int getMatchPriority(specific_intval<AllowUndefs> *) {
-  return 2;
-}
-constexpr int getMatchPriority(specific_fpval *) { return 2; }
-constexpr int getMatchPriority(specific_bbval *) { return 3; }
+// constexpr int getMatchPriority(
+//     match_combine_and<class_match<Constant>,
+//     match_unless<constantexpr_match>>
+//         *) {
+//   return 1;
+// }
+// constexpr int getMatchPriority(undef_match *) { return 1; }
+// template <typename Predicate, typename ConstantVal>
+// constexpr int getMatchPriority(cstval_pred_ty<Predicate, ConstantVal> *) {
+//   return 1;
+// }
+// template <bool AllowUndefs>
+// constexpr int getMatchPriority(specific_intval<AllowUndefs> *) {
+//   return 2;
+// }
+// constexpr int getMatchPriority(specific_fpval *) { return 2; }
+// constexpr int getMatchPriority(specific_bbval *) { return 3; }
 constexpr int getMatchPriority(specificval_ty *) { return 3; }
 template <typename T> constexpr int getMatchPriority(class_match<T> *) {
   return 4;
