@@ -926,11 +926,11 @@ template <typename T> constexpr int getMatchPriority(T *) { return 0; }
 // }
 // constexpr int getMatchPriority(specific_fpval *) { return 2; }
 // constexpr int getMatchPriority(specific_bbval *) { return 3; }
-constexpr int getMatchPriority(specificval_ty *) { return 3; }
+// constexpr int getMatchPriority(is_zero *) { return 4; }
 template <typename T> constexpr int getMatchPriority(class_match<T> *) {
-  return 4;
+  return 3;
 }
-constexpr int getMatchPriority(is_zero *) { return 4; }
+constexpr int getMatchPriority(specificval_ty *) { return 4; }
 // TODO: implement getMatchPriority for binders
 template <typename T> constexpr int getMatchPriority() {
   return getMatchPriority(static_cast<T *>(nullptr));
