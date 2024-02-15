@@ -467,13 +467,14 @@ public:
 
     // Make sure that we reprocess all operands now that we reduced their
     // use counts.
-    SmallPtrSet<Value *, 16> Ops;
+    SmallPtrSet<Instruction *, 16> Ops;
     for (Value *Op : I.operands())
-      Ops.insert(Op);
+      if (Instruction* Inst = dyn_cast<Instruction>(Op))
+        Ops.insert(Inst);
     Worklist.remove(&I);
     DC.removeValue(&I);
     I.eraseFromParent();
-    for (Value *Op : Ops)
+    for (Instruction *Op : Ops)
       Worklist.handleUseCountDecrement(Op);
     MadeIRChange = true;
     return nullptr; // Don't do anything with FI

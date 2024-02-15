@@ -409,7 +409,8 @@ public:
   Instruction *replaceOperand(Instruction &I, unsigned OpNum, Value *V) {
     Value *OldOp = I.getOperand(OpNum);
     I.setOperand(OpNum, V);
-    Worklist.handleUseCountDecrement(OldOp);
+    if (Instruction* Inst = dyn_cast<Instruction>(OldOp))
+      Worklist.handleUseCountDecrement(Inst);
     return &I;
   }
 
@@ -417,7 +418,8 @@ public:
   void replaceUse(Use &U, Value *NewValue) {
     Value *OldOp = U;
     U = NewValue;
-    Worklist.handleUseCountDecrement(OldOp);
+    if (Instruction* Inst = dyn_cast<Instruction>(OldOp))
+      Worklist.handleUseCountDecrement(Inst);
   }
 
   /// Combiner aware instruction erasure.
