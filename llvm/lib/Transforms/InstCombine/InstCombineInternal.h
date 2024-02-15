@@ -467,7 +467,9 @@ public:
 
     // Make sure that we reprocess all operands now that we reduced their
     // use counts.
-    SmallVector<Value *> Ops(I.operands());
+    SmallPtrSet<Value *, 16> Ops;
+    for (Value *Op : I.operands())
+      Ops.insert(Op);
     Worklist.remove(&I);
     DC.removeValue(&I);
     I.eraseFromParent();
