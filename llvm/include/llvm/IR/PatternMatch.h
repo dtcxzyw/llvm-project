@@ -1196,10 +1196,7 @@ struct OverflowingBinaryOp_match {
       if ((WrapFlags & OverflowingBinaryOperator::NoSignedWrap) &&
           !Op->hasNoSignedWrap())
         return false;
-      if constexpr (shouldMatchFirst<RHS_t, LHS_t>())
-        return R.match(Op->getOperand(1)) && L.match(Op->getOperand(0));
-      else
-        return L.match(Op->getOperand(0)) && R.match(Op->getOperand(1));
+      return L.match(Op->getOperand(0)) && R.match(Op->getOperand(1));
     }
     return false;
   }
@@ -1303,14 +1300,9 @@ struct DisjointOr_match {
       assert(PDI->getOpcode() == Instruction::Or && "Only or can be disjoint");
       if (!PDI->isDisjoint())
         return false;
-      if constexpr (shouldMatchFirst<RHS, LHS>())
-        return (R.match(PDI->getOperand(1)) && L.match(PDI->getOperand(0))) ||
-               (Commutable && R.match(PDI->getOperand(0)) &&
-                L.match(PDI->getOperand(1)));
-      else
-        return (L.match(PDI->getOperand(0)) && R.match(PDI->getOperand(1))) ||
-               (Commutable && L.match(PDI->getOperand(1)) &&
-                R.match(PDI->getOperand(0)));
+      return (L.match(PDI->getOperand(0)) && R.match(PDI->getOperand(1))) ||
+             (Commutable && L.match(PDI->getOperand(1)) &&
+              R.match(PDI->getOperand(0)));
     }
     return false;
   }
@@ -1349,10 +1341,7 @@ struct BinOpPred_match : Predicate {
     if (auto *I = dyn_cast<Instruction>(V)) {
       if (!this->isOpType(I->getOpcode()))
         return false;
-      if constexpr (shouldMatchFirst<RHS_t, LHS_t>())
-        return R.match(I->getOperand(1)) && L.match(I->getOperand(0));
-      else
-        return L.match(I->getOperand(0)) && R.match(I->getOperand(1));
+      return L.match(I->getOperand(0)) && R.match(I->getOperand(1));
     }
     return false;
   }
@@ -1471,26 +1460,14 @@ struct CmpClass_match {
 
   template <typename OpTy> bool match(OpTy *V) {
     if (auto *I = dyn_cast<Class>(V)) {
-      if constexpr (shouldMatchFirst<RHS_t, LHS_t>()) {
-        if (R.match(I->getOperand(1)) && L.match(I->getOperand(0))) {
-          Predicate = I->getPredicate();
-          return true;
-        }
-        if (Commutable && R.match(I->getOperand(0)) &&
-            L.match(I->getOperand(1))) {
-          Predicate = I->getSwappedPredicate();
-          return true;
-        }
-      } else {
-        if (L.match(I->getOperand(0)) && R.match(I->getOperand(1))) {
-          Predicate = I->getPredicate();
-          return true;
-        }
-        if (Commutable && L.match(I->getOperand(1)) &&
-            R.match(I->getOperand(0))) {
-          Predicate = I->getSwappedPredicate();
-          return true;
-        }
+      if (L.match(I->getOperand(0)) && R.match(I->getOperand(1))) {
+        Predicate = I->getPredicate();
+        return true;
+      }
+      if (Commutable && L.match(I->getOperand(1)) &&
+          R.match(I->getOperand(0))) {
+        Predicate = I->getSwappedPredicate();
+        return true;
       }
     }
     return false;
@@ -1544,10 +1521,7 @@ template <typename T0, typename T1, unsigned Opcode> struct TwoOps_match {
   template <typename OpTy> bool match(OpTy *V) {
     if (V->getValueID() == Value::InstructionVal + Opcode) {
       auto *I = cast<Instruction>(V);
-      if constexpr (shouldMatchFirst<T1, T0>())
-        return Op2.match(I->getOperand(1)) && Op1.match(I->getOperand(0));
-      else
-        return Op1.match(I->getOperand(0)) && Op2.match(I->getOperand(1));
+      return Op1.match(I->getOperand(0)) && Op2.match(I->getOperand(1));
     }
     return false;
   }
@@ -1566,15 +1540,8 @@ struct ThreeOps_match {
   template <typename OpTy> bool match(OpTy *V) {
     if (V->getValueID() == Value::InstructionVal + Opcode) {
       auto *I = cast<Instruction>(V);
-      if constexpr (shouldMatchFirst<T1, T0>())
-        return Op2.match(I->getOperand(1)) && Op1.match(I->getOperand(0)) &&
-               Op3.match(I->getOperand(2));
-      else if constexpr (shouldMatchFirst<T2, T0, T1>())
-        return Op3.match(I->getOperand(2)) && Op1.match(I->getOperand(0)) &&
-               Op2.match(I->getOperand(1));
-      else
-        return Op1.match(I->getOperand(0)) && Op2.match(I->getOperand(1)) &&
-               Op3.match(I->getOperand(2));
+      return Op1.match(I->getOperand(0)) && Op2.match(I->getOperand(1)) &&
+             Op3.match(I->getOperand(2));
     }
     return false;
   }
@@ -1658,12 +1625,8 @@ template <typename T0, typename T1, typename T2> struct Shuffle_match {
 
   template <typename OpTy> bool match(OpTy *V) {
     if (auto *I = dyn_cast<ShuffleVectorInst>(V)) {
-      if constexpr (shouldMatchFirst<T1, T0>())
-        return Op2.match(I->getOperand(1)) && Op1.match(I->getOperand(0)) &&
-               Mask.match(I->getShuffleMask());
-      else
-        return Op1.match(I->getOperand(0)) && Op2.match(I->getOperand(1)) &&
-               Mask.match(I->getShuffleMask());
+      return Op1.match(I->getOperand(0)) && Op2.match(I->getOperand(1)) &&
+             Mask.match(I->getShuffleMask());
     }
     return false;
   }
@@ -2037,12 +2000,8 @@ struct MaxMin_match {
           (IID == Intrinsic::umax && Pred_t::match(ICmpInst::ICMP_UGT)) ||
           (IID == Intrinsic::umin && Pred_t::match(ICmpInst::ICMP_ULT))) {
         Value *LHS = II->getOperand(0), *RHS = II->getOperand(1);
-        if constexpr (shouldMatchFirst<RHS_t, LHS_t>())
-          return (R.match(RHS) && L.match(LHS)) ||
-                 (Commutable && R.match(LHS) && L.match(RHS));
-        else
-          return (L.match(LHS) && R.match(RHS)) ||
-                 (Commutable && L.match(RHS) && R.match(LHS));
+        return (L.match(LHS) && R.match(RHS)) ||
+               (Commutable && L.match(RHS) && R.match(LHS));
       }
     }
     // Look for "(x pred y) ? x : y" or "(x pred y) ? y : x".
@@ -2801,12 +2760,8 @@ struct LogicalOp_match {
       return false;
 
     auto MatchBinOp = [&](auto *Op0, auto *Op1) {
-      if constexpr (shouldMatchFirst<RHS, LHS>())
-        return (R.match(Op1) && L.match(Op0)) ||
-               (Commutable && R.match(Op0) && L.match(Op1));
-      else
-        return (L.match(Op0) && R.match(Op1)) ||
-               (Commutable && L.match(Op1) && R.match(Op0));
+      return (L.match(Op0) && R.match(Op1)) ||
+             (Commutable && L.match(Op1) && R.match(Op0));
     };
 
     if (I->getOpcode() == Opcode) {
