@@ -110,6 +110,8 @@ public:
 
   /// Should be called *after* decrementing the use-count on V.
   void handleUseCountDecrement(Value *V) {
+    if (V->hasNUsesOrMore(4))
+      return;
     if (auto *I = dyn_cast<Instruction>(V)) {
       add(I);
       // Many folds have one-use limitations. If there's only one use left,
