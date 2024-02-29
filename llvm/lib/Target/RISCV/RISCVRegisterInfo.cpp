@@ -31,7 +31,7 @@
 using namespace llvm;
 
 static cl::opt<bool> DisableCostPerUse("riscv-disable-cost-per-use",
-                                       cl::init(false), cl::Hidden);
+                                       cl::init(true), cl::Hidden);
 static cl::opt<bool>
     DisableRegAllocHints("riscv-disable-regalloc-hints", cl::Hidden,
                          cl::init(false),
