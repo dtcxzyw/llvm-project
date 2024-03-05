@@ -6886,9 +6886,6 @@ static bool programUndefinedIfUndefOrPoison(const Value *V, bool PoisonOnly);
 static bool isGuaranteedNotToBeUndefOrPoison(
     const Value *V, AssumptionCache *AC, const Instruction *CtxI,
     const DominatorTree *DT, unsigned Depth, UndefPoisonKind Kind) {
-  if (Depth >= MaxAnalysisRecursionDepth)
-    return false;
-
   if (isa<MetadataAsValue>(V))
     return false;
 
@@ -6946,23 +6943,25 @@ static bool isGuaranteedNotToBeUndefOrPoison(
         return true;
     }
 
-    if (const auto *PN = dyn_cast<PHINode>(V)) {
-      unsigned Num = PN->getNumIncomingValues();
-      bool IsWellDefined = true;
-      for (unsigned i = 0; i < Num; ++i) {
-        auto *TI = PN->getIncomingBlock(i)->getTerminator();
-        if (!isGuaranteedNotToBeUndefOrPoison(PN->getIncomingValue(i), AC, TI,
-                                              DT, Depth + 1, Kind)) {
-          IsWellDefined = false;
-          break;
+    if (Depth < MaxAnalysisRecursionDepth - 1) {
+      if (const auto *PN = dyn_cast<PHINode>(V)) {
+        unsigned Num = PN->getNumIncomingValues();
+        bool IsWellDefined = true;
+        for (unsigned i = 0; i < Num; ++i) {
+          auto *TI = PN->getIncomingBlock(i)->getTerminator();
+          if (!isGuaranteedNotToBeUndefOrPoison(PN->getIncomingValue(i), AC, TI,
+                                                DT, Depth + 1, Kind)) {
+            IsWellDefined = false;
+            break;
+          }
         }
-      }
-      if (IsWellDefined)
+        if (IsWellDefined)
+          return true;
+      } else if (!::canCreateUndefOrPoison(Opr, Kind,
+                                           /*ConsiderFlagsAndMetadata*/ true) &&
+                 all_of(Opr->operands(), OpCheck))
         return true;
-    } else if (!::canCreateUndefOrPoison(Opr, Kind,
-                                         /*ConsiderFlagsAndMetadata*/ true) &&
-               all_of(Opr->operands(), OpCheck))
-      return true;
+    }
   }
 
   if (auto *I = dyn_cast<LoadInst>(V))
