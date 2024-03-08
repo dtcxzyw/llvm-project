@@ -7024,6 +7024,30 @@ static bool isGuaranteedNotToBeUndefOrPoison(
   if (!CtxI || !CtxI->getParent() || !DT)
     return false;
 
+  unsigned NumUsesExplored = 0;
+  for (const auto *U : V->users()) {
+    // Avoid massive lists
+    if (NumUsesExplored >= DomConditionsMaxUses)
+      break;
+    NumUsesExplored++;
+
+    // Pass an undefined value to a noundef argument is undefined.
+    if (const auto *CB = dyn_cast<CallBase>(U))
+      if (auto *CalledFunc = CB->getCalledFunction())
+        for (const Argument &Arg : CalledFunc->args())
+          if (CB->getArgOperand(Arg.getArgNo()) == V &&
+              Arg.hasAttribute(Attribute::NoUndef) &&
+              DT->dominates(CB, CtxI))
+            return true;
+
+    // If the value is used as a load/store, the pointer must be non-poison.
+    if (!includesUndef(Kind) && V == getLoadStorePointerOperand(U)) {
+      const Instruction *I = cast<Instruction>(U);
+      if (DT->dominates(I, CtxI))
+        return true;
+    }
+  }
+
   auto *DNode = DT->getNode(CtxI->getParent());
   if (!DNode)
     // Unreachable block
