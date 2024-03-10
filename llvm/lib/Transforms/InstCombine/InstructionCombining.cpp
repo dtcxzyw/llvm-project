@@ -1614,38 +1614,35 @@ Instruction *InstCombinerImpl::foldBinopOfSextBoolToSelect(BinaryOperator &BO) {
   return SelectInst::Create(X, TVal, FVal);
 }
 
-static Constant *constantFoldOperationIntoSelectOperand(Instruction &I,
-                                                        SelectInst *SI,
-                                                        bool IsTrueArm) {
-  SmallVector<Constant *> ConstOps;
+static Value *tryFoldOperationIntoSelectOperand(Instruction &I, SelectInst *SI,
+                                                bool IsTrueArm,
+                                                const SimplifyQuery &Q) {
+  SmallVector<Value *> Operands;
   for (Value *Op : I.operands()) {
     CmpInst::Predicate Pred;
-    Constant *C = nullptr;
+    Value *V = nullptr;
     if (Op == SI) {
-      C = dyn_cast<Constant>(IsTrueArm ? SI->getTrueValue()
-                                       : SI->getFalseValue());
+      V = IsTrueArm ? SI->getTrueValue() : SI->getFalseValue();
     } else if (match(SI->getCondition(),
-                     m_ICmp(Pred, m_Specific(Op), m_Constant(C))) &&
+                     m_ICmp(Pred, m_Specific(Op), m_Value(V))) &&
                Pred == (IsTrueArm ? ICmpInst::ICMP_EQ : ICmpInst::ICMP_NE) &&
-               isGuaranteedNotToBeUndefOrPoison(C)) {
+               isGuaranteedNotToBeUndefOrPoison(V)) {
       // Pass
     } else {
-      C = dyn_cast<Constant>(Op);
+      V = Op;
     }
-    if (C == nullptr)
-      return nullptr;
 
-    ConstOps.push_back(C);
+    Operands.push_back(V);
   }
 
-  return ConstantFoldInstOperands(&I, ConstOps, I.getModule()->getDataLayout());
+  return simplifyInstructionWithOperands(&I, Operands, Q);
 }
 
 static Value *foldOperationIntoSelectOperand(Instruction &I, SelectInst *SI,
                                              Value *NewOp, InstCombiner &IC) {
   Instruction *Clone = I.clone();
   Clone->replaceUsesOfWith(SI, NewOp);
-  IC.InsertNewInstBefore(Clone, SI->getIterator());
+  IC.InsertNewInstBefore(Clone, I.getIterator());
   return Clone;
 }
 
@@ -1657,8 +1654,6 @@ Instruction *InstCombinerImpl::FoldOpIntoSelect(Instruction &Op, SelectInst *SI,
 
   Value *TV = SI->getTrueValue();
   Value *FV = SI->getFalseValue();
-  if (!(isa<Constant>(TV) || isa<Constant>(FV)))
-    return nullptr;
 
   // Bool selects with constant operands can be folded to logical ops.
   if (SI->getType()->isIntOrIntVectorTy(1))
@@ -1679,9 +1674,12 @@ Instruction *InstCombinerImpl::FoldOpIntoSelect(Instruction &Op, SelectInst *SI,
     }
   }
 
-  // Make sure that one of the select arms constant folds successfully.
-  Value *NewTV = constantFoldOperationIntoSelectOperand(Op, SI, /*IsTrueArm*/ true);
-  Value *NewFV = constantFoldOperationIntoSelectOperand(Op, SI, /*IsTrueArm*/ false);
+  // Make sure that one of the select arms folds successfully.
+  SimplifyQuery SQ = getSimplifyQuery().getWithInstruction(&Op);
+  Value *NewTV =
+      tryFoldOperationIntoSelectOperand(Op, SI, /*IsTrueArm*/ true, SQ);
+  Value *NewFV =
+      tryFoldOperationIntoSelectOperand(Op, SI, /*IsTrueArm*/ false, SQ);
   if (!NewTV && !NewFV)
     return nullptr;
 
