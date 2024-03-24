@@ -1280,6 +1280,31 @@ static void addNonNullAttrs(const SCCNodeSet &SCCNodes,
   }
 }
 
+/// Return true if this function can prove that V does not have undef bits
+/// and is never poison. This function handles chain of insertvalues by
+/// recursively looking through all the inserted values.
+static bool
+isGuaranteedNotToBeUndefOrPoisonForStruct(Value *V, StructType *IndexedType,
+                                          SmallVectorImpl<unsigned> &Indices) {
+  unsigned N = IndexedType->getStructNumElements();
+  Indices.push_back(0);
+  for (unsigned &I = Indices.back(); I < N; ++I) {
+    Type *SubTy = IndexedType->getStructElementType(I);
+    if (auto *SubStTy = dyn_cast<StructType>(SubTy)) {
+      if (isGuaranteedNotToBeUndefOrPoisonForStruct(V, SubStTy, Indices))
+        continue;
+    }
+
+    Value *InsertedValue = FindInsertedValue(V, Indices);
+    if (!InsertedValue)
+      return false;
+    if (!isGuaranteedNotToBeUndefOrPoison(InsertedValue))
+      return false;
+  }
+  Indices.pop_back();
+  return true;
+}
+
 /// Deduce noundef attributes for the SCC.
 static void addNoUndefAttrs(const SCCNodeSet &SCCNodes,
                             SmallSet<Function *, 8> &Changed) {
@@ -1308,7 +1333,14 @@ static void addNoUndefAttrs(const SCCNodeSet &SCCNodes,
     if (all_of(*F, [](BasicBlock &BB) {
           if (auto *Ret = dyn_cast<ReturnInst>(BB.getTerminator())) {
             // TODO: perform context-sensitive analysis?
-            return isGuaranteedNotToBeUndefOrPoison(Ret->getReturnValue());
+            Value *RetVal = Ret->getReturnValue();
+            if (auto *StTy = dyn_cast<StructType>(RetVal->getType())) {
+              SmallVector<unsigned> Indices;
+              if (isGuaranteedNotToBeUndefOrPoisonForStruct(RetVal, StTy,
+                                                            Indices))
+                return true;
+            }
+            return isGuaranteedNotToBeUndefOrPoison(RetVal);
           }
           return true;
         })) {
