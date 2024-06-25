@@ -36,7 +36,8 @@ static LegalityPredicate typeIsScalarFPArith(unsigned TypeIdx,
   return [=, &ST](const LegalityQuery &Query) {
     return Query.Types[TypeIdx].isScalar() &&
            ((ST.hasStdExtF() && Query.Types[TypeIdx].getSizeInBits() == 32) ||
-            (ST.hasStdExtD() && Query.Types[TypeIdx].getSizeInBits() == 64));
+            (ST.hasStdExtD() && Query.Types[TypeIdx].getSizeInBits() == 64) ||
+            (ST.hasStdExtZfh() && Query.Types[TypeIdx].getSizeInBits() == 16));
   };
 }
 
@@ -373,7 +374,8 @@ RISCVLegalizerInfo::RISCVLegalizerInfo(const RISCVSubtarget &ST)
 
   getActionDefinitionsBuilder({G_FADD, G_FSUB, G_FMUL, G_FDIV, G_FMA, G_FNEG,
                                G_FABS, G_FSQRT, G_FMAXNUM, G_FMINNUM})
-      .legalIf(typeIsScalarFPArith(0, ST));
+      .legalIf(typeIsScalarFPArith(0, ST))
+      .minScalar(0, s32);
 
   getActionDefinitionsBuilder(G_FREM)
       .libcallFor({s32, s64})
@@ -386,36 +388,46 @@ RISCVLegalizerInfo::RISCVLegalizerInfo(const RISCVSubtarget &ST)
   getActionDefinitionsBuilder(G_FPTRUNC).legalIf(
       [=, &ST](const LegalityQuery &Query) -> bool {
         return (ST.hasStdExtD() && typeIs(0, s32)(Query) &&
-                typeIs(1, s64)(Query));
+                typeIs(1, s64)(Query)) ||
+               (ST.hasStdExtZfhmin() && typeIs(0, s16)(Query) &&
+                (typeIs(1, s32)(Query) ||
+                 (ST.hasStdExtD() && typeIs(1, s64)(Query))));
       });
   getActionDefinitionsBuilder(G_FPEXT).legalIf(
       [=, &ST](const LegalityQuery &Query) -> bool {
         return (ST.hasStdExtD() && typeIs(0, s64)(Query) &&
-                typeIs(1, s32)(Query));
+                typeIs(1, s32)(Query)) ||
+               (ST.hasStdExtZfhmin() && typeIs(1, s16)(Query) &&
+                (typeIs(0, s32)(Query) ||
+                 (ST.hasStdExtD() && typeIs(0, s64)(Query))));
       });
 
   getActionDefinitionsBuilder(G_FCMP)
       .legalIf(all(typeIs(0, sXLen), typeIsScalarFPArith(1, ST)))
-      .clampScalar(0, sXLen, sXLen);
+      .clampScalar(0, sXLen, sXLen)
+      .minScalar(1, s32);
 
   // TODO: Support vector version of G_IS_FPCLASS.
   getActionDefinitionsBuilder(G_IS_FPCLASS)
-      .customIf(all(typeIs(0, s1), typeIsScalarFPArith(1, ST)));
+      .customIf(all(typeIs(0, s1), typeIsScalarFPArith(1, ST)))
+      .lower();
 
   getActionDefinitionsBuilder(G_FCONSTANT)
       .legalIf(typeIsScalarFPArith(0, ST))
-      .lowerFor({s32, s64});
+      .lowerFor({s16, s32, s64});
 
   getActionDefinitionsBuilder({G_FPTOSI, G_FPTOUI})
       .legalIf(all(typeInSet(0, {s32, sXLen}), typeIsScalarFPArith(1, ST)))
       .widenScalarToNextPow2(0)
       .clampScalar(0, s32, sXLen)
+      .minScalar(1, s32)
       .libcall();
 
   getActionDefinitionsBuilder({G_SITOFP, G_UITOFP})
       .legalIf(all(typeIsScalarFPArith(0, ST), typeInSet(1, {s32, sXLen})))
       .widenScalarToNextPow2(1)
-      .clampScalar(1, s32, sXLen);
+      .clampScalar(1, s32, sXLen)
+      .minScalar(0, s32);
 
   // FIXME: We can do custom inline expansion like SelectionDAG.
   // FIXME: Legal with Zfa.
