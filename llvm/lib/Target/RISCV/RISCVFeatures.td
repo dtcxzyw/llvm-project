@@ -130,6 +130,13 @@ def HasStdExtZicond : Predicate<"Subtarget->hasStdExtZicond()">,
                       AssemblerPredicate<(all_of FeatureStdExtZicond),
                           "'Zicond' (Integer Conditional Operations)">;
 
+def FeatureStdExtZicldst
+    : RISCVExtension<"zicldst", 1, 0,
+                     "'Zicldst' (Integer Conditional Load Store)">;
+def HasStdExtZicldst : Predicate<"Subtarget->hasStdExtZicldst()">,
+                      AssemblerPredicate<(all_of FeatureStdExtZicldst),
+                          "'Zicldst' (Integer Conditional Load Store)">;
+
 def FeatureStdExtZifencei
     : RISCVExtension<"zifencei", 2, 0,
                      "'Zifencei' (fence.i)">;
