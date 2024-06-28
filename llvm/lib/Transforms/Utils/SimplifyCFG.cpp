@@ -3085,7 +3085,7 @@ bool SimplifyCFGOpt::hoistLoadStoreWithCondFaultingFromSuccessors(
         bool IsSimple = (LI && LI->isSimple()) || (SI && SI->isSimple());
         if (!IsSimple || !OpsDominatesBranch(I))
           return false;
-        auto *Type = LI ? I.getType() : I.getOperand(0)->getType();
+        auto *Type = getLoadStoreType(&I);
         // a load from alloca is always safe.
         if (!IsLoadFromAlloca(I) && !TTI.hasConditionalLoadStoreForType(Type))
           return false;
