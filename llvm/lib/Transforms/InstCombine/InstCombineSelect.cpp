@@ -4110,5 +4110,27 @@ Instruction *InstCombinerImpl::visitSelectInst(SelectInst &SI) {
     }
   }
 
+  // select mask, masked load (ptr, align, mask, V), FV -> masked load (ptr,
+  // align, mask, FV)
+  {
+    Value *Ptr, *MaskVec, *PassThru;
+    uint64_t Alignment;
+    if (CondVal->getType()->isIntegerTy(1) &&
+        match(TrueVal,
+              m_OneUse(m_ExtractElt(
+                  m_OneUse(m_MaskedLoad(m_Value(Ptr), m_ConstantInt(Alignment),
+                                        m_Value(MaskVec), m_Value(PassThru))),
+                  m_Zero()))) &&
+        match(MaskVec,
+              m_InsertElt(m_Poison(), m_Specific(CondVal), m_Zero())) &&
+        MaskVec->getType() == FixedVectorType::get(Builder.getInt1Ty(), 1)
+        // && isGuaranteedNotToBeUndef(Mask, &AC, &I, &DT)
+    ) {
+      auto *NewPassThru = Builder.CreateBitCast(FalseVal, PassThru->getType());
+      auto *NewMaskedLoad = Builder.CreateMaskedLoad(
+          PassThru->getType(), Ptr, Align(Alignment), MaskVec, NewPassThru);
+      return ExtractElementInst::Create(NewMaskedLoad, Builder.getInt32(0));
+    }
+  }
   return nullptr;
 }
