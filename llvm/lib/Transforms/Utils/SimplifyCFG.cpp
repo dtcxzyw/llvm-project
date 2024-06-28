@@ -3093,7 +3093,7 @@ bool SimplifyCFGOpt::hoistLoadStoreWithCondFaultingFromSuccessors(
         if (SI && SkipMemoryRead)
           return false;
         HoistedInsts.insert(&I);
-      } else if (!I.isTerminator() && !isSafeToSpeculativelyExecute(&I))
+      } else if (!I.isTerminator())
         return false;
       else if (I.mayReadFromMemory())
         SkipMemoryRead = true;
