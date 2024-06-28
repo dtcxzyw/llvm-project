@@ -56,23 +56,25 @@ def SDTRVCStore : SDTypeProfile<0, 3, [
 def riscv_cload : SDNode<"RISCVISD::CLOAD", SDTRVCLoad, [SDNPHasChain, SDNPMayLoad, SDNPMemOperand]>;
 def riscv_cstore : SDNode<"RISCVISD::CSTORE", SDTRVCStore, [SDNPHasChain, SDNPMayStore, SDNPMemOperand]>;
 
+def AddrRegZero : ComplexPattern<iPTR, 2, "SelectAddrRegZero">;
+
 let Predicates = [HasStdExtZicldst] in {
 
-def : Pat<(XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 8)), (CLB GPR:$rs1, simm12:$imm12)>;
-def : Pat<(XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 16)), (CLH GPR:$rs1, simm12:$imm12)>;
-def : Pat<(XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 32)), (CLW GPR:$rs1, simm12:$imm12)>;
-def : Pat<(and (XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 8)), 0xFF), (CLBU GPR:$rs1, simm12:$imm12)>;
-def : Pat<(and (XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 16)), 0xFFFF), (CLHU GPR:$rs1, simm12:$imm12)>;
-def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 8), (CSB GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
-def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 16), (CSH GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
-def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 32), (CSW GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
+def : Pat<(XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 8)), (CLB GPR:$rs1, simm12:$imm12)>;
+def : Pat<(XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 16)), (CLH GPR:$rs1, simm12:$imm12)>;
+def : Pat<(XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 32)), (CLW GPR:$rs1, simm12:$imm12)>;
+def : Pat<(and (XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 8)), 0xFF), (CLBU GPR:$rs1, simm12:$imm12)>;
+def : Pat<(and (XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 16)), 0xFFFF), (CLHU GPR:$rs1, simm12:$imm12)>;
+def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 8), (CSB GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
+def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 16), (CSH GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
+def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 32), (CSW GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
 
 } // Predicates = [HasStdExtZicldst]
 
 let Predicates = [HasStdExtZicldst, IsRV64] in {
 
-def : Pat<(and (XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 32)), 0xFFFFFFFF), (CLWU GPR:$rs1, simm12:$imm12)>;
-def : Pat<(XLenVT (riscv_cload (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 64)), (CLD GPR:$rs1, simm12:$imm12)>;
-def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegImm (XLenVT GPR:$rs1), simm12:$imm12), 64), (CSD GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
+def : Pat<(and (XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 32)), 0xFFFFFFFF), (CLWU GPR:$rs1, simm12:$imm12)>;
+def : Pat<(XLenVT (riscv_cload (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 64)), (CLD GPR:$rs1, simm12:$imm12)>;
+def : Pat<(riscv_cstore (XLenVT GPR:$rs2), (AddrRegZero (XLenVT GPR:$rs1), simm12:$imm12), 64), (CSD GPR:$rs2, GPR:$rs1, simm12:$imm12)>;
 
 } // Predicates = [HasStdExtZicldst, IsRV64]

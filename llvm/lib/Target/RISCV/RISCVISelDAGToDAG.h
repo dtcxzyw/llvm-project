@@ -47,6 +47,7 @@ public:
 
   bool SelectAddrFrameIndex(SDValue Addr, SDValue &Base, SDValue &Offset);
   bool SelectFrameAddrRegImm(SDValue Addr, SDValue &Base, SDValue &Offset);
+  bool SelectAddrRegZero(SDValue Addr, SDValue &Base, SDValue &Offset);
   bool SelectAddrRegImm(SDValue Addr, SDValue &Base, SDValue &Offset,
                         bool IsINX = false);
   bool SelectAddrRegImmINX(SDValue Addr, SDValue &Base, SDValue &Offset) {
