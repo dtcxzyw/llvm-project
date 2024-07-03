@@ -3028,7 +3028,8 @@ static bool validateAndCostRequiredSelects(BasicBlock *BB, BasicBlock *ThenBB,
 bool SimplifyCFGOpt::hoistLoadStoreWithCondFaultingFromSuccessors(
     BranchInst *BI, BasicBlock *ThenBB) {
   if (!HoistLoadsStoresWithCondFaulting ||
-      !TTI.hasConditionalLoadStoreForType())
+      !TTI.hasConditionalLoadStoreForType() ||
+      !Options.ConvertConditionalLoadStores)
     return false;
 
   if (!BI || !BI->isConditional())
