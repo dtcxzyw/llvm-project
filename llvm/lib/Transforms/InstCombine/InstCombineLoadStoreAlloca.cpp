@@ -998,6 +998,89 @@ static bool canSimplifyNullLoadOrGEP(LoadInst &LI, Value *Op) {
   return false;
 }
 
+static Value *foldLoadFromIndexedGlobal(LoadInst &LI, IRBuilderBase &Builder) {
+  if (LI.isVolatile())
+    return nullptr;
+
+  auto *GEP = dyn_cast<GetElementPtrInst>(LI.getPointerOperand());
+  if (!GEP || LI.getType() != GEP->getResultElementType())
+    return nullptr;
+
+  auto *GV = dyn_cast<GlobalVariable>(GEP->getPointerOperand());
+  if (!GV || !GV->isConstant() || !GV->hasDefinitiveInitializer() ||
+      GV->getValueType() != GEP->getSourceElementType())
+    return nullptr;
+
+  Constant *Init = GV->getInitializer();
+  if (!isa<ConstantArray>(Init) && !isa<ConstantDataArray>(Init))
+    return nullptr;
+
+  uint64_t ArrayElementCount = Init->getType()->getArrayNumElements();
+  // Don't blow up on huge arrays.
+  // This threshold is chosen based on statistics on a dataset
+  // which is collected from real-world applications.
+  constexpr uint64_t MaxArraySize = 16;
+  if (ArrayElementCount > MaxArraySize)
+    return nullptr;
+
+  // Require: GEP GV, 0, i
+  if (GEP->getNumOperands() != 3 || !isa<ConstantInt>(GEP->getOperand(1)) ||
+      !cast<ConstantInt>(GEP->getOperand(1))->isZero() ||
+      isa<Constant>(GEP->getOperand(2)))
+    return nullptr;
+
+  SmallMapVector<Constant *, uint64_t, 2> ValueMap;
+  // MultiMapIdx indicates that this value occurs more than once in the array.
+  constexpr uint64_t MultiMapIdx = static_cast<uint64_t>(-1);
+  uint32_t MultiMapElts = 0;
+  for (uint64_t I = 0; I < ArrayElementCount; ++I) {
+    Constant *Elt = Init->getAggregateElement(I);
+
+    if (auto *It = ValueMap.find(Elt); It != ValueMap.end()) {
+      if (It->second == MultiMapIdx)
+        continue;
+      if (++MultiMapElts == 2)
+        return nullptr;
+      It->second = MultiMapIdx;
+    } else {
+      if (ValueMap.size() == 2)
+        return nullptr;
+      ValueMap.insert(std::make_pair(Elt, I));
+    }
+  }
+
+  // Handle load from uniform arrays.
+  if (ValueMap.size() == 1)
+    return ValueMap.begin()->first;
+
+  // Now we have two unique values in the array. And at least one value
+  // only occurs in Array[Index].
+  assert(ValueMap.size() == 2);
+
+  auto [C1, I1] = *ValueMap.begin();
+  auto [C2, I2] = *ValueMap.rbegin();
+  assert((I1 != MultiMapIdx || I2 != MultiMapIdx) &&
+         "Should have a one to one mapping");
+  Value *TrueArm;
+  Value *FalseArm;
+  uint64_t C;
+  if (I1 != MultiMapIdx) {
+    TrueArm = C1;
+    FalseArm = C2;
+    C = I1;
+  } else {
+    TrueArm = C2;
+    FalseArm = C1;
+    C = I2;
+  }
+
+  Value *Index = GEP->getOperand(2);
+  return Builder.CreateSelect(
+      Builder.CreateICmp(ICmpInst::ICMP_EQ, Index,
+                         ConstantInt::get(Index->getType(), C)),
+      TrueArm, FalseArm);
+}
+
 Instruction *InstCombinerImpl::visitLoadInst(LoadInst &LI) {
   Value *Op = LI.getOperand(0);
   if (Value *Res = simplifyLoadInst(&LI, Op, SQ.getWithInstruction(&LI)))
@@ -1047,6 +1130,10 @@ Instruction *InstCombinerImpl::visitLoadInst(LoadInst &LI) {
     CreateNonTerminatorUnreachable(&LI);
     return replaceInstUsesWith(LI, PoisonValue::get(LI.getType()));
   }
+
+  // Convert load from a constant lookup table into select
+  if (auto *V = foldLoadFromIndexedGlobal(LI, Builder))
+    return replaceInstUsesWith(LI, V);
 
   if (Op->hasOneUse()) {
     // Change select and PHI nodes to select values instead of addresses: this

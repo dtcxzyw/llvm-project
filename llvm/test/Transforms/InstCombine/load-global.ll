@@ -13,8 +13,8 @@ define i32 @fold_arr2(i64 %x) {
 ; CHECK-LABEL: define i32 @fold_arr2(
 ; CHECK-SAME: i64 [[X:%.*]]) {
 ; CHECK-NEXT:  [[ENTRY:.*:]]
-; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [2 x i32], ptr @arr2, i64 0, i64 [[X]]
-; CHECK-NEXT:    [[VAL:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
+; CHECK-NEXT:    [[TMP0:%.*]] = icmp ne i64 [[X]], 0
+; CHECK-NEXT:    [[VAL:%.*]] = zext i1 [[TMP0]] to i32
 ; CHECK-NEXT:    ret i32 [[VAL]]
 ;
 entry:
@@ -27,9 +27,7 @@ define i32 @fold_arr2_uniform(i64 %x) {
 ; CHECK-LABEL: define i32 @fold_arr2_uniform(
 ; CHECK-SAME: i64 [[X:%.*]]) {
 ; CHECK-NEXT:  [[ENTRY:.*:]]
-; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [2 x i32], ptr @arr2_uniform, i64 0, i64 [[X]]
-; CHECK-NEXT:    [[VAL:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
-; CHECK-NEXT:    ret i32 [[VAL]]
+; CHECK-NEXT:    ret i32 1
 ;
 entry:
   %arrayidx = getelementptr [2 x i32], ptr @arr2_uniform, i64 0, i64 %x
@@ -41,8 +39,8 @@ define i32 @fold_arr3(i64 %x) {
 ; CHECK-LABEL: define i32 @fold_arr3(
 ; CHECK-SAME: i64 [[X:%.*]]) {
 ; CHECK-NEXT:  [[ENTRY:.*:]]
-; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [3 x i32], ptr @arr3, i64 0, i64 [[X]]
-; CHECK-NEXT:    [[VAL:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
+; CHECK-NEXT:    [[TMP0:%.*]] = icmp ne i64 [[X]], 0
+; CHECK-NEXT:    [[VAL:%.*]] = zext i1 [[TMP0]] to i32
 ; CHECK-NEXT:    ret i32 [[VAL]]
 ;
 entry:
@@ -55,8 +53,8 @@ define i32 @fold_arr3_alt(i64 %x) {
 ; CHECK-LABEL: define i32 @fold_arr3_alt(
 ; CHECK-SAME: i64 [[X:%.*]]) {
 ; CHECK-NEXT:  [[ENTRY:.*:]]
-; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [3 x i32], ptr @arr3_alt, i64 0, i64 [[X]]
-; CHECK-NEXT:    [[VAL:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
+; CHECK-NEXT:    [[TMP0:%.*]] = icmp ne i64 [[X]], 1
+; CHECK-NEXT:    [[VAL:%.*]] = zext i1 [[TMP0]] to i32
 ; CHECK-NEXT:    ret i32 [[VAL]]
 ;
 entry:
@@ -69,9 +67,7 @@ define i32 @fold_arr3_uniform(i64 %x) {
 ; CHECK-LABEL: define i32 @fold_arr3_uniform(
 ; CHECK-SAME: i64 [[X:%.*]]) {
 ; CHECK-NEXT:  [[ENTRY:.*:]]
-; CHECK-NEXT:    [[ARRAYIDX:%.*]] = getelementptr [3 x i32], ptr @arr3_uniform, i64 0, i64 [[X]]
-; CHECK-NEXT:    [[VAL:%.*]] = load i32, ptr [[ARRAYIDX]], align 4
-; CHECK-NEXT:    ret i32 [[VAL]]
+; CHECK-NEXT:    ret i32 1
 ;
 entry:
   %arrayidx = getelementptr [3 x i32], ptr @arr3_uniform, i64 0, i64 %x
