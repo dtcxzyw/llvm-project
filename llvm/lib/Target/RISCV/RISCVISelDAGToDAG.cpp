@@ -2628,6 +2628,15 @@ bool RISCVDAGToDAGISel::SelectAddrRegRegScale(SDValue Addr,
   return false;
 }
 
+bool RISCVDAGToDAGISel::SelectAddrRegZero(SDValue Addr, SDValue &Base,
+                                          SDValue &Offset) {
+  SDLoc DL(Addr);
+  MVT VT = Addr.getSimpleValueType();
+  Base = Addr;
+  Offset = CurDAG->getTargetConstant(0, DL, VT);
+  return true;
+}
+
 bool RISCVDAGToDAGISel::SelectAddrRegImm(SDValue Addr, SDValue &Base,
                                          SDValue &Offset, bool IsRV32Zdinx) {
   if (SelectAddrFrameIndex(Addr, Base, Offset))

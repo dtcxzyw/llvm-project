@@ -218,6 +218,27 @@ public:
   }
 
   bool isLegalMaskedLoadStore(Type *DataType, Align Alignment) {
+    if (ST->hasStdExtZicldst() && isa<FixedVectorType>(DataType) &&
+        DataType->getScalarType()->isIntOrPtrTy() &&
+        cast<FixedVectorType>(DataType)->getNumElements() == 1) {
+      EVT DataTypeVT = TLI->getValueType(DL, DataType);
+      EVT ElemType = DataTypeVT.getScalarType();
+      if (!ST->enableUnalignedScalarMem() &&
+          Alignment < ElemType.getStoreSize())
+        return false;
+
+      switch (DL.getTypeSizeInBits(DataType)) {
+      default:
+        return false;
+      case 8:
+      case 16:
+      case 32:
+        return true;
+      case 64:
+        return ST->is64Bit();
+      }
+    }
+
     if (!ST->hasVInstructions())
       return false;
 
@@ -404,6 +425,7 @@ public:
   shouldConsiderAddressTypePromotion(const Instruction &I,
                                      bool &AllowPromotionWithoutCommonHeader);
   std::optional<unsigned> getMinPageSize() const { return 4096; }
+  bool hasConditionalLoadStoreForType(Type *Ty) const;
 };
 
 } // end namespace llvm

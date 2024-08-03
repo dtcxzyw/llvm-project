@@ -28,6 +28,7 @@
 #include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineJumpTableInfo.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
+#include "llvm/CodeGen/SDPatternMatch.h"
 #include "llvm/CodeGen/SelectionDAGAddressAnalysis.h"
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/CodeGen/ValueTypes.h"
@@ -20212,6 +20213,8 @@ const char *RISCVTargetLowering::getTargetNodeName(unsigned Opcode) const {
   NODE_NAME_CASE(SF_VC_V_IVW_SE)
   NODE_NAME_CASE(SF_VC_V_VVW_SE)
   NODE_NAME_CASE(SF_VC_V_FVW_SE)
+  NODE_NAME_CASE(CLOAD)
+  NODE_NAME_CASE(CSTORE)
   }
   // clang-format on
   return nullptr;
@@ -21706,6 +21709,55 @@ SDValue RISCVTargetLowering::expandIndirectJTBranch(const SDLoc &dl,
                        Addr);
   }
   return TargetLowering::expandIndirectJTBranch(dl, Value, Addr, JTI, DAG);
+}
+
+SDValue RISCVTargetLowering::visitMaskedLoad(
+    SelectionDAG &DAG, const SDLoc &DL, SDValue Chain, MachineMemOperand *MMO,
+    SDValue &NewLoad, SDValue Ptr, SDValue PassThru, SDValue Mask) const {
+  using namespace SDPatternMatch;
+  // @llvm.masked.load.v1*(ptr, alignment, mask, passthru)
+  // ->
+  // ptr_in = select (bit_cast_to_i1 mask), ptr, 0
+  // val, chain = CLOAD inchain, ptr_in, width
+  // res = select mask, (bit_cast_to_vt val), passthru
+  EVT VTy = PassThru.getValueType();
+  EVT Ty = VTy.getVectorElementType();
+  EVT XLenVT = Subtarget.getXLenVT();
+  SDVTList Tys = DAG.getVTList(XLenVT, MVT::Other);
+  SDValue ScalarMask = DAG.getBitcast(MVT::i1, Mask);
+  EVT PtrVT = Ptr.getValueType();
+  SDValue PtrIn =
+      DAG.getSelect(DL, PtrVT, ScalarMask, Ptr, DAG.getConstant(0, DL, PtrVT));
+  SDValue Ops[] = {Chain, PtrIn,
+                   DAG.getConstant(Ty.getScalarSizeInBits(), DL, XLenVT)};
+  NewLoad = DAG.getMemIntrinsicNode(RISCVISD::CLOAD, DL, Tys, Ops, Ty, MMO);
+  SDValue Ret =
+      DAG.getBitcast(VTy, DAG.getNode(ISD::TRUNCATE, DL, Ty, NewLoad));
+  if (!PassThru.isUndef() && !sd_match(PassThru, m_Zero()))
+    Ret = DAG.getSelect(DL, VTy, Mask, Ret, PassThru);
+  return Ret;
+}
+
+SDValue RISCVTargetLowering::visitMaskedStore(SelectionDAG &DAG,
+                                              const SDLoc &DL, SDValue Chain,
+                                              MachineMemOperand *MMO,
+                                              SDValue Ptr, SDValue Val,
+                                              SDValue Mask) const {
+  // llvm.masked.store.v1*(Src0, Ptr, alignment, Mask)
+  // ->
+  // chain = CSTORE inchain, (bit_cast_to_scalar val), ptr_in, width
+  EVT Ty = Val.getValueType().getVectorElementType();
+  EVT XLenVT = Subtarget.getXLenVT();
+  SDVTList Tys = DAG.getVTList(MVT::Other);
+  SDValue ScalarMask = DAG.getBitcast(MVT::i1, Mask);
+  EVT PtrVT = Ptr.getValueType();
+  SDValue PtrIn =
+      DAG.getSelect(DL, PtrVT, ScalarMask, Ptr, DAG.getConstant(0, DL, PtrVT));
+  SDValue ScalarVal =
+      DAG.getNode(ISD::ANY_EXTEND, DL, XLenVT, DAG.getBitcast(Ty, Val));
+  SDValue Ops[] = {Chain, ScalarVal, PtrIn,
+                   DAG.getConstant(Ty.getScalarSizeInBits(), DL, XLenVT)};
+  return DAG.getMemIntrinsicNode(RISCVISD::CSTORE, DL, Tys, Ops, Ty, MMO);
 }
 
 namespace llvm::RISCVVIntrinsicsTable {

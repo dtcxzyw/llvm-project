@@ -967,6 +967,7 @@ R"(All available -march extensions for RISC-V
     ziccif               1.0
     zicclsm              1.0
     ziccrse              1.0
+    zicldst              1.0
     zicntr               2.0
     zicond               1.0
     zicsr                2.0

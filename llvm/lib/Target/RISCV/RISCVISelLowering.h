@@ -481,6 +481,10 @@ enum NodeType : unsigned {
   TH_LDD,
   TH_SWD,
   TH_SDD,
+
+  // Conditional load/store instructions
+  CLOAD,
+  CSTORE,
 };
 // clang-format on
 } // namespace RISCVISD
@@ -1041,6 +1045,13 @@ private:
 
   SDValue emitFlushICache(SelectionDAG &DAG, SDValue InChain, SDValue Start,
                           SDValue End, SDValue Flags, SDLoc DL) const;
+
+  SDValue visitMaskedLoad(SelectionDAG &DAG, const SDLoc &DL, SDValue Chain,
+                          MachineMemOperand *MMO, SDValue &NewLoad, SDValue Ptr,
+                          SDValue PassThru, SDValue Mask) const override;
+  SDValue visitMaskedStore(SelectionDAG &DAG, const SDLoc &DL, SDValue Chain,
+                           MachineMemOperand *MMO, SDValue Ptr, SDValue Val,
+                           SDValue Mask) const override;
 };
 
 namespace RISCVVIntrinsicsTable {
