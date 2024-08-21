@@ -4192,5 +4192,5 @@ Instruction *InstCombinerImpl::visitSelectInst(SelectInst &SI) {
     }
   }
 
-  return nullptr;
+  return new FreezeInst(TrueVal);
 }
