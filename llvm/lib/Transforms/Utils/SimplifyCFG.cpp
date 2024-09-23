@@ -6513,7 +6513,7 @@ SwitchLookupTable::SwitchLookupTable(
       LinearMultiplier = ConstantInt::get(M.getContext(), DistToPrev);
       bool MayWrap = false;
       APInt M = LinearMultiplier->getValue();
-      (void)M.smul_ov(APInt(M.getBitWidth(), TableSize - 1), MayWrap);
+      (void)M.smul_ov(APInt(M.getBitWidth(), TableSize - 1, false, true), MayWrap);
       LinearMapValWrapped = NonMonotonic || MayWrap;
       Kind = LinearMapKind;
       ++NumLinearMaps;
