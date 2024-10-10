@@ -47,8 +47,8 @@ namespace llvm {
 
 bool SCCPSolver::isConstant(const ValueLatticeElement &LV) {
   return LV.isConstant() ||
-         (LV.isConstantRange() && LV.getConstantRange().isSingleElement()) ||
-         (LV.isConstantFPRange() && LV.getConstantFPRange().isSingleElement());
+         (LV.isConstantRange() && LV.getConstantRange().isSingleElement());
+        //  ||(LV.isConstantFPRange() && LV.getConstantFPRange().isSingleElement());
 }
 
 bool SCCPSolver::isOverdefined(const ValueLatticeElement &LV) {
