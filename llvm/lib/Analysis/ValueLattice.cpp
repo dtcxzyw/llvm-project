@@ -47,14 +47,15 @@ ValueLatticeElement::getCompare(CmpInst::Predicate Pred, Type *Ty,
       return ConstantInt::getTrue(Ty);
     if (CR.icmp(CmpInst::getInversePredicate(Pred), OtherCR))
       return ConstantInt::getFalse(Ty);
-  } else if (isConstantFPRange() && Other.isConstantFPRange()) {
-    const auto &CR = getConstantFPRange();
-    const auto &OtherCR = Other.getConstantFPRange();
-    if (CR.fcmp(Pred, OtherCR))
-      return ConstantInt::getTrue(Ty);
-    if (CR.fcmp(CmpInst::getInversePredicate(Pred), OtherCR))
-      return ConstantInt::getFalse(Ty);
   }
+  //  else if (isConstantFPRange() && Other.isConstantFPRange()) {
+  //   const auto &CR = getConstantFPRange();
+  //   const auto &OtherCR = Other.getConstantFPRange();
+  //   if (CR.fcmp(Pred, OtherCR))
+  //     return ConstantInt::getTrue(Ty);
+  //   if (CR.fcmp(CmpInst::getInversePredicate(Pred), OtherCR))
+  //     return ConstantInt::getFalse(Ty);
+  // }
 
   return nullptr;
 }
