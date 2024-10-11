@@ -587,14 +587,14 @@ public:
               std::move(NewR),
               Opts.setMayIncludeUndef(RHS.isConstantRangeIncludingUndef()));
         }
-        if (ScalarTy->isFloatingPointTy()) {
-          ConstantFPRange L = getConstant()->toConstantFPRange();
-          ConstantFPRange NewR = L.unionWith(
-              RHS.asConstantFPRange(L.getSemantics(), /*UndefAllowed=*/true));
-          return markConstantFPRange(
-              std::move(NewR),
-              Opts.setMayIncludeUndef(RHS.isConstantFPRangeIncludingUndef()));
-        }
+        // if (ScalarTy->isFloatingPointTy()) {
+        //   ConstantFPRange L = getConstant()->toConstantFPRange();
+        //   ConstantFPRange NewR = L.unionWith(
+        //       RHS.asConstantFPRange(L.getSemantics(), /*UndefAllowed=*/true));
+        //   return markConstantFPRange(
+        //       std::move(NewR),
+        //       Opts.setMayIncludeUndef(RHS.isConstantFPRangeIncludingUndef()));
+        // }
       }
       markOverdefined();
       return true;
