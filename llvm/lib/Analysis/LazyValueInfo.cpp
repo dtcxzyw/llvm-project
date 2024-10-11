@@ -1688,11 +1688,11 @@ Constant *LazyValueInfo::getConstant(Value *V, Instruction *CxtI) {
     if (const APInt *SingleVal = CR.getSingleElement())
       return ConstantInt::get(V->getType(), *SingleVal);
   }
-  if (Result.isConstantFPRange()) {
-    const ConstantFPRange &CR = Result.getConstantFPRange();
-    if (const APFloat *SingleVal = CR.getSingleElement())
-      return ConstantFP::get(V->getType(), *SingleVal);
-  }
+  // if (Result.isConstantFPRange()) {
+  //   const ConstantFPRange &CR = Result.getConstantFPRange();
+  //   if (const APFloat *SingleVal = CR.getSingleElement())
+  //     return ConstantFP::get(V->getType(), *SingleVal);
+  // }
   return nullptr;
 }
 
