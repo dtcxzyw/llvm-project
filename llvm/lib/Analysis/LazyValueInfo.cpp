@@ -1764,15 +1764,15 @@ static Constant *getPredicateResult(CmpInst::Predicate Pred, Constant *C,
       return ConstantInt::getFalse(ResTy);
     return nullptr;
   }
-  if (Val.isConstantFPRange()) {
-    const ConstantFPRange &CR = Val.getConstantFPRange();
-    ConstantFPRange RHS = C->toConstantFPRange();
-    if (CR.fcmp(Pred, RHS))
-      return ConstantInt::getTrue(ResTy);
-    if (CR.fcmp(CmpInst::getInversePredicate(Pred), RHS))
-      return ConstantInt::getFalse(ResTy);
-    return nullptr;
-  }
+  // if (Val.isConstantFPRange()) {
+  //   const ConstantFPRange &CR = Val.getConstantFPRange();
+  //   ConstantFPRange RHS = C->toConstantFPRange();
+  //   if (CR.fcmp(Pred, RHS))
+  //     return ConstantInt::getTrue(ResTy);
+  //   if (CR.fcmp(CmpInst::getInversePredicate(Pred), RHS))
+  //     return ConstantInt::getFalse(ResTy);
+  //   return nullptr;
+  // }
 
   if (Val.isNotConstant()) {
     // If this is an equality comparison, we can try to fold it knowing that
