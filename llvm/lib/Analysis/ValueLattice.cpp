@@ -63,9 +63,9 @@ static bool hasSingleValue(const ValueLatticeElement &Val) {
   if (Val.isConstantRange() && Val.getConstantRange().isSingleElement())
     // Integer constants are single element ranges
     return true;
-  if (Val.isConstantFPRange() && Val.getConstantFPRange().isSingleElement())
-    // Floating point constants are single element ranges
-    return true;
+  // if (Val.isConstantFPRange() && Val.getConstantFPRange().isSingleElement())
+  //   // Floating point constants are single element ranges
+  //   return true;
   return Val.isConstant();
 }
 
