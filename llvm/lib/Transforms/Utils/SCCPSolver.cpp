@@ -1008,11 +1008,11 @@ Constant *SCCPInstVisitor::getConstant(const ValueLatticeElement &LV,
       return ConstantInt::get(Ty, *CR.getSingleElement());
   }
 
-  if (LV.isConstantFPRange()) {
-    const auto &CR = LV.getConstantFPRange();
-    if (CR.getSingleElement())
-      return ConstantFP::get(Ty, *CR.getSingleElement());
-  }
+  // if (LV.isConstantFPRange()) {
+  //   const auto &CR = LV.getConstantFPRange();
+  //   if (CR.getSingleElement())
+  //     return ConstantFP::get(Ty, *CR.getSingleElement());
+  // }
   return nullptr;
 }
 
