@@ -17,6 +17,7 @@
 #include "llvm/Transforms/IPO/GlobalDCE.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/Statistic.h"
+#include "llvm/Analysis/LastRunTrackingAnalysis.h"
 #include "llvm/Analysis/TypeMetadataUtils.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
@@ -246,7 +247,21 @@ void GlobalDCEPass::AddVirtualFunctionDependencies(Module &M) {
   );
 }
 
+struct GlobalDCEPassOptions {
+  bool InLTOPostLink;
+
+  bool isCompatibleWith(const GlobalDCEPassOptions& LastOpt) const {
+    return InLTOPostLink == LastOpt.InLTOPostLink;
+  }
+};
+
 PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
+  GlobalDCEPassOptions Options{InLTOPostLink};
+  auto &LRT = MAM.getResult<LastRunTrackingAnalysis>(M);
+   // No changes since last InstCombine pass, exit early.
+   if (LRT.shouldSkip(&ID, Options))
+     return PreservedAnalyses::all();
+
   bool Changed = false;
 
   // The algorithm first computes the set L of global variables that are
@@ -412,8 +427,14 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   TypeIdMap.clear();
   VFESafeVTables.clear();
 
-  if (Changed)
-    return PreservedAnalyses::none();
+  if (Changed) {
+    PreservedAnalyses PA;
+    LRT.update(&ID, /*Changed=*/true, Options);
+    PA.preserve<LastRunTrackingAnalysis>();
+    return PA;
+  }
+
+  LRT.update(&ID, /*Changed=*/false, Options);
   return PreservedAnalyses::all();
 }
 
@@ -424,3 +445,5 @@ void GlobalDCEPass::printPipeline(
   if (InLTOPostLink)
     OS << "<vfe-linkage-unit-visibility>";
 }
+
+char GlobalDCEPass::ID;

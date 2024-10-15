@@ -43,6 +43,8 @@ public:
                      function_ref<StringRef(StringRef)> MapClassName2PassName);
 
 private:
+  static char ID;
+
   bool InLTOPostLink = false;
 
   SmallPtrSet<GlobalValue*, 32> AliveGlobals;
