@@ -35,6 +35,8 @@ namespace llvm {
 
 /// Converts loops into loop-closed SSA form.
 class LCSSAPass : public PassInfoMixin<LCSSAPass> {
+  static char ID;
+
 public:
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
 };
