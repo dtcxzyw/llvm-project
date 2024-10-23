@@ -232,6 +232,9 @@ static bool tailMergeBlocksWithSimilarFunctionTerminators(Function &F,
 static bool iterativelySimplifyCFG(Function &F, const TargetTransformInfo &TTI,
                                    DomTreeUpdater *DTU,
                                    const SimplifyCFGOptions &Options) {
+  if (F.size() == 1)
+    return false;
+
   bool Changed = false;
   bool LocalChange = true;
 
@@ -374,9 +377,6 @@ void SimplifyCFGPass::printPipeline(
 
 PreservedAnalyses SimplifyCFGPass::run(Function &F,
                                        FunctionAnalysisManager &AM) {
-  if (F.size() == 1)
-    return PreservedAnalyses::all();
-
   auto &TTI = AM.getResult<TargetIRAnalysis>(F);
   Options.AC = &AM.getResult<AssumptionAnalysis>(F);
   DominatorTree *DT = nullptr;
