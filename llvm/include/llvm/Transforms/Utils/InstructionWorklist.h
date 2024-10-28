@@ -104,8 +104,13 @@ public:
   /// When an instruction is simplified, add all users of the instruction
   /// to the work lists because they might get more simplified now.
   void pushUsersToWorkList(Instruction &I) {
-    for (User *U : I.users())
+    for (User *U : I.users()) {
       push(cast<Instruction>(U));
+      if (auto *PHI = dyn_cast<PHINode>(U)) {
+        for (User *PHIU : PHI->users())
+          push(cast<Instruction>(PHIU));
+      }
+    }
   }
 
   /// Should be called *after* decrementing the use-count on V.
