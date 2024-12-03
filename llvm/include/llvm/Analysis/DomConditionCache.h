@@ -34,11 +34,12 @@ enum class DomConditionFlag : uint8_t {
   KnownFPClass = 1 << 1,
   PowerOfTwo = 1 << 2,
   ICmp = 1 << 3,
+  NonEqual = 1 << 4,
 };
 
 LLVM_DECLARE_ENUM_AS_BITMASK(
     DomConditionFlag,
-    /*LargestValue=*/static_cast<uint8_t>(DomConditionFlag::ICmp));
+    /*LargestValue=*/static_cast<uint8_t>(DomConditionFlag::NonEqual));
 
 class DomConditionCache {
 private:

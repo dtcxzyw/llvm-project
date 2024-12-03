@@ -303,18 +303,15 @@ static bool isKnownNonEqual(const Value *V1, const Value *V2,
                             const SimplifyQuery &Q);
 
 bool llvm::isKnownNonEqual(const Value *V1, const Value *V2,
-                           const DataLayout &DL, AssumptionCache *AC,
-                           const Instruction *CxtI, const DominatorTree *DT,
-                           bool UseInstrInfo) {
+                           const SimplifyQuery &Q, unsigned Depth) {
   // We don't support looking through casts.
   if (V1 == V2 || V1->getType() != V2->getType())
     return false;
   auto *FVTy = dyn_cast<FixedVectorType>(V1->getType());
   APInt DemandedElts =
       FVTy ? APInt::getAllOnes(FVTy->getNumElements()) : APInt(1, 1);
-  return ::isKnownNonEqual(
-      V1, V2, DemandedElts, 0,
-      SimplifyQuery(DL, DT, AC, safeCxtI(V2, V1, CxtI), UseInstrInfo));
+  return ::isKnownNonEqual(V1, V2, DemandedElts, Depth,
+                           Q.getWithInstruction(safeCxtI(V2, V1, Q.CxtI)));
 }
 
 bool llvm::MaskedValueIsZero(const Value *V, const APInt &Mask,
@@ -3751,6 +3748,52 @@ static bool isKnownNonEqual(const Value *V1, const Value *V2,
   if (match(V1, m_PtrToIntSameSize(Q.DL, m_Value(A))) &&
       match(V2, m_PtrToIntSameSize(Q.DL, m_Value(B))))
     return isKnownNonEqual(A, B, DemandedElts, Depth + 1, Q);
+
+  if (!Q.CxtI)
+    return false;
+
+  // Try to infer NonEqual based on information from dominating conditions.
+  if (Q.DC && Q.DT) {
+    for (auto [BI, Flags] : Q.DC->conditionsFor(V1)) {
+      if (!any(Flags & DomConditionFlag::NonEqual))
+        continue;
+      Value *Cond = BI->getCondition();
+      BasicBlockEdge Edge0(BI->getParent(), BI->getSuccessor(0));
+      if (Q.DT->dominates(Edge0, Q.CxtI->getParent()) &&
+          isImpliedCondition(Cond, ICmpInst::ICMP_NE, V1, V2, Q.DL,
+                             /*LHSIsTrue=*/true, Depth)
+              .value_or(false))
+        return true;
+
+      BasicBlockEdge Edge1(BI->getParent(), BI->getSuccessor(1));
+      if (Q.DT->dominates(Edge1, Q.CxtI->getParent()) &&
+          isImpliedCondition(Cond, ICmpInst::ICMP_NE, V1, V2, Q.DL,
+                             /*LHSIsTrue=*/false, Depth)
+              .value_or(false))
+        return true;
+    }
+  }
+
+  if (!Q.AC)
+    return false;
+
+  // Try to infer NonEqual based on information from assumptions.
+  for (auto &AssumeVH : Q.AC->assumptionsFor(V1)) {
+    if (!AssumeVH)
+      continue;
+    CallInst *I = cast<CallInst>(AssumeVH);
+
+    assert(I->getFunction() == Q.CxtI->getFunction() &&
+           "Got assumption for the wrong function!");
+    assert(I->getIntrinsicID() == Intrinsic::assume &&
+           "must be an assume intrinsic");
+
+    if (isImpliedCondition(I->getArgOperand(0), ICmpInst::ICMP_NE, V1, V2, Q.DL,
+                           /*LHSIsTrue=*/true, Depth)
+            .value_or(false) &&
+        isValidAssumeForContext(I, Q.CxtI, Q.DT))
+      return true;
+  }
 
   return false;
 }
@@ -10082,11 +10125,12 @@ void llvm::findValuesAffectedByCondition(
         Worklist.push_back(B);
       }
     } else if (match(V, m_ICmp(Pred, m_Value(A), m_Value(B)))) {
-      AddCmpOperands(A, B,
-                     DomConditionFlag::KnownBits | DomConditionFlag::ICmp);
-
       bool HasRHSC = match(B, m_ConstantInt());
       if (ICmpInst::isEquality(Pred)) {
+        AddAffected(A, DomConditionFlag::KnownBits | DomConditionFlag::ICmp |
+                           DomConditionFlag::NonEqual);
+        AddAffected(B, DomConditionFlag::KnownBits | DomConditionFlag::ICmp |
+                           DomConditionFlag::NonEqual);
         if (HasRHSC) {
           Value *Y;
           // (X & C) or (X | C) or (X ^ C).
@@ -10101,6 +10145,9 @@ void llvm::findValuesAffectedByCondition(
           }
         }
       } else {
+        AddCmpOperands(A, B,
+                       DomConditionFlag::KnownBits | DomConditionFlag::ICmp);
+
         if (HasRHSC) {
           // Handle (A + C1) u< C2, which is the canonical form of
           // A > C3 && A < C4.
