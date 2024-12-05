@@ -941,8 +941,11 @@ Instruction *InstCombinerImpl::visitTrunc(TruncInst &Trunc) {
     Changed = true;
   }
   if (!Trunc.hasNoUnsignedWrap() &&
-      MaskedValueIsZero(Src, APInt::getBitsSetFrom(SrcWidth, DestWidth),
-                        /*Depth=*/0, &Trunc)) {
+      (Trunc.hasNoSignedWrap()
+           ? isKnownNonNegative(Src,
+                                getSimplifyQuery().getWithInstruction(&Trunc))
+           : MaskedValueIsZero(Src, APInt::getBitsSetFrom(SrcWidth, DestWidth),
+                               /*Depth=*/0, &Trunc))) {
     Trunc.setHasNoUnsignedWrap(true);
     Changed = true;
   }
