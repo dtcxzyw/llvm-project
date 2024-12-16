@@ -77,6 +77,13 @@ PreservedAnalyses PassManager<IRUnitT, AnalysisManagerT, ExtraArgTs...>::run(
     // false).
     if (!PI.runBeforePass<IRUnitT>(*Pass, IR))
       continue;
+    if constexpr(std::is_same_v<IRUnitT, Function>) {
+      IR.removeDeadConstantUsers();
+      if (IR.isDefTriviallyDead()) {
+        // errs() << "Unnecessary pass run on " << IR.getName() << "\n";
+        continue;
+      }
+    }
 
     PreservedAnalyses PassPA = Pass->run(IR, AM, ExtraArgs...);
 
