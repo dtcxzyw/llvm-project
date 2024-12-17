@@ -1268,7 +1268,7 @@ struct DSEState {
     LLVM_DEBUG(dbgs() << "  Check if def " << *Def << " ("
                       << *Def->getMemoryInst()
                       << ") is at the end the function \n");
-    SmallVector<MemoryAccess *, 4> WorkList;
+    SmallVector<MemoryAccess *, 32> WorkList;
     SmallPtrSet<MemoryAccess *, 8> Visited;
 
     pushMemUses(Def, WorkList, Visited);

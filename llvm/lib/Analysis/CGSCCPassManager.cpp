@@ -887,9 +887,9 @@ static LazyCallGraph::SCC &updateCGAndAnalysisManagerForPass(
 
   // Walk the function body and build up the set of retained, promoted, and
   // demoted edges.
-  SmallVector<Constant *, 16> Worklist;
-  SmallPtrSet<Constant *, 16> Visited;
-  SmallPtrSet<Node *, 16> RetainedEdges;
+  SmallVector<Constant *, 32> Worklist;
+  SmallPtrSet<Constant *, 32> Visited;
+  SmallPtrSet<Node *, 32> RetainedEdges;
   SmallSetVector<Node *, 4> PromotedRefTargets;
   SmallSetVector<Node *, 4> DemotedCallTargets;
   SmallSetVector<Node *, 4> NewCallEdges;

@@ -2658,7 +2658,7 @@ public:
         // rest of the lanes. We are visiting the nodes in a circular fashion,
         // using FirstLane as the center point and increasing the radius
         // distance.
-        SmallVector<SmallVector<Value *, 2>> MainAltOps(NumOperands);
+        SmallVector<SmallVector<Value *, 2>, 2> MainAltOps(NumOperands);
         for (unsigned I = 0; I < NumOperands; ++I)
           MainAltOps[I].push_back(getData(I, FirstLane).V);
 
@@ -7900,7 +7900,7 @@ class PHIHandler {
   DominatorTree &DT;
   PHINode *Main = nullptr;
   SmallVector<Value *> Phis;
-  SmallVector<SmallVector<Value *>> Operands;
+  SmallVector<SmallVector<Value *>, 8> Operands;
 
 public:
   PHIHandler() = delete;
@@ -8397,7 +8397,7 @@ void BoUpSLP::buildTree_rec(ArrayRef<Value *> VL, unsigned Depth,
       Handler.buildOperands();
       for (unsigned I : seq<unsigned>(PH->getNumOperands()))
         TE->setOperand(I, Handler.getOperands(I));
-      SmallVector<ArrayRef<Value *>> Operands(PH->getNumOperands());
+      SmallVector<ArrayRef<Value *>, 8> Operands(PH->getNumOperands());
       for (unsigned I : seq<unsigned>(PH->getNumOperands()))
         Operands[I] = Handler.getOperands(I);
       CreateOperandNodes(TE, Operands);

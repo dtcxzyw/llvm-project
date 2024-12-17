@@ -556,7 +556,7 @@ Value *addDiffRuntimeChecks(
 struct IVConditionInfo {
   /// Instructions that need to be duplicated and checked for the unswitching
   /// condition.
-  SmallVector<Instruction *> InstToDuplicate;
+  SmallVector<Instruction *, 4> InstToDuplicate;
 
   /// Constant to indicate for which value the condition is invariant.
   Constant *KnownValue = nullptr;

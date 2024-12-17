@@ -110,7 +110,7 @@ public:
   /// Returns true if there may be a solution for the constraints in the system.
   bool mayHaveSolution();
 
-  static SmallVector<int64_t, 8> negate(SmallVector<int64_t, 8> R) {
+  static SmallVector<int64_t, 16> negate(SmallVector<int64_t, 16> R) {
     // The negated constraint R is obtained by multiplying by -1 and adding 1 to
     // the constant.
     if (AddOverflow(R[0], int64_t(1), R[0]))
@@ -123,7 +123,7 @@ public:
   /// original vector.
   ///
   /// \param R The vector of coefficients to be negated.
-  static SmallVector<int64_t, 8> negateOrEqual(SmallVector<int64_t, 8> R) {
+  static SmallVector<int64_t, 16> negateOrEqual(SmallVector<int64_t, 16> R) {
     // The negated constraint R is obtained by multiplying by -1.
     for (auto &C : R)
       if (MulOverflow(C, int64_t(-1), C))
@@ -135,7 +135,7 @@ public:
   /// modify the original vector.
   ///
   /// \param R The vector of coefficients to be converted.
-  static SmallVector<int64_t, 8> toStrictLessThan(SmallVector<int64_t, 8> R) {
+  static SmallVector<int64_t, 16> toStrictLessThan(SmallVector<int64_t, 16> R) {
     // The strict less than is obtained by subtracting 1 from the constant.
     if (SubOverflow(R[0], int64_t(1), R[0])) {
       return {};
@@ -143,7 +143,7 @@ public:
     return R;
   }
 
-  bool isConditionImplied(SmallVector<int64_t, 8> R) const;
+  bool isConditionImplied(SmallVector<int64_t, 16> R) const;
 
   SmallVector<int64_t> getLastConstraint() const {
     assert(!Constraints.empty() && "Constraint system is empty");

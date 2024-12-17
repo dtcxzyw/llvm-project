@@ -715,7 +715,7 @@ ArgumentUsesSummary collectArgumentUsesPerBlock(Argument &A, Function &F) {
   ArgumentUsesSummary Result;
 
   BasicBlock &EntryBB = F.getEntryBlock();
-  SmallVector<ArgumentUse, 4> Worklist;
+  SmallVector<ArgumentUse, 16> Worklist;
   for (Use &U : A.uses())
     Worklist.push_back({&U, 0});
 
@@ -1104,7 +1104,7 @@ static bool inferInitializes(Argument &A, Function &F) {
 
     if (UPB != UsesPerBlock.end()) {
       // Sort uses in this block by instruction order.
-      SmallVector<std::pair<Instruction *, ArgumentAccessInfo>, 2> Insts;
+      SmallVector<std::pair<Instruction *, ArgumentAccessInfo>, 4> Insts;
       append_range(Insts, UPB->second.Insts);
       sort(Insts, [](std::pair<Instruction *, ArgumentAccessInfo> &LHS,
                      std::pair<Instruction *, ArgumentAccessInfo> &RHS) {
@@ -2085,7 +2085,7 @@ static void addNoReturnAttrs(const SCCNodeSet &SCCNodes,
 static bool allPathsGoThroughCold(Function &F) {
   SmallDenseMap<BasicBlock *, bool, 16> ColdPaths;
   ColdPaths[&F.front()] = false;
-  SmallVector<BasicBlock *> Jobs;
+  SmallVector<BasicBlock *, 8> Jobs;
   Jobs.push_back(&F.front());
 
   while (!Jobs.empty()) {
@@ -2163,7 +2163,7 @@ static bool functionWillReturn(const Function &F) {
 
   // Functions with loops require more sophisticated analysis, as the loop
   // may be infinite. For now, don't try to handle them.
-  SmallVector<std::pair<const BasicBlock *, const BasicBlock *>> Backedges;
+  SmallVector<std::pair<const BasicBlock *, const BasicBlock *>, 2> Backedges;
   FindFunctionBackedges(F, Backedges);
   if (!Backedges.empty())
     return false;

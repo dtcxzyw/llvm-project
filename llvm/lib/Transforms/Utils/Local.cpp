@@ -3820,7 +3820,7 @@ struct BitPart {
 
   /// The "provenance" of each bit. Provenance[A] = B means that bit A
   /// in Provider becomes bit B in the result of this expression.
-  SmallVector<int8_t, 32> Provenance; // int8_t means max size is i128.
+  SmallVector<int8_t, 64> Provenance; // int8_t means max size is i128.
 
   enum { Unset = -1 };
 };

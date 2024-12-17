@@ -2704,7 +2704,7 @@ namespace {
 struct CompatibleSets {
   using SetTy = SmallVector<InvokeInst *, 2>;
 
-  SmallVector<SetTy, 1> Sets;
+  SmallVector<SetTy, 4> Sets;
 
   static bool shouldBelongToSameSet(ArrayRef<InvokeInst *> Invokes);
 
@@ -7229,7 +7229,7 @@ static bool reduceSwitchRange(SwitchInst *SI, IRBuilder<> &Builder,
   // can treat the case values as signed or unsigned. We can optimize more common
   // cases such as a sequence crossing zero {-4,0,4,8} if we interpret case values
   // as signed.
-  SmallVector<int64_t,4> Values;
+  SmallVector<int64_t, 32> Values;
   for (const auto &C : SI->cases())
     Values.push_back(C.getCaseValue()->getValue().getSExtValue());
   llvm::sort(Values);

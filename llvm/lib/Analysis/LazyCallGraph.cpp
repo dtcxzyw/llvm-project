@@ -77,9 +77,9 @@ LazyCallGraph::EdgeSequence &LazyCallGraph::Node::populateSlow() {
 
   Edges = EdgeSequence();
 
-  SmallVector<Constant *, 16> Worklist;
+  SmallVector<Constant *, 32> Worklist;
   SmallPtrSet<Function *, 4> Callees;
-  SmallPtrSet<Constant *, 16> Visited;
+  SmallPtrSet<Constant *, 32> Visited;
 
   // Find all the potential call graph edges in this function. We track both
   // actual call edges and indirect references to functions. The direct calls

@@ -2069,7 +2069,7 @@ llvm::hasPartialIVCondition(const Loop &L, unsigned MSSAThreshold,
   if (!CondI || !isa<CmpInst, TruncInst>(CondI) || !L.contains(CondI))
     return {};
 
-  SmallVector<Instruction *> InstToDuplicate;
+  SmallVector<Instruction *, 4> InstToDuplicate;
   InstToDuplicate.push_back(CondI);
 
   SmallVector<Value *, 4> WorkList;

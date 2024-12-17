@@ -389,7 +389,7 @@ struct PromoteMem2Reg {
 
   /// Lazily compute the number of predecessors a block has, indexed by block
   /// number.
-  SmallVector<unsigned> BBNumPreds;
+  SmallVector<unsigned, 16> BBNumPreds;
 
   /// Whether the function has the no-signed-zeros-fp-math attribute set.
   bool NoSignedZeros = false;

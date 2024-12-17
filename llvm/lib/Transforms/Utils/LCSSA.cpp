@@ -404,7 +404,7 @@ static bool formLCSSAImpl(Loop &L, const DominatorTree &DT, const LoopInfo *LI,
   // walking the dominator tree upwards until we hit a loop header.
   computeBlocksDominatingExits(L, DT, ExitBlocks, BlocksDominatingExits);
 
-  SmallVector<Instruction *, 8> Worklist;
+  SmallVector<Instruction *, 16> Worklist;
 
   // Look at all the instructions in the loop, checking to see if they have uses
   // outside the loop.  If so, put them into the worklist to rewrite those uses.

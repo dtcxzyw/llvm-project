@@ -205,7 +205,7 @@ bool SimpleCaptureAnalysis::isNotCapturedBefore(const Value *Object,
 static bool isNotInCycle(const Instruction *I, const DominatorTree *DT,
                          const LoopInfo *LI) {
   BasicBlock *BB = const_cast<BasicBlock *>(I->getParent());
-  SmallVector<BasicBlock *> Succs(successors(BB));
+  SmallVector<BasicBlock *, 16> Succs(successors(BB));
   return Succs.empty() ||
          !isPotentiallyReachableFromMany(Succs, BB, nullptr, DT, LI);
 }

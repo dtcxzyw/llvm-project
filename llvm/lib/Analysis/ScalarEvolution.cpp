@@ -1103,7 +1103,7 @@ const SCEV *ScalarEvolution::getLosslessPtrToIntExpr(const SCEV *Op,
     }
 
     const SCEV *visitAddExpr(const SCEVAddExpr *Expr) {
-      SmallVector<const SCEV *, 2> Operands;
+      SmallVector<const SCEV *, 4> Operands;
       bool Changed = false;
       for (const auto *Op : Expr->operands()) {
         Operands.push_back(visit(Op));
@@ -2958,7 +2958,7 @@ const SCEV *ScalarEvolution::getAddExpr(SmallVectorImpl<const SCEV *> &Ops,
                 append_range(AddRecOps, OtherAddRec->operands().drop_front(i));
                 break;
               }
-              SmallVector<const SCEV *, 2> TwoOps = {
+              SmallVector<const SCEV *, 4> TwoOps = {
                   AddRecOps[i], OtherAddRec->getOperand(i)};
               AddRecOps[i] = getAddExpr(TwoOps, SCEV::FlagAnyWrap, Depth + 1);
             }
@@ -4635,7 +4635,7 @@ const SCEV *ScalarEvolution::removePointerBase(const SCEV *P) {
   }
   if (auto *Add = dyn_cast<SCEVAddExpr>(P)) {
     // The base of an Add is the pointer operand.
-    SmallVector<const SCEV *> Ops{Add->operands()};
+    SmallVector<const SCEV *, 4> Ops{Add->operands()};
     const SCEV **PtrOp = nullptr;
     for (const SCEV *&AddOp : Ops) {
       if (AddOp->getType()->isPointerTy()) {
@@ -7290,7 +7290,7 @@ ScalarEvolution::getDefiningScopeBound(ArrayRef<const SCEV *> Ops,
   Precise = true;
   // Do a bounded search of the def relation of the requested SCEVs.
   SmallSet<const SCEV *, 16> Visited;
-  SmallVector<const SCEV *> Worklist;
+  SmallVector<const SCEV *, 4> Worklist;
   auto pushOp = [&](const SCEV *S) {
     if (!Visited.insert(S).second)
       return;
@@ -7475,7 +7475,7 @@ const SCEV *ScalarEvolution::createSCEVIter(Value *V) {
   // Worklist item with a Value and a bool indicating whether all operands have
   // been visited already.
   using PointerTy = PointerIntPair<Value *, 1, bool>;
-  SmallVector<PointerTy> Stack;
+  SmallVector<PointerTy, 8> Stack;
 
   Stack.emplace_back(V, true);
   Stack.emplace_back(V, false);
@@ -15396,7 +15396,7 @@ void ScalarEvolution::LoopGuards::collectFromBlock(
     ScalarEvolution &SE, ScalarEvolution::LoopGuards &Guards,
     const BasicBlock *Block, const BasicBlock *Pred,
     SmallPtrSetImpl<const BasicBlock *> &VisitedBlocks, unsigned Depth) {
-  SmallVector<const SCEV *> ExprsToRewrite;
+  SmallVector<const SCEV *, 4> ExprsToRewrite;
   auto CollectCondition = [&](ICmpInst::Predicate Predicate, const SCEV *LHS,
                               const SCEV *RHS,
                               DenseMap<const SCEV *, const SCEV *>
@@ -15731,7 +15731,7 @@ void ScalarEvolution::LoopGuards::collectFromBlock(
     }
   };
 
-  SmallVector<PointerIntPair<Value *, 1, bool>> Terms;
+  SmallVector<PointerIntPair<Value *, 1, bool>, 8> Terms;
   // First, collect information from assumptions dominating the loop.
   for (auto &AssumeVH : SE.AC.assumptions()) {
     if (!AssumeVH)
@@ -15918,7 +15918,7 @@ const SCEV *ScalarEvolution::LoopGuards::rewrite(const SCEV *Expr) const {
     }
 
     const SCEV *visitAddExpr(const SCEVAddExpr *Expr) {
-      SmallVector<const SCEV *, 2> Operands;
+      SmallVector<const SCEV *, 4> Operands;
       bool Changed = false;
       for (const auto *Op : Expr->operands()) {
         Operands.push_back(

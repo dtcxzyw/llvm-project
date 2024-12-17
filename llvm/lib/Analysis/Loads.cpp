@@ -717,7 +717,7 @@ Value *llvm::FindAvailableLoadedValue(LoadInst *Load, BatchAAResults &AA,
   // Try to find an available value first, and delay expensive alias analysis
   // queries until later.
   Value *Available = nullptr;
-  SmallVector<Instruction *> MustNotAliasInsts;
+  SmallVector<Instruction *, 4> MustNotAliasInsts;
   for (Instruction &Inst : make_range(++Load->getReverseIterator(),
                                       ScanBB->rend())) {
     if (Inst.isDebugOrPseudoInst())

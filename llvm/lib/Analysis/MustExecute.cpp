@@ -170,7 +170,7 @@ static void collectTransitivePredecessors(
   assert(CurLoop->contains(BB) && "Should only be called for loop blocks!");
   if (BB == CurLoop->getHeader())
     return;
-  SmallVector<const BasicBlock *, 4> WorkList;
+  SmallVector<const BasicBlock *, 16> WorkList;
   for (const auto *Pred : predecessors(BB)) {
     if (!CurLoop->contains(Pred))
       continue;

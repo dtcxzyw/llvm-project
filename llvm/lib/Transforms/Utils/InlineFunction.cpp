@@ -1372,7 +1372,7 @@ static void AddParamAndFnBasicAttributes(const CallBase &CB,
   auto &Context = CalledFunction->getContext();
 
   // Collect valid attributes for all params.
-  SmallVector<AttrBuilder> ValidObjParamAttrs, ValidExactParamAttrs;
+  SmallVector<AttrBuilder, 4> ValidObjParamAttrs, ValidExactParamAttrs;
   bool HasAttrToPropagate = false;
 
   // Attributes we can only propagate if the exact parameter is forwarded.

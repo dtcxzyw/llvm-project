@@ -220,7 +220,7 @@ struct StackEntry {
 };
 
 struct ConstraintTy {
-  SmallVector<int64_t, 8> Coefficients;
+  SmallVector<int64_t, 16> Coefficients;
   SmallVector<ConditionTy, 2> Preconditions;
 
   SmallVector<SmallVector<int64_t, 8>> ExtraInfo;
@@ -229,7 +229,7 @@ struct ConstraintTy {
 
   ConstraintTy() = default;
 
-  ConstraintTy(SmallVector<int64_t, 8> Coefficients, bool IsSigned, bool IsEq,
+  ConstraintTy(SmallVector<int64_t, 16> Coefficients, bool IsSigned, bool IsEq,
                bool IsNe)
       : Coefficients(std::move(Coefficients)), IsSigned(IsSigned), IsEq(IsEq),
         IsNe(IsNe) {}
@@ -277,7 +277,7 @@ public:
     auto &Value2Index = getValue2Index(false);
     // Add Arg > -1 constraints to unsigned system for all function arguments.
     for (Value *Arg : FunctionArgs) {
-      ConstraintTy VarPos(SmallVector<int64_t, 8>(Value2Index.size() + 1, 0),
+      ConstraintTy VarPos(SmallVector<int64_t, 16>(Value2Index.size() + 1, 0),
                           false, false, false);
       VarPos.Coefficients[Value2Index[Arg]] = -1;
       UnsignedCS.addVariableRow(VarPos.Coefficients);
@@ -712,7 +712,7 @@ ConstraintInfo::getConstraint(CmpInst::Predicate Pred, Value *Op0, Value *Op1,
   // Build result constraint, by first adding all coefficients from A and then
   // subtracting all coefficients from B.
   ConstraintTy Res(
-      SmallVector<int64_t, 8>(Value2Index.size() + NewVariables.size() + 1, 0),
+      SmallVector<int64_t, 16>(Value2Index.size() + NewVariables.size() + 1, 0),
       IsSigned, IsEq, IsNe);
   // Collect variables that are known to be positive in all uses in the
   // constraint.
@@ -776,7 +776,7 @@ ConstraintTy ConstraintInfo::getConstraintForSolving(CmpInst::Predicate Pred,
       (Pred == CmpInst::ICMP_UGE && Op1 == NullC)) {
     auto &Value2Index = getValue2Index(false);
     // Return constraint that's trivially true.
-    return ConstraintTy(SmallVector<int64_t, 8>(Value2Index.size(), 0), false,
+    return ConstraintTy(SmallVector<int64_t, 16>(Value2Index.size(), 0), false,
                         false, false);
   }
 
@@ -1619,7 +1619,7 @@ void ConstraintInfo::addFact(CmpInst::Predicate Pred, Value *A, Value *B,
 
     if (!R.IsSigned) {
       for (Value *V : NewVariables) {
-        ConstraintTy VarPos(SmallVector<int64_t, 8>(Value2Index.size() + 1, 0),
+        ConstraintTy VarPos(SmallVector<int64_t, 16>(Value2Index.size() + 1, 0),
                             false, false, false);
         VarPos.Coefficients[Value2Index[V]] = -1;
         CSToUse.addVariableRow(VarPos.Coefficients);
@@ -1705,7 +1705,7 @@ static bool eliminateConstraints(Function &F, DominatorTree &DT, LoopInfo &LI,
                                  OptimizationRemarkEmitter &ORE) {
   bool Changed = false;
   DT.updateDFSNumbers();
-  SmallVector<Value *> FunctionArgs;
+  SmallVector<Value *, 4> FunctionArgs;
   for (Value &Arg : F.args())
     FunctionArgs.push_back(&Arg);
   ConstraintInfo Info(F.getDataLayout(), FunctionArgs);
