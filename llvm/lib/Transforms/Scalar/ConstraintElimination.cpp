@@ -1415,7 +1415,7 @@ static std::optional<bool> checkCondition(CmpInst::Predicate Pred, Value *A,
 }
 
 static bool checkAndReplaceCondition(
-    CmpInst *Cmp, ConstraintInfo &Info, unsigned NumIn, unsigned NumOut,
+    ICmpInst *Cmp, ConstraintInfo &Info, unsigned NumIn, unsigned NumOut,
     Instruction *ContextInst, Module *ReproducerModule,
     ArrayRef<ReproducerEntry> ReproducerCondStack, DominatorTree &DT,
     SmallVectorImpl<Instruction *> &ToRemove) {
@@ -1448,6 +1448,14 @@ static bool checkAndReplaceCondition(
           checkCondition(Cmp->getPredicate(), Cmp->getOperand(0),
                          Cmp->getOperand(1), Cmp, Info))
     return ReplaceCmpWithConstant(Cmp, *ImpliedCondition);
+
+  if (Cmp->hasSameSign() && Cmp->isRelational()) {
+    if (auto ImpliedCondition =
+            checkCondition(Cmp->getFlippedSignednessPredicate(),
+                           Cmp->getOperand(0), Cmp->getOperand(1), Cmp, Info))
+      return ReplaceCmpWithConstant(Cmp, *ImpliedCondition);
+  }
+
   return false;
 }
 
