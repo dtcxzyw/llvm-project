@@ -3143,12 +3143,13 @@ static Value *isSafeToSpeculateStore(Instruction *I, BasicBlock *BrBB,
 static bool validateAndCostRequiredSelects(BasicBlock *BB, BasicBlock *ThenBB,
                                            BasicBlock *EndBB,
                                            unsigned &SpeculatedInstructions,
-                                           InstructionCost &Cost,
+                                           InstructionCost Budget,
                                            const TargetTransformInfo &TTI) {
   TargetTransformInfo::TargetCostKind CostKind =
     BB->getParent()->hasMinSize()
     ? TargetTransformInfo::TCK_CodeSize
     : TargetTransformInfo::TCK_SizeAndLatency;
+  InstructionCost Cost = 0;
 
   bool HaveRewritablePHIs = false;
   for (PHINode &PN : EndBB->phis()) {
@@ -3162,6 +3163,8 @@ static bool validateAndCostRequiredSelects(BasicBlock *BB, BasicBlock *ThenBB,
 
     Cost += TTI.getCmpSelInstrCost(Instruction::Select, PN.getType(), nullptr,
                                    CmpInst::BAD_ICMP_PREDICATE, CostKind);
+    if (Cost > Budget)
+      return false;
 
     // Don't convert to selects if we could remove undefined behavior instead.
     if (passingValueIsAlwaysUndefined(OrigV, &PN) ||
@@ -3376,10 +3379,9 @@ bool SimplifyCFGOpt::speculativelyExecuteBB(BranchInst *BI,
   // so.
   bool Convert =
       SpeculatedStore != nullptr || !SpeculatedConditionalLoadsStores.empty();
-  InstructionCost Cost = 0;
-  Convert |= validateAndCostRequiredSelects(BB, ThenBB, EndBB,
-                                            SpeculatedInstructions, Cost, TTI);
-  if (!Convert || Cost > Budget)
+  Convert |= validateAndCostRequiredSelects(
+      BB, ThenBB, EndBB, SpeculatedInstructions, Budget, TTI);
+  if (!Convert)
     return false;
 
   // If we get here, we can hoist the instruction and if-convert.
