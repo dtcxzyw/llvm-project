@@ -3552,7 +3552,7 @@ static bool speculativelyExecuteEmptyBB(BranchInst *BI, bool Invert,
   InstructionCost Budget =
       PHINodeFoldingThreshold * TargetTransformInfo::TCC_Basic;
   InstructionCost Cost = 0;
-  unsigned SpeculatedInstructions = 0;
+  unsigned SpeculatedInstructions = 1;
   if (!validateAndCostRequiredSelects(BB, ThenBB, EndBB, SpeculatedInstructions,
                                       Cost, TTI) ||
       Cost > Budget)
