@@ -3541,6 +3541,9 @@ static bool speculativelyExecuteEmptyBB(BranchInst *BI, bool Invert,
   BasicBlock *ThenBB = BI->getSuccessor(Invert);
   BasicBlock *EndBB = BI->getSuccessor(!Invert);
 
+  if (ThenBB->getSinglePredecessor())
+    return false;
+
   BranchInst *SuccBI = dyn_cast<BranchInst>(ThenBB->getTerminator());
   if (!SuccBI || !SuccBI->isUnconditional() || SuccBI->getSuccessor(0) != EndBB)
     return false;
