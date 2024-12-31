@@ -3548,6 +3548,8 @@ static bool speculativelyExecuteEmptyBB(BranchInst *BI, bool Invert,
     return false;
   if (!isProfitableToSpeculate(BI, Invert, TTI))
     return false;
+  if (any_of(EndBB->phis(), [](PHINode &PN) { return !PN.getType()->isIntOrIntVectorTy(1); }))
+    return false;
 
   InstructionCost Budget =
       PHINodeFoldingThreshold * TargetTransformInfo::TCC_Basic;
