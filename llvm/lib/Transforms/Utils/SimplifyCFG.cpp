@@ -8159,6 +8159,13 @@ bool SimplifyCFGOpt::simplifyCondBranch(BranchInst *BI, IRBuilder<> &Builder) {
                              Options.BonusInstThreshold))
     return requestResimplify();
 
+  if (Options.SpeculateBlocks) {
+    if (speculativelyExecuteEmptyBB(BI, /*Invert=*/false, DTU, TTI))
+      return true;
+    if (speculativelyExecuteEmptyBB(BI, /*Invert=*/true, DTU, TTI))
+      return true;
+  }
+
   // We have a conditional branch to two blocks that are only reachable
   // from BI.  We know that the condbr dominates the two blocks, so see if
   // there is any identical code in the "then" and "else" blocks.  If so, we
@@ -8214,13 +8221,6 @@ bool SimplifyCFGOpt::simplifyCondBranch(BranchInst *BI, IRBuilder<> &Builder) {
         Succ1TI->getSuccessor(0) == BI->getSuccessor(0))
       if (speculativelyExecuteBB(BI, BI->getSuccessor(1)))
         return requestResimplify();
-  }
-
-  if (Options.SpeculateBlocks) {
-    if (speculativelyExecuteEmptyBB(BI, /*Invert=*/false, DTU, TTI))
-      return true;
-    if (speculativelyExecuteEmptyBB(BI, /*Invert=*/true, DTU, TTI))
-      return true;
   }
 
   // If this is a branch on something for which we know the constant value in
