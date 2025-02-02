@@ -8276,15 +8276,17 @@ static bool passingValueIsAlwaysUndefined(Value *V, Instruction *I, bool PtrValu
         return true;
 
       if (C->isNullValue()) {
-        for (const llvm::Use &Arg : CB->args())
-          if (Arg == I) {
-            unsigned ArgIdx = CB->getArgOperandNo(&Arg);
-            if (CB->isPassingUndefUB(ArgIdx) &&
-                CB->paramHasAttr(ArgIdx, Attribute::NonNull)) {
-              // Passing null to a nonnnull+noundef argument is undefined.
-              return !PtrValueMayBeModified;
+        if (C->getType()->isPointerTy()) {
+          for (const llvm::Use &Arg : CB->args())
+            if (Arg == I) {
+              unsigned ArgIdx = CB->getArgOperandNo(&Arg);
+              if (CB->paramHasNonNullAttr(ArgIdx,
+                                          /*AllowUndefOrPoison=*/false)) {
+                // Passing null to a nonnnull+noundef argument is undefined.
+                return !PtrValueMayBeModified;
+              }
             }
-          }
+        }
       } else if (isa<UndefValue>(C)) {
         // Passing undef to a noundef argument is undefined.
         for (const llvm::Use &Arg : CB->args())
