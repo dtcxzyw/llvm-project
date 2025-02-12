@@ -10289,7 +10289,7 @@ void llvm::findValuesAffectedByCondition(
       if (ICmpInst::isEquality(Pred)) {
         AddAffected(A, DomConditionFlag::KnownBits | DomConditionFlag::ICmp |
                            DomConditionFlag::NonEqual);
-        AddAffected(B, DomConditionFlag::KnownBits | DomConditionFlag::ICmp |
+        AddAffected(B, (IsAssume ? (DomConditionFlag::KnownBits | DomConditionFlag::ICmp) : DomConditionFlag::None) |
                            DomConditionFlag::NonEqual);
         if (HasRHSC) {
           Value *Y;
