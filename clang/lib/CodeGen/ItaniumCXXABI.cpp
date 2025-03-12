@@ -873,7 +873,10 @@ llvm::Value *ItaniumCXXABI::EmitMemberDataPointerAddress(
   CGBuilderTy &Builder = CGF.Builder;
 
   // Apply the offset, which we assume is non-null.
-  return Builder.CreateInBoundsGEP(CGF.Int8Ty, Base.emitRawPointer(CGF), MemPtr,
+  llvm::Value *BasePtr = Base.emitRawPointer(CGF);
+  if (isa<llvm::ConstantPointerNull>(BasePtr))
+    return Builder.CreateGEP(CGF.Int8Ty, BasePtr, MemPtr, "memptr.offset");
+  return Builder.CreateInBoundsGEP(CGF.Int8Ty, BasePtr, MemPtr,
                                    "memptr.offset");
 }
 
