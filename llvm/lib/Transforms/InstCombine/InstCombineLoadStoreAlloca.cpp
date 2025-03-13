@@ -985,6 +985,9 @@ static bool canSimplifyNullLoadOrGEP(LoadInst &LI, Value *Op) {
 Value *InstCombinerImpl::simplifyNonNullOperand(Value *V,
                                                 bool HasDereferenceable,
                                                 unsigned Depth) {
+  if (isa<ConstantPointerNull>(V))
+    return PoisonValue::get(V->getType());
+
   if (auto *Sel = dyn_cast<SelectInst>(V)) {
     if (isa<ConstantPointerNull>(Sel->getOperand(1)))
       return Sel->getOperand(2);
