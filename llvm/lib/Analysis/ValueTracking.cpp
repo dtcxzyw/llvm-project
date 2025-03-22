@@ -2280,6 +2280,13 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
     return;
   }
 
+  if (Q.DT && I->getParent()) {
+    if (auto *I = dyn_cast<Instruction>(V)) {
+      if (!Q.DT->isReachableFromEntry(I->getParent()))
+        return;
+    }
+  }
+
   if (const Operator *I = dyn_cast<Operator>(V))
     computeKnownBitsFromOperator(I, DemandedElts, Known, Depth, Q);
   else if (const GlobalValue *GV = dyn_cast<GlobalValue>(V)) {
