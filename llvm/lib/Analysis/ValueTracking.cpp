@@ -2280,9 +2280,9 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
     return;
   }
 
-  if (Q.DT && I->getParent()) {
+  if (Q.DT) {
     if (auto *I = dyn_cast<Instruction>(V)) {
-      if (!Q.DT->isReachableFromEntry(I->getParent()))
+      if (I->getParent() && !Q.DT->isReachableFromEntry(I->getParent()))
         return;
     }
   }
