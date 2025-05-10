@@ -899,6 +899,8 @@ inline raw_ostream &operator<<(raw_ostream &OS, const Value &V) {
 }
 
 void Use::set(Value *V) {
+  if (Val == V)
+    return;
   removeFromList();
   Val = V;
   if (V)

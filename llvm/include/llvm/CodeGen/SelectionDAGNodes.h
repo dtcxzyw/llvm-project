@@ -1304,6 +1304,8 @@ inline unsigned SDUse::getOperandNo() const {
 }
 
 inline void SDUse::set(const SDValue &V) {
+  if (V == Val)
+    return;
   if (Val.getNode()) removeFromList();
   Val = V;
   if (V.getNode())
@@ -1316,6 +1318,8 @@ inline void SDUse::setInitial(const SDValue &V) {
 }
 
 inline void SDUse::setNode(SDNode *N) {
+  if (N == Val.getNode())
+    return;
   if (Val.getNode()) removeFromList();
   Val.setNode(N);
   if (N) N->addUse(*this);
