@@ -64,20 +64,6 @@ static cl::opt<bool> DumpReproducers(
 static int64_t MaxConstraintValue = std::numeric_limits<int64_t>::max();
 static int64_t MinSignedConstraintValue = std::numeric_limits<int64_t>::min();
 
-// A helper to multiply 2 signed integers where overflowing is allowed.
-static int64_t multiplyWithOverflow(int64_t A, int64_t B) {
-  int64_t Result;
-  MulOverflow(A, B, Result);
-  return Result;
-}
-
-// A helper to add 2 signed integers where overflowing is allowed.
-static int64_t addWithOverflow(int64_t A, int64_t B) {
-  int64_t Result;
-  AddOverflow(A, B, Result);
-  return Result;
-}
-
 static Instruction *getContextInstForUse(Use &U) {
   Instruction *UserI = cast<Instruction>(U.getUser());
   if (auto *Phi = dyn_cast<PHINode>(UserI))
@@ -358,6 +344,7 @@ struct DecompEntry {
 struct Decomposition {
   int64_t Offset = 0;
   SmallVector<DecompEntry, 3> Vars;
+  bool Valid = true;
 
   Decomposition(int64_t Offset) : Offset(Offset) {}
   Decomposition(Value *V, bool IsKnownNonNegative = false) {
@@ -367,7 +354,7 @@ struct Decomposition {
       : Offset(Offset), Vars(Vars) {}
 
   void add(int64_t OtherOffset) {
-    Offset = addWithOverflow(Offset, OtherOffset);
+    Valid &= !AddOverflow(Offset, OtherOffset, Offset);
   }
 
   void add(const Decomposition &Other) {
@@ -383,9 +370,9 @@ struct Decomposition {
   }
 
   void mul(int64_t Factor) {
-    Offset = multiplyWithOverflow(Offset, Factor);
+    Valid &= !MulOverflow(Offset, Factor, Offset);
     for (auto &Var : Vars)
-      Var.Coefficient = multiplyWithOverflow(Var.Coefficient, Factor);
+      Valid &= !MulOverflow(Var.Coefficient, Factor, Var.Coefficient);
   }
 };
 
@@ -694,8 +681,12 @@ ConstraintInfo::getConstraint(CmpInst::Predicate Pred, Value *Op0, Value *Op1,
   auto &Value2Index = getValue2Index(IsSigned);
   auto ADec = decompose(Op0->stripPointerCastsSameRepresentation(),
                         Preconditions, IsSigned, DL);
+  if (!ADec.Valid)
+    return {};
   auto BDec = decompose(Op1->stripPointerCastsSameRepresentation(),
                         Preconditions, IsSigned, DL);
+  if (!BDec.Valid)
+    return {};
   int64_t Offset1 = ADec.Offset;
   int64_t Offset2 = BDec.Offset;
   Offset1 *= -1;
