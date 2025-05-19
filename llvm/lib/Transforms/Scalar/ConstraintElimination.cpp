@@ -358,11 +358,13 @@ struct Decomposition {
   }
 
   void add(const Decomposition &Other) {
+    Valid &= Other.Valid;
     add(Other.Offset);
     append_range(Vars, Other.Vars);
   }
 
   void sub(const Decomposition &Other) {
+    Valid &= Other.Valid;
     Decomposition Tmp = Other;
     Tmp.mul(-1);
     add(Tmp.Offset);
