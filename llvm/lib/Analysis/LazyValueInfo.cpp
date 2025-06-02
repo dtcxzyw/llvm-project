@@ -682,6 +682,13 @@ LazyValueInfoImpl::solveBlockValueNonLocal(Value *Val, BasicBlock *BB) {
     return ValueLatticeElement::getOverdefined();
   }
 
+  BasicBlock *LocalBB =
+      isa<Argument>(Val) ? &BB->getParent()->getEntryBlock() : BB;
+  std::optional<ValueLatticeElement> LocalVal =
+      getBlockValue(Val, LocalBB, nullptr);
+  if (!LocalVal)
+    return std::nullopt;
+
   // Loop over all of our predecessors, merging what we know from them into
   // result.  If we encounter an unexplored predecessor, we eagerly explore it
   // in a depth first manner.  In practice, this has the effect of discovering
@@ -714,7 +721,7 @@ LazyValueInfoImpl::solveBlockValueNonLocal(Value *Val, BasicBlock *BB) {
 
   // Return the merged value, which is more precise than 'overdefined'.
   assert(!Result.isOverdefined());
-  return Result;
+  return Result.intersect(*LocalVal);
 }
 
 std::optional<ValueLatticeElement>
