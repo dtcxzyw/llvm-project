@@ -60,6 +60,7 @@
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/CodeGen/TargetSchedule.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
+#include "llvm/IR/Attributes.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/MC/MCSchedule.h"
@@ -166,6 +167,9 @@ bool X86CmovConverterPass::runOnMachineFunction(MachineFunction &MF) {
   if (skipFunction(MF.getFunction()))
     return false;
   if (!EnableCmovConverter)
+    return false;
+
+  if (MF.getFunction().hasFnAttribute(Attribute::TimingAttackHardening))
     return false;
 
   // If the SelectOptimize pass is enabled, cmovs have already been optimized.

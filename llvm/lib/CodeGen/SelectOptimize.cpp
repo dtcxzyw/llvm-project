@@ -25,6 +25,7 @@
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/CodeGen/TargetSchedule.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
+#include "llvm/IR/Attributes.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
@@ -363,7 +364,8 @@ PreservedAnalyses SelectOptimizeImpl::run(Function &F,
     return PreservedAnalyses::all();
 
   TTI = &FAM.getResult<TargetIRAnalysis>(F);
-  if (!TTI->enableSelectOptimize())
+  if (!TTI->enableSelectOptimize() ||
+      F.hasFnAttribute(Attribute::TimingAttackHardening))
     return PreservedAnalyses::all();
 
   PSI = FAM.getResult<ModuleAnalysisManagerFunctionProxy>(F)
@@ -398,7 +400,8 @@ bool SelectOptimizeImpl::runOnFunction(Function &F, Pass &P) {
 
   TTI = &P.getAnalysis<TargetTransformInfoWrapperPass>().getTTI(F);
 
-  if (!TTI->enableSelectOptimize())
+  if (!TTI->enableSelectOptimize() ||
+      F.hasFnAttribute(Attribute::TimingAttackHardening))
     return false;
 
   LI = &P.getAnalysis<LoopInfoWrapperPass>().getLoopInfo();

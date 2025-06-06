@@ -2049,6 +2049,9 @@ static void getTrivialDefaultFunctionAttributes(
     if (CodeGenOpts.SpeculativeLoadHardening)
       FuncAttrs.addAttribute(llvm::Attribute::SpeculativeLoadHardening);
 
+    if (CodeGenOpts.TimingAttackHardening)
+      FuncAttrs.addAttribute(llvm::Attribute::TimingAttackHardening);
+
     // Add zero-call-used-regs attribute.
     switch (CodeGenOpts.getZeroCallUsedRegs()) {
     case llvm::ZeroCallUsedRegs::ZeroCallUsedRegsKind::Skip:

@@ -349,6 +349,9 @@ def SpeculativeLoadHardening : EnumAttr<"speculative_load_hardening",
                                         IntersectPreserve,
                                         [FnAttr]>;
 
+def TimingAttackHardening
+    : EnumAttr<"timing_attack_hardening", IntersectPreserve, [FnAttr]>;
+
 /// Argument is swift error.
 def SwiftError : EnumAttr<"swifterror", IntersectPreserve, [ParamAttr]>;
 

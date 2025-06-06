@@ -5012,6 +5012,11 @@ defm speculative_load_hardening : BoolMOption<"speculative-load-hardening",
   CodeGenOpts<"SpeculativeLoadHardening">, DefaultFalse,
   PosFlag<SetTrue, [], [ClangOption, CC1Option]>,
   NegFlag<SetFalse>, BothFlags<[], [ClangOption, CLOption]>>;
+defm timing_attack_hardening
+    : BoolMOption<"timing-attack-hardening",
+                  CodeGenOpts<"TimingAttackHardening">, DefaultTrue,
+                  PosFlag<SetTrue, [], [ClangOption, CC1Option]>,
+                  NegFlag<SetFalse>, BothFlags<[], [ClangOption, CLOption]>>;
 def mlvi_hardening : Flag<["-"], "mlvi-hardening">, Group<m_Group>,
   Visibility<[ClangOption, CLOption]>,
   HelpText<"Enable all mitigations for Load Value Injection (LVI)">;
