@@ -2752,16 +2752,18 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     Value *Mag = II->getArgOperand(0), *Sign = II->getArgOperand(1);
     if (std::optional<bool> KnownSignBit = computeKnownFPSignBit(
             Sign, getSimplifyQuery().getWithInstruction(II))) {
+      FastMathFlags FMF = II->getFastMathFlags();
+      FMF.setNoSignedZeros(false);
       if (*KnownSignBit) {
         // If we know that the sign argument is negative, reduce to FNABS:
         // copysign Mag, -Sign --> fneg (fabs Mag)
-        Value *Fabs = Builder.CreateUnaryIntrinsic(Intrinsic::fabs, Mag, II);
-        return replaceInstUsesWith(*II, Builder.CreateFNegFMF(Fabs, II));
+        Value *Fabs = Builder.CreateUnaryIntrinsic(Intrinsic::fabs, Mag, FMF);
+        return replaceInstUsesWith(*II, Builder.CreateFNegFMF(Fabs, FMF));
       }
 
       // If we know that the sign argument is positive, reduce to FABS:
       // copysign Mag, +Sign --> fabs Mag
-      Value *Fabs = Builder.CreateUnaryIntrinsic(Intrinsic::fabs, Mag, II);
+      Value *Fabs = Builder.CreateUnaryIntrinsic(Intrinsic::fabs, Mag, FMF);
       return replaceInstUsesWith(*II, Fabs);
     }
 
@@ -2809,10 +2811,9 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
         CallInst *AbsT = Builder.CreateCall(II->getCalledFunction(), {TVal});
         CallInst *AbsF = Builder.CreateCall(II->getCalledFunction(), {FVal});
         SelectInst *SI = SelectInst::Create(Cond, AbsT, AbsF);
-        FastMathFlags FMF1 = II->getFastMathFlags();
-        FastMathFlags FMF2 = cast<SelectInst>(Arg)->getFastMathFlags();
-        FMF2.setNoSignedZeros(false);
-        SI->setFastMathFlags(FMF1 | FMF2);
+        FastMathFlags FMF = II->getFastMathFlags() | cast<SelectInst>(Arg)->getFastMathFlags();
+        FMF.setNoSignedZeros(false);
+        SI->setFastMathFlags(FMF);
         return SI;
       }
       // fabs (select Cond, -FVal, FVal) --> fabs FVal
