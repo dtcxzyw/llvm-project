@@ -2832,7 +2832,11 @@ public:
     OldPtr = cast<Instruction>(OldUse->get());
 
     Instruction *OldUserI = cast<Instruction>(OldUse->getUser());
-    IRB.SetInsertPoint(OldUserI);
+    auto *OldUserII = dyn_cast<IntrinsicInst>(OldUserI);
+    if (OldUserII && OldUserII->getIntrinsicID() == Intrinsic::lifetime_end)
+      IRB.SetInsertPoint(OldUserI->getNextNode());
+    else
+      IRB.SetInsertPoint(OldUserI);
     IRB.SetCurrentDebugLocation(OldUserI->getDebugLoc());
     IRB.getInserter().SetNamePrefix(Twine(NewAI.getName()) + "." +
                                     Twine(BeginOffset) + ".");

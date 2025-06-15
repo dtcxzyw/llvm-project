@@ -6057,6 +6057,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
     Builder.CreateStore(errorResult, swiftErrorArg);
   }
 
+  // Explicitly call CallLifetimeEnd::Emit just to re-use the code even though
+  // we can't use the full cleanup mechanism.
+  for (CallLifetimeEnd &LifetimeEnd : reverse(CallLifetimeEndAfterCall))
+    LifetimeEnd.Emit(*this, /*Flags=*/{});
+
   // Emit any call-associated writebacks immediately.  Arguably this
   // should happen after any return-value munging.
   if (CallArgs.hasWritebacks())
@@ -6193,11 +6198,6 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
     AssumeAlignedAttrEmitter.EmitAsAnAssumption(Loc, RetTy, Ret);
     AllocAlignAttrEmitter.EmitAsAnAssumption(Loc, RetTy, Ret);
   }
-
-  // Explicitly call CallLifetimeEnd::Emit just to re-use the code even though
-  // we can't use the full cleanup mechanism.
-  for (CallLifetimeEnd &LifetimeEnd : CallLifetimeEndAfterCall)
-    LifetimeEnd.Emit(*this, /*Flags=*/{});
 
   if (!ReturnValue.isExternallyDestructed() &&
       RetTy.isDestructedType() == QualType::DK_nontrivial_c_struct)
