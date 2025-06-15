@@ -2977,6 +2977,7 @@ llvm::InlineResult llvm::InlineFunction(CallBase &CB, InlineFunctionInfo &IFI,
   if ((InsertLifetime || Caller->isPresplitCoroutine()) &&
       !IFI.StaticAllocas.empty()) {
     IRBuilder<> builder(&*FirstNewBlock, FirstNewBlock->begin());
+    SmallVector<std::pair<AllocaInst *, ConstantInt *>> AllocasWithLifetimeEnd;
     for (AllocaInst *AI : IFI.StaticAllocas) {
       // Don't mark swifterror allocas. They can't have bitcast uses.
       if (AI->isSwiftError())
@@ -3012,17 +3013,19 @@ llvm::InlineResult llvm::InlineFunction(CallBase &CB, InlineFunctionInfo &IFI,
       }
 
       builder.CreateLifetimeStart(AI, AllocaSize);
-      for (ReturnInst *RI : Returns) {
-        // Don't insert llvm.lifetime.end calls between a musttail or deoptimize
-        // call and a return.  The return kills all local allocas.
-        if (InlinedMustTailCalls &&
-            RI->getParent()->getTerminatingMustTailCall())
-          continue;
-        if (InlinedDeoptimizeCalls &&
-            RI->getParent()->getTerminatingDeoptimizeCall())
-          continue;
+      AllocasWithLifetimeEnd.emplace_back(AI, AllocaSize);
+    }
+
+    for (ReturnInst *RI : Returns) {
+      // Don't insert llvm.lifetime.end calls between a musttail or deoptimize
+      // call and a return.  The return kills all local allocas.
+      if (InlinedMustTailCalls && RI->getParent()->getTerminatingMustTailCall())
+        continue;
+      if (InlinedDeoptimizeCalls &&
+          RI->getParent()->getTerminatingDeoptimizeCall())
+        continue;
+      for (auto [AI, AllocaSize] : reverse(AllocasWithLifetimeEnd))
         IRBuilder<>(RI).CreateLifetimeEnd(AI, AllocaSize);
-      }
     }
   }
 
