@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CodeGenFunction.h"
+#include "clang/AST/ASTContext.h"
 #include "clang/Basic/TargetBuiltins.h"
 #include "llvm/IR/IntrinsicsRISCV.h"
 #include "llvm/TargetParser/RISCVISAInfo.h"
@@ -133,6 +134,107 @@ Value *CodeGenFunction::EmitRISCVCpuIs(StringRef CPUStr) {
   return Result;
 }
 
+static LLVM_ATTRIBUTE_NOINLINE Value *
+emitRISCVVectorBuiltinExpr(CodeGenFunction &CGF, unsigned BuiltinID,
+                           const CallExpr *E, ReturnValueSlot ReturnValue,
+                           SmallVectorImpl<Value *> &Ops,
+                           llvm::Type *ResultType) {
+  // The 0th bit simulates the `vta` of RVV
+  // The 1st bit simulates the `vma` of RVV
+  constexpr unsigned RVV_VTA = 0x1;
+  constexpr unsigned RVV_VMA = 0x2;
+  int PolicyAttrs = 0;
+  bool IsMasked = false;
+  // This is used by segment load/store to determine it's llvm type.
+  unsigned SegInstSEW = 8;
+
+  auto getContext = [&]() -> ASTContext & { return CGF.getContext(); };
+  auto &CGM = CGF.CGM;
+  auto &Builder = CGF.Builder;
+  auto *SizeTy = CGF.SizeTy;
+  auto *Int64Ty = CGF.Int64Ty;
+  Intrinsic::ID ID = Intrinsic::not_intrinsic;
+
+  // Required for overloaded intrinsics.
+  llvm::SmallVector<llvm::Type *, 2> IntrinsicTypes;
+  switch (BuiltinID) {
+  default:
+    return nullptr;
+    // Vector builtins are handled from here.
+#include "clang/Basic/riscv_vector_builtin_cg.inc"
+  }
+  assert(ID != Intrinsic::not_intrinsic);
+
+  llvm::Function *F = CGM.getIntrinsic(ID, IntrinsicTypes);
+  return Builder.CreateCall(F, Ops, "");
+}
+
+static LLVM_ATTRIBUTE_NOINLINE Value *
+emitSiFiveVectorBuiltinExpr(CodeGenFunction &CGF, unsigned BuiltinID,
+                            const CallExpr *E, ReturnValueSlot ReturnValue,
+                            SmallVectorImpl<Value *> &Ops,
+                            llvm::Type *ResultType) {
+  // The 0th bit simulates the `vta` of RVV
+  // The 1st bit simulates the `vma` of RVV
+  constexpr unsigned RVV_VTA = 0x1;
+  constexpr unsigned RVV_VMA = 0x2;
+  int PolicyAttrs = 0;
+  bool IsMasked = false;
+  // This is used by segment load/store to determine it's llvm type.
+  unsigned SegInstSEW = 8;
+
+  auto getContext = [&]() -> ASTContext & { return CGF.getContext(); };
+  auto &CGM = CGF.CGM;
+  auto &Builder = CGF.Builder;
+  Intrinsic::ID ID = Intrinsic::not_intrinsic;
+
+  // Required for overloaded intrinsics.
+  llvm::SmallVector<llvm::Type *, 2> IntrinsicTypes;
+  switch (BuiltinID) {
+  default:
+    return nullptr;
+    // SiFive Vector builtins are handled from here.
+#include "clang/Basic/riscv_sifive_vector_builtin_cg.inc"
+  }
+  assert(ID != Intrinsic::not_intrinsic);
+
+  llvm::Function *F = CGM.getIntrinsic(ID, IntrinsicTypes);
+  return Builder.CreateCall(F, Ops, "");
+}
+
+static LLVM_ATTRIBUTE_NOINLINE Value *
+emitAndesVectorBuiltinExpr(CodeGenFunction &CGF, unsigned BuiltinID,
+                           const CallExpr *E, ReturnValueSlot ReturnValue,
+                           SmallVectorImpl<Value *> &Ops,
+                           llvm::Type *ResultType) {
+  // The 0th bit simulates the `vta` of RVV
+  // The 1st bit simulates the `vma` of RVV
+  constexpr unsigned RVV_VTA = 0x1;
+  constexpr unsigned RVV_VMA = 0x2;
+  int PolicyAttrs = 0;
+  bool IsMasked = false;
+  // This is used by segment load/store to determine it's llvm type.
+  unsigned SegInstSEW = 8;
+
+  auto getContext = [&]() -> ASTContext & { return CGF.getContext(); };
+  auto &CGM = CGF.CGM;
+  auto &Builder = CGF.Builder;
+  Intrinsic::ID ID = Intrinsic::not_intrinsic;
+
+  // Required for overloaded intrinsics.
+  llvm::SmallVector<llvm::Type *, 2> IntrinsicTypes;
+  switch (BuiltinID) {
+  default:
+    return nullptr;
+    // Andes Vector builtins are handled from here.
+#include "clang/Basic/riscv_andes_vector_builtin_cg.inc"
+  }
+  assert(ID != Intrinsic::not_intrinsic);
+
+  llvm::Function *F = CGM.getIntrinsic(ID, IntrinsicTypes);
+  return Builder.CreateCall(F, Ops, "");
+}
+
 Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
                                              const CallExpr *E,
                                              ReturnValueSlot ReturnValue) {
@@ -179,15 +281,17 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
     Ops.push_back(EmitScalarOrConstFoldImmArg(ICEArguments, i, E));
   }
 
+  if (Value *V = emitRISCVVectorBuiltinExpr(*this, BuiltinID, E, ReturnValue,
+                                            Ops, ResultType))
+    return V;
+  if (Value *V = emitSiFiveVectorBuiltinExpr(*this, BuiltinID, E, ReturnValue,
+                                             Ops, ResultType))
+    return V;
+  if (Value *V = emitAndesVectorBuiltinExpr(*this, BuiltinID, E, ReturnValue,
+                                            Ops, ResultType))
+    return V;
+
   Intrinsic::ID ID = Intrinsic::not_intrinsic;
-  // The 0th bit simulates the `vta` of RVV
-  // The 1st bit simulates the `vma` of RVV
-  constexpr unsigned RVV_VTA = 0x1;
-  constexpr unsigned RVV_VMA = 0x2;
-  int PolicyAttrs = 0;
-  bool IsMasked = false;
-  // This is used by segment load/store to determine it's llvm type.
-  unsigned SegInstSEW = 8;
 
   // Required for overloaded intrinsics.
   llvm::SmallVector<llvm::Type *, 2> IntrinsicTypes;
@@ -412,15 +516,6 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
   case RISCV::BI__builtin_riscv_cv_alu_subuRN:
     ID = Intrinsic::riscv_cv_alu_subuRN;
     break;
-
-    // Vector builtins are handled from here.
-#include "clang/Basic/riscv_vector_builtin_cg.inc"
-
-    // SiFive Vector builtins are handled from here.
-#include "clang/Basic/riscv_sifive_vector_builtin_cg.inc"
-
-    // Andes Vector builtins are handled from here.
-#include "clang/Basic/riscv_andes_vector_builtin_cg.inc"
   }
 
   assert(ID != Intrinsic::not_intrinsic);
