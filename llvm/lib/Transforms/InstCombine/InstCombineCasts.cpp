@@ -1243,6 +1243,10 @@ Instruction *InstCombinerImpl::visitZExt(ZExtInst &Zext) {
     return BinaryOperator::CreateAnd(Res, C);
   }
 
+  if (Zext.hasNonNeg())
+    if (Instruction *Res = tryToEvaluateSExtd(Zext))
+      return Res;
+
   // If this is a TRUNC followed by a ZEXT then we are dealing with integral
   // types and if the sizes are just right we can convert this into a logical
   // 'and' which will be much cheaper than the pair of casts.
@@ -1476,6 +1480,36 @@ static bool canEvaluateSExtd(Value *V, Type *Ty) {
   return false;
 }
 
+/// Try to sign-extend the entire expression tree to the wide destination type.
+Instruction *InstCombinerImpl::tryToEvaluateSExtd(CastInst &Ext) {
+  Value *Src = Ext.getOperand(0);
+  Type *DestTy = Ext.getType();
+  Type *SrcTy = Src->getType();
+  if (!shouldChangeType(SrcTy, DestTy))
+    return nullptr;
+  if (!canEvaluateSExtd(Src, DestTy))
+    return nullptr;
+  unsigned SrcBitSize = SrcTy->getScalarSizeInBits();
+  unsigned DestBitSize = DestTy->getScalarSizeInBits();
+
+  // Okay, we can transform this!  Insert the new expression now.
+  LLVM_DEBUG(dbgs() << "ICE: EvaluateInDifferentType converting expression type"
+                       " to avoid sign extend: "
+                    << Ext << '\n');
+  Value *Res = EvaluateInDifferentType(Src, DestTy, true);
+  assert(Res->getType() == DestTy);
+
+  // If the high bits are already filled with sign bit, just replace this
+  // cast with the result.
+  if (ComputeNumSignBits(Res, &Ext) > DestBitSize - SrcBitSize)
+    return replaceInstUsesWith(Ext, Res);
+
+  // We need to emit a shl + ashr to do the sign extend.
+  Value *ShAmt = ConstantInt::get(DestTy, DestBitSize - SrcBitSize);
+  return BinaryOperator::CreateAShr(Builder.CreateShl(Res, ShAmt, "sext"),
+                                    ShAmt);
+}
+
 Instruction *InstCombinerImpl::visitSExt(SExtInst &Sext) {
   // If this sign extend is only used by a truncate, let the truncate be
   // eliminated before we try to optimize this sext.
@@ -1497,26 +1531,8 @@ Instruction *InstCombinerImpl::visitSExt(SExtInst &Sext) {
     return CI;
   }
 
-  // Try to extend the entire expression tree to the wide destination type.
-  if (shouldChangeType(SrcTy, DestTy) && canEvaluateSExtd(Src, DestTy)) {
-    // Okay, we can transform this!  Insert the new expression now.
-    LLVM_DEBUG(
-        dbgs() << "ICE: EvaluateInDifferentType converting expression type"
-                  " to avoid sign extend: "
-               << Sext << '\n');
-    Value *Res = EvaluateInDifferentType(Src, DestTy, true);
-    assert(Res->getType() == DestTy);
-
-    // If the high bits are already filled with sign bit, just replace this
-    // cast with the result.
-    if (ComputeNumSignBits(Res, &Sext) > DestBitSize - SrcBitSize)
-      return replaceInstUsesWith(Sext, Res);
-
-    // We need to emit a shl + ashr to do the sign extend.
-    Value *ShAmt = ConstantInt::get(DestTy, DestBitSize-SrcBitSize);
-    return BinaryOperator::CreateAShr(Builder.CreateShl(Res, ShAmt, "sext"),
-                                      ShAmt);
-  }
+  if (Instruction *Res = tryToEvaluateSExtd(Sext))
+    return Res;
 
   Value *X;
   if (match(Src, m_Trunc(m_Value(X)))) {

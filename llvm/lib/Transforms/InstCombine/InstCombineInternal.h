@@ -791,6 +791,9 @@ public:
   Instruction *SimplifyAnyMemSet(AnyMemSetInst *MI);
 
   Value *EvaluateInDifferentType(Value *V, Type *Ty, bool isSigned);
+  /// Try to sign-extend the entire expression tree to the wide destination
+  /// type.
+  Instruction *tryToEvaluateSExtd(CastInst &Ext);
 
   bool tryToSinkInstruction(Instruction *I, BasicBlock *DestBlock);
   void tryToSinkInstructionDbgValues(
