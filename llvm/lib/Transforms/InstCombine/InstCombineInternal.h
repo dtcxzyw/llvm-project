@@ -880,7 +880,8 @@ struct CommonPointerBase {
   /// RHS GEP NoWrapFlags until common base.
   GEPNoWrapFlags RHSNW = GEPNoWrapFlags::all();
 
-  static CommonPointerBase compute(Value *LHS, Value *RHS);
+  static CommonPointerBase compute(Value *LHS, Value *RHS,
+                                   bool CheckOneUse = false);
 };
 
 } // end namespace llvm

@@ -2096,7 +2096,8 @@ Instruction *InstCombinerImpl::visitFAdd(BinaryOperator &I) {
   return nullptr;
 }
 
-CommonPointerBase CommonPointerBase::compute(Value *LHS, Value *RHS) {
+CommonPointerBase CommonPointerBase::compute(Value *LHS, Value *RHS,
+                                             bool CheckOneUse) {
   CommonPointerBase Base;
 
   if (LHS->getType() != RHS->getType())
@@ -2107,7 +2108,8 @@ CommonPointerBase CommonPointerBase::compute(Value *LHS, Value *RHS) {
   Value *Ptr = LHS;
   while (true) {
     Ptrs.insert(Ptr);
-    if (auto *GEP = dyn_cast<GEPOperator>(Ptr))
+    if (auto *GEP = dyn_cast<GEPOperator>(Ptr);
+        GEP && (!CheckOneUse || GEP->hasOneUse()))
       Ptr = GEP->getPointerOperand();
     else
       break;
@@ -2120,7 +2122,8 @@ CommonPointerBase CommonPointerBase::compute(Value *LHS, Value *RHS) {
       break;
     }
 
-    if (auto *GEP = dyn_cast<GEPOperator>(RHS)) {
+    if (auto *GEP = dyn_cast<GEPOperator>(RHS);
+        GEP && (!CheckOneUse || GEP->hasOneUse())) {
       Base.RHSGEPs.push_back(GEP);
       Base.RHSNW &= GEP->getNoWrapFlags();
       RHS = GEP->getPointerOperand();
