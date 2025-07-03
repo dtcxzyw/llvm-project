@@ -772,7 +772,6 @@ define i64 @mask_test_eq(i64 %x) nounwind {
 ; RV64I-LABEL: mask_test_eq:
 ; RV64I:       # %bb.0:
 ; RV64I-NEXT:    slli a0, a0, 2
-; RV64I-NEXT:    srli a0, a0, 2
 ; RV64I-NEXT:    seqz a0, a0
 ; RV64I-NEXT:    ret
    %y = and i64 %x, 4611686018427387903
@@ -785,7 +784,6 @@ define i64 @mask_test_ne(i64 %x) nounwind {
 ; RV64I-LABEL: mask_test_ne:
 ; RV64I:       # %bb.0:
 ; RV64I-NEXT:    slli a0, a0, 2
-; RV64I-NEXT:    srli a0, a0, 2
 ; RV64I-NEXT:    snez a0, a0
 ; RV64I-NEXT:    ret
    %y = and i64 %x, 4611686018427387903

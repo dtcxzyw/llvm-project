@@ -2411,39 +2411,58 @@ unsigned RISCVTargetLowering::getVectorTypeBreakdownForCallingConv(
   return NumRegs;
 }
 
+/// Changes the condition code and operands for setcc/SELECT_CC/BR_CC.
+static bool translateSetCC(const SDLoc &DL, SDValue &LHS, SDValue &RHS,
+                           ISD::CondCode &CC, SelectionDAG &DAG,
+                           const RISCVSubtarget &Subtarget, bool IsSetCC) {
+  if (isIntEqualitySetCC(CC) && isNullConstant(RHS) &&
+      LHS.getOpcode() == ISD::AND && LHS.hasOneUse() &&
+      isa<ConstantSDNode>(LHS.getOperand(1))) {
+    EVT VT = LHS.getValueType();
+    uint64_t Mask = LHS.getConstantOperandVal(1);
+    if (!isInt<12>(Mask)) {
+      // If this is a single bit test that can't be handled by ANDI, shift the
+      // bit to be tested to the MSB and perform a signed compare with 0.
+      if (isPowerOf2_64(Mask)) {
+        unsigned ShAmt = LHS.getValueSizeInBits() - 1 - Log2_64(Mask);
+        // For SetCC, bexti is more efficient than shift+cmp (except for and X,
+        // SignMask).
+        if (ShAmt == 0 || !(IsSetCC && (Subtarget.hasStdExtZbs() ||
+                                        Subtarget.hasVendorXTHeadBs()))) {
+          CC = CC == ISD::SETEQ ? ISD::SETGE : ISD::SETLT;
+          LHS = LHS.getOperand(0);
+          if (ShAmt != 0)
+            LHS = DAG.getNode(ISD::SHL, DL, VT, LHS,
+                              DAG.getConstant(ShAmt, DL, VT));
+          return true;
+        }
+      }
+      // Convert (seteq/ne (and X, Mask), 0) to (seteq/ne (shl X, ctlz(Mask)),
+      // 0) Preserve (and X, 0xffffffff) since sext.w is more compressible.
+      if (isMask_64(Mask) &&
+          !(Subtarget.is64Bit() && Mask == UINT64_C(0xffffffff))) {
+        unsigned ShAmt = LHS.getValueSizeInBits() - llvm::bit_width(Mask);
+        LHS = DAG.getNode(ISD::SHL, DL, VT, LHS.getOperand(0),
+                          DAG.getConstant(ShAmt, DL, VT));
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Changes the condition code and swaps operands if necessary, so the SetCC
 // operation matches one of the comparisons supported directly by branches
 // in the RISC-V ISA. May adjust compares to favor compare with 0 over compare
 // with 1/-1.
 static void translateSetCCForBranch(const SDLoc &DL, SDValue &LHS, SDValue &RHS,
-                                    ISD::CondCode &CC, SelectionDAG &DAG) {
-  // If this is a single bit test that can't be handled by ANDI, shift the
-  // bit to be tested to the MSB and perform a signed compare with 0.
-  if (isIntEqualitySetCC(CC) && isNullConstant(RHS) &&
-      LHS.getOpcode() == ISD::AND && LHS.hasOneUse() &&
-      isa<ConstantSDNode>(LHS.getOperand(1))) {
-    uint64_t Mask = LHS.getConstantOperandVal(1);
-    if ((isPowerOf2_64(Mask) || isMask_64(Mask)) && !isInt<12>(Mask)) {
-      unsigned ShAmt = 0;
-      if (isPowerOf2_64(Mask)) {
-        CC = CC == ISD::SETEQ ? ISD::SETGE : ISD::SETLT;
-        ShAmt = LHS.getValueSizeInBits() - 1 - Log2_64(Mask);
-      } else {
-        ShAmt = LHS.getValueSizeInBits() - llvm::bit_width(Mask);
-      }
-
-      LHS = LHS.getOperand(0);
-      if (ShAmt != 0)
-        LHS = DAG.getNode(ISD::SHL, DL, LHS.getValueType(), LHS,
-                          DAG.getConstant(ShAmt, DL, LHS.getValueType()));
-      return;
-    }
-  }
+                                    ISD::CondCode &CC, SelectionDAG &DAG,
+                                    const RISCVSubtarget &Subtarget) {
+  if (translateSetCC(DL, LHS, RHS, CC, DAG, Subtarget, /*IsSetCC=*/false))
+    return;
 
   if (auto *RHSC = dyn_cast<ConstantSDNode>(RHS)) {
     int64_t C = RHSC->getSExtValue();
-    const RISCVSubtarget &Subtarget =
-        DAG.getMachineFunction().getSubtarget<RISCVSubtarget>();
     switch (CC) {
     default: break;
     case ISD::SETGT:
@@ -9221,7 +9240,7 @@ SDValue RISCVTargetLowering::lowerSELECT(SDValue Op, SelectionDAG &DAG) const {
       return DAG.getNode(ISD::SUB, DL, VT, FalseV, CondV);
   }
 
-  translateSetCCForBranch(DL, LHS, RHS, CCVal, DAG);
+  translateSetCCForBranch(DL, LHS, RHS, CCVal, DAG, Subtarget);
   // 1 < x ? x : 1 -> 0 < x ? x : 1
   if (isOneConstant(LHS) && (CCVal == ISD::SETLT || CCVal == ISD::SETULT) &&
       RHS == TrueV && LHS == FalseV) {
@@ -9263,7 +9282,7 @@ SDValue RISCVTargetLowering::lowerBRCOND(SDValue Op, SelectionDAG &DAG) const {
     SDValue RHS = CondV.getOperand(1);
     ISD::CondCode CCVal = cast<CondCodeSDNode>(CondV.getOperand(2))->get();
 
-    translateSetCCForBranch(DL, LHS, RHS, CCVal, DAG);
+    translateSetCCForBranch(DL, LHS, RHS, CCVal, DAG, Subtarget);
 
     SDValue TargetCC = DAG.getCondCode(CCVal);
     return DAG.getNode(RISCVISD::BR_CC, DL, Op.getValueType(), Op.getOperand(0),
@@ -16303,6 +16322,10 @@ static SDValue performSETCCCombine(SDNode *N, SelectionDAG &DAG,
   EVT OpVT = N0.getValueType();
 
   ISD::CondCode Cond = cast<CondCodeSDNode>(N->getOperand(2))->get();
+  if (OpVT == Subtarget.getXLenVT() &&
+      translateSetCC(dl, N0, N1, Cond, DAG, Subtarget, /*IsSetCC=*/true))
+    return DAG.getSetCC(dl, VT, N0, N1, Cond);
+
   // Looking for an equality compare.
   if (!isIntEqualitySetCC(Cond))
     return SDValue();
@@ -18207,7 +18230,7 @@ static bool combine_CC(SDValue &LHS, SDValue &RHS, SDValue &CC, const SDLoc &DL,
 
     RHS = LHS.getOperand(1);
     LHS = LHS.getOperand(0);
-    translateSetCCForBranch(DL, LHS, RHS, CCVal, DAG);
+    translateSetCCForBranch(DL, LHS, RHS, CCVal, DAG, Subtarget);
 
     CC = DAG.getCondCode(CCVal);
     return true;
