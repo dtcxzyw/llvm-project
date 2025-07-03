@@ -4496,5 +4496,5 @@ Instruction *InstCombinerImpl::visitSelectInst(SelectInst &SI) {
       return replaceOperand(SI, 2, ConstantInt::get(FalseVal->getType(), 0));
   }
 
-  return nullptr;
+  return new FreezeInst(TrueVal);
 }
