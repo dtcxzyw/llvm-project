@@ -672,7 +672,7 @@ static bool isKnownNonZeroFromAssume(const Value *V, const SimplifyQuery &Q) {
 
 static void computeKnownBitsFromCmp(const Value *V, CmpInst::Predicate Pred,
                                     Value *LHS, Value *RHS, KnownBits &Known,
-                                    const SimplifyQuery &Q) {
+                                    const SimplifyQuery &Q, unsigned Depth) {
   if (RHS->getType()->isPointerTy()) {
     // Handle comparison of pointer to null explicitly, as it will not be
     // covered by the m_APInt() logic below.
@@ -701,8 +701,14 @@ static void computeKnownBitsFromCmp(const Value *V, CmpInst::Predicate Pred,
 
   Value *Y;
   const APInt *Mask, *C;
-  if (!match(RHS, m_APInt(C)))
+  if (!match(RHS, m_APInt(C))) {
+    if (Pred == ICmpInst::ICMP_EQ && match(LHS, m_V) &&
+        Depth < MaxAnalysisRecursionDepth) {
+      // Remove context information to avoid infinite recursion.
+      computeKnownBits(RHS, Known, SimplifyQuery(Q.DL), Depth + 1);
+    }
     return;
+  }
 
   uint64_t ShAmt;
   switch (Pred) {
@@ -779,7 +785,8 @@ static void computeKnownBitsFromCmp(const Value *V, CmpInst::Predicate Pred,
 
 static void computeKnownBitsFromICmpCond(const Value *V, ICmpInst *Cmp,
                                          KnownBits &Known,
-                                         const SimplifyQuery &SQ, bool Invert) {
+                                         const SimplifyQuery &SQ, bool Invert,
+                                         bool Depth) {
   ICmpInst::Predicate Pred =
       Invert ? Cmp->getInversePredicate() : Cmp->getPredicate();
   Value *LHS = Cmp->getOperand(0);
@@ -788,7 +795,7 @@ static void computeKnownBitsFromICmpCond(const Value *V, ICmpInst *Cmp,
   // Handle icmp pred (trunc V), C
   if (match(LHS, m_Trunc(m_Specific(V)))) {
     KnownBits DstKnown(LHS->getType()->getScalarSizeInBits());
-    computeKnownBitsFromCmp(LHS, Pred, LHS, RHS, DstKnown, SQ);
+    computeKnownBitsFromCmp(LHS, Pred, LHS, RHS, DstKnown, SQ, Depth);
     if (cast<TruncInst>(LHS)->hasNoUnsignedWrap())
       Known = Known.unionWith(DstKnown.zext(Known.getBitWidth()));
     else
@@ -796,7 +803,7 @@ static void computeKnownBitsFromICmpCond(const Value *V, ICmpInst *Cmp,
     return;
   }
 
-  computeKnownBitsFromCmp(V, Pred, LHS, RHS, Known, SQ);
+  computeKnownBitsFromCmp(V, Pred, LHS, RHS, Known, SQ, Depth);
 }
 
 static void computeKnownBitsFromCond(const Value *V, Value *Cond,
@@ -819,7 +826,7 @@ static void computeKnownBitsFromCond(const Value *V, Value *Cond,
   }
 
   if (auto *Cmp = dyn_cast<ICmpInst>(Cond)) {
-    computeKnownBitsFromICmpCond(V, Cmp, Known, SQ, Invert);
+    computeKnownBitsFromICmpCond(V, Cmp, Known, SQ, Invert, Depth);
     return;
   }
 
@@ -942,7 +949,7 @@ void llvm::computeKnownBitsFromContext(const Value *V, KnownBits &Known,
     if (!isValidAssumeForContext(I, Q.CxtI, Q.DT))
       continue;
 
-    computeKnownBitsFromICmpCond(V, Cmp, Known, Q, /*Invert=*/false);
+    computeKnownBitsFromICmpCond(V, Cmp, Known, Q, /*Invert=*/false, Depth);
   }
 
   // Conflicting assumption: Undefined behavior will occur on this execution
