@@ -7318,27 +7318,10 @@ bool llvm::isOverflowIntrinsicNoWrap(const WithOverflowInst *WO,
 
 /// Shifts return poison if shiftwidth is larger than the bitwidth.
 static bool shiftAmountKnownInRange(const Value *ShiftAmount) {
-  auto *C = dyn_cast<Constant>(ShiftAmount);
-  if (!C)
-    return false;
-
-  // Shifts return poison if shiftwidth is larger than the bitwidth.
-  SmallVector<const Constant *, 4> ShiftAmounts;
-  if (auto *FVTy = dyn_cast<FixedVectorType>(C->getType())) {
-    unsigned NumElts = FVTy->getNumElements();
-    for (unsigned i = 0; i < NumElts; ++i)
-      ShiftAmounts.push_back(C->getAggregateElement(i));
-  } else if (isa<ScalableVectorType>(C->getType()))
-    return false; // Can't tell, just return false to be safe
-  else
-    ShiftAmounts.push_back(C);
-
-  bool Safe = llvm::all_of(ShiftAmounts, [](const Constant *C) {
-    auto *CI = dyn_cast_or_null<ConstantInt>(C);
-    return CI && CI->getValue().ult(C->getType()->getIntegerBitWidth());
-  });
-
-  return Safe;
+  unsigned BitWidth = ShiftAmount->getType()->getScalarSizeInBits();
+  return match(ShiftAmount, m_CheckedInt([BitWidth](const APInt &V) {
+                 return V.ult(BitWidth);
+               }));
 }
 
 enum class UndefPoisonKind {
