@@ -315,6 +315,14 @@ bool llvm::isKnownNonEqual(const Value *V1, const Value *V2,
 
 bool llvm::MaskedValueIsZero(const Value *V, const APInt &Mask,
                              const SimplifyQuery &SQ, unsigned Depth) {
+  const APInt *ShiftAmt;
+  if (Mask.isMask() && match(V, m_Shl(m_Value(), m_APInt(ShiftAmt))) &&
+      ShiftAmt->uge(Mask.countTrailingOnes()))
+    return true;
+  if ((~Mask).isMask() && match(V, m_LShr(m_Value(), m_APInt(ShiftAmt))) &&
+      ShiftAmt->uge(Mask.countLeadingOnes()))
+    return true;
+
   KnownBits Known(Mask.getBitWidth());
   computeKnownBits(V, Known, SQ, Depth);
   return Mask.isSubsetOf(Known.Zero);
