@@ -456,6 +456,19 @@ const BasicBlock *BasicBlock::getUniquePredecessor() const {
   return PredBB;
 }
 
+bool BasicBlock::hasUniquePredecessor(const BasicBlock *BB) const {
+  const_pred_iterator PI = pred_begin(this), E = pred_end(this);
+  if (PI == E)
+    return false; // No preds.
+  for (; PI != E; ++PI) {
+    if (*PI != BB)
+      return false;
+    // The same predecessor appears multiple times in the predecessor list.
+    // This is OK.
+  }
+  return true;
+}
+
 bool BasicBlock::hasNPredecessors(unsigned N) const {
   return hasNItems(pred_begin(this), pred_end(this), N);
 }
@@ -484,6 +497,19 @@ const BasicBlock *BasicBlock::getUniqueSuccessor() const {
     // This is OK.
   }
   return SuccBB;
+}
+
+bool BasicBlock::hasUniqueSuccessor(const BasicBlock *BB) const {
+  const_succ_iterator SI = succ_begin(this), E = succ_end(this);
+  if (SI == E)
+    return false; // No successors
+  for (; SI != E; ++SI) {
+    if (*SI != BB)
+      return false;
+    // The same successor appears multiple times in the successor list.
+    // This is OK.
+  }
+  return true;
 }
 
 iterator_range<BasicBlock::phi_iterator> BasicBlock::phis() {

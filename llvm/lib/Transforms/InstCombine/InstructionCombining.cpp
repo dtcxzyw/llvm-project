@@ -5223,7 +5223,7 @@ bool InstCombinerImpl::tryToSinkInstruction(Instruction *I,
     // We don't want to do any sophisticated alias analysis, so we only check
     // the instructions after I in I's parent block if we try to sink to its
     // successor block.
-    if (DestBlock->getUniquePredecessor() != I->getParent())
+    if (!DestBlock->hasUniquePredecessor(I->getParent()))
       return false;
     for (BasicBlock::iterator Scan = std::next(I->getIterator()),
                               E = I->getParent()->end();
@@ -5539,7 +5539,7 @@ bool InstCombinerImpl::run() {
           //   - I dominates the User (by SSA form);
           //   - the User will be executed at most once.
           // So sinking I down to User is always profitable or neutral.
-          if (UserParent->getUniquePredecessor() != BB && !succ_empty(Term))
+          if (!UserParent->hasUniquePredecessor(BB) && !succ_empty(Term))
             return std::nullopt;
 
           assert(DT.dominates(BB, UserParent) && "Dominance relation broken?");

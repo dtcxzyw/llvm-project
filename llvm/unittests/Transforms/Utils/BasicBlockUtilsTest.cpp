@@ -471,6 +471,7 @@ exit:
   EXPECT_EQ(1u, SplitBB->getTerminator()->getNumSuccessors());
   // MergeIdenticalEdges: SplitBB has two identical predecessors, %while.cond.
   EXPECT_EQ(WhileBB, SplitBB->getUniquePredecessor());
+  EXPECT_TRUE(SplitBB->hasUniquePredecessor(WhileBB));
   EXPECT_TRUE(SplitBB->hasNPredecessors(2));
 
   auto *PN = dyn_cast<PHINode>(&SplitBB->front());

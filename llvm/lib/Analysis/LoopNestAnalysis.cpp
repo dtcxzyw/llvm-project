@@ -291,7 +291,7 @@ const BasicBlock &LoopNest::skipEmptyBlockUntil(const BasicBlock *From,
   assert(From && "Expecting valid From");
   assert(End && "Expecting valid End");
 
-  if (From == End || !From->getUniqueSuccessor())
+  if (From == End)
     return *From;
 
   auto IsEmpty = [](const BasicBlock *BB) {
@@ -301,6 +301,8 @@ const BasicBlock &LoopNest::skipEmptyBlockUntil(const BasicBlock *From,
   // Visited is used to avoid running into an infinite loop.
   SmallPtrSet<const BasicBlock *, 4> Visited;
   const BasicBlock *BB = From->getUniqueSuccessor();
+  if (!BB)
+    return *From;
   const BasicBlock *PredBB = From;
   while (BB && BB != End && IsEmpty(BB) && !Visited.count(BB) &&
          (!CheckUniquePred || BB->getUniquePredecessor())) {

@@ -1012,10 +1012,9 @@ class SPIRVStructurizer : public FunctionPass {
       if (MergeBlocks.count(&BB) != 0 || ContinueBlocks.count(&BB) != 0)
         continue;
 
-      if (BB.getUniqueSuccessor() == nullptr)
-        continue;
-
       BasicBlock *Successor = BB.getUniqueSuccessor();
+      if (!Successor)
+        continue;
       std::vector<BasicBlock *> Predecessors(predecessors(&BB).begin(),
                                              predecessors(&BB).end());
       for (BasicBlock *Predecessor : Predecessors)

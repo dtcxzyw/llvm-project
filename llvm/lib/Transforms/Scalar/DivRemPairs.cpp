@@ -283,7 +283,7 @@ static bool optimizeDivRem(Function &F, const TargetTransformInfo &TTI,
         // the Rem path.
       } else if (BasicBlock *RemPredBB = RemBB->getUniquePredecessor()) {
         // This hoist is only profitable when the target has a DivRem op.
-        if (HasDivRemOp && RemPredBB == DivBB->getUniquePredecessor())
+        if (HasDivRemOp && DivBB->hasUniquePredecessor(RemPredBB))
           PredBB = RemPredBB;
       }
       // FIXME: We could handle more hoisting cases.

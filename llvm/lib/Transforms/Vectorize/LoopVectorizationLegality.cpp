@@ -1712,8 +1712,7 @@ bool LoopVectorizationLegality::isVectorizableEarlyExitLoop() {
 
   // The only supported early exit loops so far are ones where the early
   // exiting block is a unique predecessor of the latch block.
-  BasicBlock *LatchPredBB = LatchBB->getUniquePredecessor();
-  if (LatchPredBB != SingleUncountableEdge->first) {
+  if (!LatchBB->hasUniquePredecessor(SingleUncountableEdge->first)) {
     reportVectorizationFailure("Early exit is not the latch predecessor",
                                "Cannot vectorize early exit loop",
                                "EarlyExitNotLatchPredecessor", ORE, TheLoop);
@@ -1766,7 +1765,7 @@ bool LoopVectorizationLegality::isVectorizableEarlyExitLoop() {
     }
 
   // The vectoriser cannot handle loads that occur after the early exit block.
-  assert(LatchBB->getUniquePredecessor() == SingleUncountableEdge->first &&
+  assert(LatchBB->hasUniquePredecessor(SingleUncountableEdge->first) &&
          "Expected latch predecessor to be the early exiting block");
 
   // TODO: Handle loops that may fault.

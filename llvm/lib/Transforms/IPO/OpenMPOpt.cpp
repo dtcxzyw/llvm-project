@@ -1121,7 +1121,7 @@ private:
       BasicBlock *SeqStartBB =
           SplitBlock(ParentBB, SeqStartI, DT, LI, nullptr, "seq.par.merged");
 
-      assert(ParentBB->getUniqueSuccessor() == SeqStartBB &&
+      assert(ParentBB->hasUniqueSuccessor(SeqStartBB) &&
              "Expected a different CFG");
       const DebugLoc DL = ParentBB->getTerminator()->getDebugLoc();
       ParentBB->getTerminator()->eraseFromParent();
@@ -1228,7 +1228,7 @@ private:
       StartBB = SplitBlock(BB, MergableCIs.front(), DT, LI, nullptr,
                            "omp.par.merged");
 
-      assert(BB->getUniqueSuccessor() == StartBB && "Expected a different CFG");
+      assert(BB->hasUniqueSuccessor(StartBB) && "Expected a different CFG");
       const DebugLoc DL = BB->getTerminator()->getDebugLoc();
       BB->getTerminator()->eraseFromParent();
 
@@ -3993,7 +3993,7 @@ struct AAKernelInfoFunction : AAKernelInfo {
       BasicBlock *RegionStartBB =
           SplitBlock(ParentBB, RegionStartI, DT, LI, MSU, "region.guarded");
 
-      assert(ParentBB->getUniqueSuccessor() == RegionStartBB &&
+      assert(ParentBB->hasUniqueSuccessor(RegionStartBB) &&
              "Expected a different CFG");
 
       BasicBlock *RegionCheckTidBB = SplitBlock(

@@ -4569,7 +4569,7 @@ void Verifier::visitEHPadPredecessors(Instruction &I) {
   }
   if (auto *CPI = dyn_cast<CatchPadInst>(&I)) {
     if (!pred_empty(BB))
-      Check(BB->getUniquePredecessor() == CPI->getCatchSwitch()->getParent(),
+      Check(BB->hasUniquePredecessor(CPI->getCatchSwitch()->getParent()),
             "Block containg CatchPadInst must be jumped to "
             "only by its catchswitch.",
             CPI);

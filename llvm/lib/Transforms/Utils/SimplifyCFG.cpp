@@ -6796,7 +6796,7 @@ static void reuseTableCompare(
   // at this late stage. Practically we do it at most once for a switch.
   BasicBlock *BranchBlock = RangeCheckBranch->getParent();
   for (BasicBlock *Pred : predecessors(PhiBlock)) {
-    if (Pred != BranchBlock && Pred->getUniquePredecessor() != BranchBlock)
+    if (Pred != BranchBlock && !Pred->hasUniquePredecessor(BranchBlock))
       return;
   }
 
@@ -7508,7 +7508,7 @@ bool SimplifyCFGOpt::simplifyDuplicateSwitchArms(SwitchInst *SI,
     // FIXME: This case needs some extra care because the terminators other than
     // SI need to be updated. For now, consider only backedges to the SI.
     if (BB->hasNPredecessorsOrMore(4) ||
-        BB->getUniquePredecessor() != SI->getParent())
+        !BB->hasUniquePredecessor(SI->getParent()))
       continue;
 
     // FIXME: Relax that the terminator is a BranchInst by checking for equality

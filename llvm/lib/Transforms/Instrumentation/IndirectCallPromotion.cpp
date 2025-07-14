@@ -218,7 +218,7 @@ static bool isDestBBSuitableForSink(Instruction *Inst, BasicBlock *DestBB) {
   [[maybe_unused]] BasicBlock *BB = Inst->getParent();
 
   assert(BB != DestBB && BB->getTerminator()->getNumSuccessors() == 2 &&
-         DestBB->getUniquePredecessor() == BB &&
+         DestBB->hasUniquePredecessor(BB) &&
          "Guaranteed by ICP transformation");
 
   BasicBlock *UserBB = nullptr;
@@ -293,7 +293,7 @@ static int tryToSinkInstructions(BasicBlock *OriginalBB,
                                  BasicBlock *IndirectCallBB) {
   int SinkCount = 0;
   // Do not sink across a critical edge for simplicity.
-  if (IndirectCallBB->getUniquePredecessor() != OriginalBB)
+  if (!IndirectCallBB->hasUniquePredecessor(OriginalBB))
     return SinkCount;
   // Sink all eligible instructions in OriginalBB in reverse order.
   for (Instruction &I :

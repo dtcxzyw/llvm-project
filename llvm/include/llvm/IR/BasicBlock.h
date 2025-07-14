@@ -421,6 +421,9 @@ public:
         static_cast<const BasicBlock *>(this)->getUniquePredecessor());
   }
 
+  /// Return true if \p BB is the unique predecessor of this block.
+  LLVM_ABI bool hasUniquePredecessor(const BasicBlock *BB) const;
+
   /// Return true if this block has exactly N predecessors.
   LLVM_ABI bool hasNPredecessors(unsigned N) const;
 
@@ -446,6 +449,9 @@ public:
     return const_cast<BasicBlock *>(
         static_cast<const BasicBlock *>(this)->getUniqueSuccessor());
   }
+
+  /// Return true if \p BB is the unique successor of this block.
+  LLVM_ABI bool hasUniqueSuccessor(const BasicBlock *BB) const;
 
   /// Print the basic block to an output stream with an optional
   /// AssemblyAnnotationWriter.

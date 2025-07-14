@@ -195,7 +195,7 @@ bool llvm::MergeBlockIntoPredecessor(BasicBlock *BB, DomTreeUpdater *DTU,
     return false;
 
   // Can't merge if there are multiple distinct successors.
-  if (!PredecessorWithTwoSuccessors && PredBB->getUniqueSuccessor() != BB)
+  if (!PredecessorWithTwoSuccessors && !PredBB->hasUniqueSuccessor(BB))
     return false;
 
   // Currently only allow PredBB to have two predecessors, one being BB.

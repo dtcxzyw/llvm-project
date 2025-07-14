@@ -1028,7 +1028,7 @@ bool CodeGenPrepare::isMergingEmptyBlockProfitable(BasicBlock *BB,
   BlockFrequency BBFreq = BFI->getBlockFreq(BB);
 
   for (auto *SameValueBB : SameIncomingValueBBs)
-    if (SameValueBB->getUniquePredecessor() == Pred &&
+    if (SameValueBB->hasUniquePredecessor(Pred) &&
         DestBB == findDestBlockOfMergeableEmptyBlock(SameValueBB))
       BBFreq += BFI->getBlockFreq(SameValueBB);
 

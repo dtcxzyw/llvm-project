@@ -610,7 +610,7 @@ static bool unswitchTrivialBranch(Loop &L, BranchInst &BI, DominatorTree &DT,
   // Because the loop is in simplified form, *any* other predecessor is enough.
   BasicBlock *UnswitchedBB;
   if (FullUnswitch && LoopExitBB->getUniquePredecessor()) {
-    assert(LoopExitBB->getUniquePredecessor() == BI.getParent() &&
+    assert(LoopExitBB->hasUniquePredecessor(BI.getParent()) &&
            "A branch's parent isn't a predecessor!");
     UnswitchedBB = LoopExitBB;
   } else {

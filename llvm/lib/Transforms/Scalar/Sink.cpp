@@ -81,7 +81,7 @@ static bool IsAcceptableTarget(Instruction *Inst, BasicBlock *SuccToSinkTo,
   // on different code paths.  We could split the critical edge, but for now we
   // just punt.
   // FIXME: Split critical edges if not backedges.
-  if (SuccToSinkTo->getUniquePredecessor() != Inst->getParent()) {
+  if (!SuccToSinkTo->hasUniquePredecessor(Inst->getParent())) {
     // We cannot sink a load across a critical edge - there may be stores in
     // other code paths.
     if (Inst->mayReadFromMemory() &&
