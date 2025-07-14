@@ -14,6 +14,7 @@
 #include "llvm/Analysis/CmpInstAnalysis.h"
 #include "llvm/Analysis/FloatingPointPredicateUtils.h"
 #include "llvm/Analysis/InstructionSimplify.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/PatternMatch.h"
@@ -701,7 +702,7 @@ static Value *foldLogOpOfMaskedICmps(Value *LHS, Value *RHS, bool IsAnd,
       isKnownToBeAPowerOfTwo(D, /*OrZero=*/false, Q)) {
     // If this is a logical and/or, then we must prevent propagation of a
     // poison value from the RHS by inserting freeze.
-    if (IsLogical)
+    if (IsLogical && !isGuaranteedNotToBePoison(D))
       D = Builder.CreateFreeze(D);
     Value *Mask = Builder.CreateOr(B, D);
     Value *Masked = Builder.CreateAnd(A, Mask);
@@ -3319,7 +3320,7 @@ static Value *foldAndOrOfICmpEqConstantAndICmp(ICmpInst *LHS, ICmpInst *RHS,
   else
     return nullptr;
 
-  if (IsLogical)
+  if (IsLogical && !isGuaranteedNotToBePoison(Other))
     Other = Builder.CreateFreeze(Other);
 
   return Builder.CreateICmp(
@@ -5155,7 +5156,7 @@ Instruction *InstCombinerImpl::visitXor(BinaryOperator &I) {
     if (A == C)
       std::swap(C, D);
     if (A == D) {
-      if (NeedFreeze)
+      if (NeedFreeze && !isGuaranteedNotToBePoison(A))
         A = Builder.CreateFreeze(A);
       Value *NotB = Builder.CreateNot(B);
       return SelectInst::Create(A, NotB, C);

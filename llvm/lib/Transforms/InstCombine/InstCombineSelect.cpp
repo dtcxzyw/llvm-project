@@ -3457,7 +3457,7 @@ Instruction *InstCombinerImpl::foldSelectOfBools(SelectInst &SI) {
       bool MayNeedFreeze = SelCond && SelFVal &&
                            match(SelFVal->getTrueValue(),
                                  m_Not(m_Specific(SelCond->getTrueValue())));
-      if (MayNeedFreeze)
+      if (MayNeedFreeze && !isGuaranteedNotToBePoison(C))
         C = Builder.CreateFreeze(C);
       return SelectInst::Create(C, A, B);
     }
@@ -3473,7 +3473,7 @@ Instruction *InstCombinerImpl::foldSelectOfBools(SelectInst &SI) {
       bool MayNeedFreeze = SelCond && SelFVal &&
                            match(SelCond->getTrueValue(),
                                  m_Not(m_Specific(SelFVal->getTrueValue())));
-      if (MayNeedFreeze)
+      if (MayNeedFreeze && !isGuaranteedNotToBePoison(C))
         C = Builder.CreateFreeze(C);
       return SelectInst::Create(C, B, A);
     }
