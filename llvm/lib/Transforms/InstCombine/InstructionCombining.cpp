@@ -5131,6 +5131,35 @@ Instruction *InstCombinerImpl::visitFreeze(FreezeInst &I) {
   if (freezeOtherUses(I))
     return &I;
 
+  if (I.hasOneUse()) {
+    auto *User = cast<Instruction>(*I.user_begin());
+    switch (User->getOpcode()) {
+    case Instruction::Load: {
+      auto *LI = cast<LoadInst>(User);
+      if (&I == LI->getPointerOperand() &&
+          !NullPointerIsDefined(I.getFunction(), LI->getPointerAddressSpace()))
+        return replaceInstUsesWith(I, Op0);
+      break;
+    }
+    case Instruction::Store: {
+      auto *SI = cast<StoreInst>(User);
+      if (&I == SI->getPointerOperand() &&
+          !NullPointerIsDefined(I.getFunction(), SI->getPointerAddressSpace()))
+        return replaceInstUsesWith(I, Op0);
+      break;
+    }
+    case Instruction::SDiv:
+    case Instruction::SRem:
+    case Instruction::UDiv:
+    case Instruction::URem:
+      if (I.use_begin()->getOperandNo() == 1)
+        return replaceInstUsesWith(I, Op0);
+      break;
+    default:
+      break;
+    }
+  }
+
   return nullptr;
 }
 
