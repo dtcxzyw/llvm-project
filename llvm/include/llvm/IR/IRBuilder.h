@@ -96,7 +96,7 @@ class FMFSource {
 public:
   FMFSource() = default;
   FMFSource(Instruction *Source) {
-    if (Source)
+    if (isa_and_present<FPMathOperator>(Source))
       FMF = Source->getFastMathFlags();
   }
   FMFSource(FastMathFlags FMF) : FMF(FMF) {}
