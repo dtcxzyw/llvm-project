@@ -524,6 +524,7 @@ Value *PredicateInfoBuilder::materializeStack(unsigned int &Counter,
       BitCastInst *PIC = CreateSSACopy(getBranchTerminator(ValInfo), Op,
                                        Op->getName() + "." + Twine(Counter++));
       PI.PredicateMap.insert({PIC, ValInfo});
+      PI.InsertedSSACopies.push_back(PIC);
       Result.Def = PIC;
     } else {
       auto *PAssume = dyn_cast<PredicateAssume>(ValInfo);
@@ -533,6 +534,7 @@ Value *PredicateInfoBuilder::materializeStack(unsigned int &Counter,
       // directly before it, assume(i1 true) is not a useful fact.
       BitCastInst *PIC = CreateSSACopy(PAssume->AssumeInst->getNextNode(), Op);
       PI.PredicateMap.insert({PIC, ValInfo});
+      PI.InsertedSSACopies.push_back(PIC);
       Result.Def = PIC;
     }
   }

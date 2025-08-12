@@ -21,6 +21,7 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstVisitor.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/NoFolder.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/Support/Casting.h"
@@ -775,18 +776,12 @@ public:
     if (It == FnPredicateInfo.end())
       return;
 
-    for (BasicBlock &BB : F) {
-      for (Instruction &Inst : llvm::make_early_inc_range(BB)) {
-        if (auto *BC = dyn_cast<BitCastInst>(&Inst)) {
-          if (BC->getType() == BC->getOperand(0)->getType()) {
-            if (It->second->getPredicateInfoFor(&Inst)) {
-              Value *Op = BC->getOperand(0);
-              Inst.replaceAllUsesWith(Op);
-              Inst.eraseFromParent();
-            }
-          }
-        }
-      }
+    for (auto &SSACopy : It->second->getInsertedSSACopies()) {
+      auto *BC = cast_or_null<Instruction>(SSACopy);
+      if (!BC)
+        continue;
+      BC->replaceAllUsesWith(BC->getOperand(0));
+      BC->eraseFromParent();
     }
   }
 

@@ -52,6 +52,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallSet.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/ValueHandle.h"
@@ -186,6 +187,9 @@ public:
   const PredicateBase *getPredicateInfoFor(const Value *V) const {
     return PredicateMap.lookup(V);
   }
+  const SmallVector<WeakVH> &getInsertedSSACopies() const {
+    return InsertedSSACopies;
+  }
 
 protected:
   // Used by PredicateInfo annotater, dumpers, and wrapper pass.
@@ -199,6 +203,7 @@ private:
   // the Predicate Info, they belong to the ValueInfo structs in the ValueInfos
   // vector.
   DenseMap<const Value *, const PredicateBase *> PredicateMap;
+  SmallVector<WeakVH> InsertedSSACopies;
 };
 
 /// Printer pass for \c PredicateInfo.
