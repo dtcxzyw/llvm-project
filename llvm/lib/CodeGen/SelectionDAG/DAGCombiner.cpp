@@ -16787,11 +16787,12 @@ SDValue DAGCombiner::visitFREEZE(SDNode *N) {
 
   // If we have frozen and unfrozen users of N0, update so everything uses N.
   if (!N0.isUndef() && !N0.hasOneUse()) {
+    // Avoid introducing cycles. Otherwise, ReplaceAllUsesOfValueWith will also
+    // updates the use in N.
+    DAG.UpdateNodeOperands(N, DAG.getPOISON(N0.getValueType()));
     SDValue FrozenN0(N, 0);
     DAG.ReplaceAllUsesOfValueWith(N0, FrozenN0);
-    // ReplaceAllUsesOfValueWith will have also updated the use in N, thus
-    // creating a cycle in a DAG. Let's undo that by mutating the freeze.
-    assert(N->getOperand(0) == FrozenN0 && "Expected cycle in DAG");
+    // Let's undo that by mutating the freeze.
     DAG.UpdateNodeOperands(N, N0);
     return FrozenN0;
   }
