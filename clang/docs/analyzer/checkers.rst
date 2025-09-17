@@ -3028,6 +3028,21 @@ Check for assignment of a fixed address to a pointer.
    p = (int *) 0x10000; // warn
  }
 
+.. _alpha-core-PointerAddOverflow:
+
+alpha.core.PointerAddOverflow (C)
+""""""""""""""""""""""""""""
+Check for pointer addition with negative size_t offsets.
+
+.. code-block:: c
+
+ void test() {
+   ssize_t offset;
+   size_t size;
+   int *p;
+   p += offset * size; // warn
+ }
+
 .. _alpha-core-PointerArithm:
 
 alpha.core.PointerArithm (C)

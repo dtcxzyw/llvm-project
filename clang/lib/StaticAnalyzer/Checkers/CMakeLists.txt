@@ -88,6 +88,7 @@ add_clang_library(clangStaticAnalyzerCheckers
   ObjCUnusedIVarsChecker.cpp
   OSObjectCStyleCast.cpp
   PaddingChecker.cpp
+  PointerAddOverflowChecker.cpp
   PointerArithChecker.cpp
   PointerSubChecker.cpp
   PthreadLockChecker.cpp
