@@ -38,6 +38,9 @@ Value *InstCombinerImpl::EvaluateInDifferentType(Value *V, Type *Ty,
   Instruction *I = cast<Instruction>(V);
   Instruction *Res = nullptr;
   unsigned Opc = I->getOpcode();
+  unsigned SrcBitWidth = I->getType()->getScalarSizeInBits();
+  unsigned DstBitWidth = Ty->getScalarSizeInBits();
+  bool IsTrunc = DstBitWidth < SrcBitWidth;
   switch (Opc) {
   case Instruction::Add:
   case Instruction::Sub:
@@ -53,8 +56,20 @@ Value *InstCombinerImpl::EvaluateInDifferentType(Value *V, Type *Ty,
     Value *LHS = EvaluateInDifferentType(I->getOperand(0), Ty, isSigned);
     Value *RHS = EvaluateInDifferentType(I->getOperand(1), Ty, isSigned);
     Res = BinaryOperator::Create((Instruction::BinaryOps)Opc, LHS, RHS);
-    if (Opc == Instruction::LShr || Opc == Instruction::AShr)
+    switch (Opc) {
+    case Instruction::LShr:
+    case Instruction::AShr:
       Res->setIsExact(I->isExact());
+      break;
+    case Instruction::Sub:
+      if (!isSigned && I->hasNoUnsignedWrap() && IsTrunc &&
+          MaskedValueIsZero(I->getOperand(0),
+                            APInt::getBitsSetFrom(SrcBitWidth, DstBitWidth)))
+        Res->setHasNoUnsignedWrap();
+      break;
+    default:
+      break;
+    }
     break;
   }
   case Instruction::Trunc:

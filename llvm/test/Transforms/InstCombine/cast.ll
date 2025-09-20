@@ -2242,7 +2242,7 @@ define i32 @test95(i32 %x) {
 define i16 @evaluate_truncated_preserve_sub_nuw(i16 %x, i16 %y) {
 ; ALL-LABEL: @evaluate_truncated_preserve_sub_nuw(
 ; ALL-NEXT:  entry:
-; ALL-NEXT:    [[SUB:%.*]] = sub i16 [[X:%.*]], [[Y:%.*]]
+; ALL-NEXT:    [[SUB:%.*]] = sub nuw i16 [[X:%.*]], [[Y:%.*]]
 ; ALL-NEXT:    ret i16 [[SUB]]
 ;
 entry:
