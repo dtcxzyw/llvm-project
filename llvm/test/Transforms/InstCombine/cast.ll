@@ -2238,3 +2238,62 @@ define i32 @test95(i32 %x) {
   %5 = zext i8 %4 to i32
   ret i32 %5
 }
+
+define i16 @evaluate_truncated_preserve_sub_nuw(i16 %x, i16 %y) {
+; ALL-LABEL: @evaluate_truncated_preserve_sub_nuw(
+; ALL-NEXT:  entry:
+; ALL-NEXT:    [[SUB:%.*]] = sub i16 [[X:%.*]], [[Y:%.*]]
+; ALL-NEXT:    ret i16 [[SUB]]
+;
+entry:
+  %ext1 = zext i16 %x to i32
+  %ext2 = zext i16 %y to i32
+  %sub = sub nuw i32 %ext1, %ext2
+  %trunc = trunc i32 %sub to i16
+  ret i16 %trunc
+}
+
+; Negative tests
+
+define i16 @evaluate_truncated_preserve_sub_nuw_large_lhs(i16 %x, i16 %y) {
+; ALL-LABEL: @evaluate_truncated_preserve_sub_nuw_large_lhs(
+; ALL-NEXT:  entry:
+; ALL-NEXT:    [[SUB:%.*]] = sub i16 1, [[Y:%.*]]
+; ALL-NEXT:    ret i16 [[SUB]]
+;
+entry:
+  %ext1 = zext i16 %x to i32
+  %ext2 = zext i16 %y to i32
+  %sub = sub nuw i32 65537, %ext2
+  %trunc = trunc i32 %sub to i16
+  ret i16 %trunc
+}
+
+define i16 @evaluate_truncated_sub_without_nuw(i16 %x, i16 %y) {
+; ALL-LABEL: @evaluate_truncated_sub_without_nuw(
+; ALL-NEXT:  entry:
+; ALL-NEXT:    [[SUB:%.*]] = sub i16 [[X:%.*]], [[Y:%.*]]
+; ALL-NEXT:    ret i16 [[SUB]]
+;
+entry:
+  %ext1 = zext i16 %x to i32
+  %ext2 = zext i16 %y to i32
+  %sub = sub i32 %ext1, %ext2
+  %trunc = trunc i32 %sub to i16
+  ret i16 %trunc
+}
+
+define i32 @evaluate_zextd_sub_nuw(i32 %x, i32 %y) {
+; ALL-LABEL: @evaluate_zextd_sub_nuw(
+; ALL-NEXT:  entry:
+; ALL-NEXT:    [[SUB:%.*]] = sub i32 [[X:%.*]], [[Y:%.*]]
+; ALL-NEXT:    [[ZEXT:%.*]] = and i32 [[SUB]], 15
+; ALL-NEXT:    ret i32 [[ZEXT]]
+;
+entry:
+  %ext1 = trunc i32 %x to i4
+  %ext2 = trunc i32 %y to i4
+  %sub = sub nuw i4 %ext1, %ext2
+  %zext = zext i4 %sub to i32
+  ret i32 %zext
+}
