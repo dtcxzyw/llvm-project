@@ -15,8 +15,10 @@
 #include "llvm/Analysis/CmpInstAnalysis.h"
 #include "llvm/Analysis/FloatingPointPredicateUtils.h"
 #include "llvm/Analysis/InstructionSimplify.h"
+#include "llvm/Analysis/SimplifyQuery.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/PatternMatch.h"
@@ -3356,6 +3358,35 @@ static Value *foldAndOrOfICmpEqConstantAndICmp(ICmpInst *LHS, ICmpInst *RHS,
       Other);
 }
 
+/// Fold range check idiom
+///   X >= Y && X < Y + Z to X - Y < Z
+///   X < Y || X >= Y + Z to X - Y >= Z
+static Value *foldDynamicRangeCheck(ICmpInst *LHS, ICmpInst *RHS, bool IsAnd,
+                                    InstCombiner::BuilderTy &Builder,
+                                    const SimplifyQuery &SQ) {
+  Value *X, *Y, *Z;
+  ICmpInst::Predicate ExpectedLHSPred =
+      IsAnd ? ICmpInst::ICMP_UGE : ICmpInst::ICMP_ULT;
+  ICmpInst::Predicate ExpectedRHSPred =
+      IsAnd ? ICmpInst::ICMP_ULT : ICmpInst::ICMP_UGE;
+  if ((match(LHS, m_c_SpecificICmp(ExpectedLHSPred, m_Value(X), m_Value(Y))) &&
+       match(RHS, m_c_SpecificICmp(
+                      ExpectedRHSPred, m_Specific(X),
+                      m_OneUse(m_NUWAddLike(m_Specific(Y), m_Value(Z)))))) ||
+      (match(LHS,
+             m_c_SpecificICmp(ICmpInst::getSignedPredicate(ExpectedLHSPred),
+                              m_Value(X), m_Value(Y))) &&
+       match(RHS,
+             m_c_SpecificICmp(
+                 ICmpInst::getSignedPredicate(ExpectedRHSPred), m_Specific(X),
+                 m_OneUse(m_NSWAddLike(m_Specific(Y), m_Value(Z))))) &&
+       isKnownNonNegative(Z, SQ)))
+    return Builder.CreateICmp(IsAnd ? ICmpInst::ICMP_UGE : ICmpInst::ICMP_ULT,
+                              Builder.CreateSub(X, Y), Z);
+
+  return nullptr;
+}
+
 /// Fold (icmp)&(icmp) or (icmp)|(icmp) if possible.
 /// If IsLogical is true, then the and/or is in select form and the transform
 /// must be poison-safe.
@@ -3476,6 +3507,13 @@ Value *InstCombinerImpl::foldAndOrOfICmps(ICmpInst *LHS, ICmpInst *RHS,
     if (Value *V =
             foldAndOrOfICmpsWithPow2AndWithZero(Builder, LHS, RHS, IsAnd, Q))
       return V;
+
+  if (!IsLogical && LHS->hasOneUse() && RHS->hasOneUse()) {
+    if (Value *V = foldDynamicRangeCheck(LHS, RHS, IsAnd, Builder, Q))
+      return V;
+    if (Value *V = foldDynamicRangeCheck(RHS, LHS, IsAnd, Builder, Q))
+      return V;
+  }
 
   // This only handles icmp of constants: (icmp1 A, C1) | (icmp2 B, C2).
   if (!LHSC || !RHSC)
