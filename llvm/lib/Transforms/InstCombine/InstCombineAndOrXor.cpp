@@ -3372,17 +3372,8 @@ static Value *foldDynamicRangeCheck(ICmpInst *LHS, ICmpInst *RHS, bool IsAnd,
   if ((match(LHS, m_c_SpecificICmp(ExpectedLHSPred, m_Value(X), m_Value(Y))) &&
        match(RHS, m_c_SpecificICmp(
                       ExpectedRHSPred, m_Specific(X),
-                      m_OneUse(m_NUWAddLike(m_Specific(Y), m_Value(Z)))))) ||
-      (match(LHS,
-             m_c_SpecificICmp(ICmpInst::getSignedPredicate(ExpectedLHSPred),
-                              m_Value(X), m_Value(Y))) &&
-       match(RHS,
-             m_c_SpecificICmp(
-                 ICmpInst::getSignedPredicate(ExpectedRHSPred), m_Specific(X),
-                 m_OneUse(m_NSWAddLike(m_Specific(Y), m_Value(Z))))) &&
-       isKnownNonNegative(Z, SQ)))
-    return Builder.CreateICmp(IsAnd ? ICmpInst::ICMP_UGE : ICmpInst::ICMP_ULT,
-                              Builder.CreateSub(X, Y), Z);
+                      m_OneUse(m_NUWAddLike(m_Specific(Y), m_Value(Z)))))))
+    return Builder.CreateICmp(ExpectedRHSPred, Builder.CreateSub(X, Y), Z);
 
   return nullptr;
 }
