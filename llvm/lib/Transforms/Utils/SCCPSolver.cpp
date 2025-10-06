@@ -253,6 +253,11 @@ static Value *simplifyInstruction(SCCPSolver &Solver,
     if (LRange.getUnsignedMax().ule(*RHSC))
       return X;
   }
+  if (match(&Inst, m_Or(m_Value(X), m_NegatedPower2(RHSC)))) {
+    ConstantRange LRange = GetRange(X);
+    if (LRange.getUnsignedMin().uge(*RHSC))
+      return X;
+  }
 
   // Check if we can simplify [us]cmp(X, Y) to X - Y.
   if (auto *Cmp = dyn_cast<CmpIntrinsic>(&Inst)) {
