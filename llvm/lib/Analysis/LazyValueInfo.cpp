@@ -23,6 +23,7 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/AssemblyAnnotationWriter.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/IR/ConstantFPRange.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
@@ -445,6 +446,9 @@ class LazyValueInfoImpl {
 
   std::optional<ValueLatticeElement>
   getValueFromICmpCondition(Value *Val, ICmpInst *ICI, bool isTrueDest,
+                            bool UseBlockValue);
+  std::optional<ValueLatticeElement>
+  getValueFromFCmpCondition(Value *Val, FCmpInst *FCI, bool IsTrueDest,
                             bool UseBlockValue);
   ValueLatticeElement getValueFromTrunc(Value *Val, TruncInst *Trunc,
                                         bool IsTrueDest);
@@ -1437,6 +1441,22 @@ std::optional<ValueLatticeElement> LazyValueInfoImpl::getValueFromICmpCondition(
   return ValueLatticeElement::getOverdefined();
 }
 
+std::optional<ValueLatticeElement> LazyValueInfoImpl::getValueFromFCmpCondition(
+    Value *Val, FCmpInst *FCI, bool IsTrueDest, bool UseBlockValue) {
+  Value *LHS = FCI->getOperand(0);
+  Value *RHS = FCI->getOperand(1);
+
+  // Get the predicate that must hold along the considered edge.
+  CmpInst::Predicate EdgePred =
+      IsTrueDest ? FCI->getPredicate() : FCI->getInversePredicate();
+  const APFloat *RHSC;
+  if (LHS == Val && match(RHS, m_APFloat(RHSC))) {
+    if (auto CR = ConstantFPRange::makeExactFCmpRegion(EdgePred, *RHSC))
+      return ValueLatticeElement::getFPRange(*CR);
+  }
+  return ValueLatticeElement::getOverdefined();
+}
+
 ValueLatticeElement LazyValueInfoImpl::getValueFromTrunc(Value *Val,
                                                          TruncInst *Trunc,
                                                          bool IsTrueDest) {
@@ -1486,6 +1506,9 @@ LazyValueInfoImpl::getValueFromCondition(Value *Val, Value *Cond,
                                          unsigned Depth) {
   if (ICmpInst *ICI = dyn_cast<ICmpInst>(Cond))
     return getValueFromICmpCondition(Val, ICI, IsTrueDest, UseBlockValue);
+
+  if (FCmpInst *FCI = dyn_cast<FCmpInst>(Cond))
+    return getValueFromFCmpCondition(Val, FCI, IsTrueDest, UseBlockValue);
 
   if (auto *Trunc = dyn_cast<TruncInst>(Cond))
     return getValueFromTrunc(Val, Trunc, IsTrueDest);
