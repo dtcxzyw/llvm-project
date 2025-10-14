@@ -35,9 +35,14 @@ struct KnownFPClass;
 
 /// This class represents a range of floating-point values.
 class [[nodiscard]] ConstantFPRange {
+  /// MayBeQNaN is stored in the extra bit of Lower.
+  /// MayBeSNaN is stored in the extra bit of Upper.
+  /// Note: Please update MayBeQNaN and MayBeSNaN after modifying Lower or
+  /// Upper.
   APFloat Lower, Upper;
-  bool MayBeQNaN : 1;
-  bool MayBeSNaN : 1;
+
+  void setMayBeQNaN(bool B) { return Lower.setExtraBit(B); }
+  void setMayBeSNaN(bool B) { return Upper.setExtraBit(B); }
 
   /// Create empty constant range with same semantics.
   ConstantFPRange getEmpty() const {
@@ -141,9 +146,9 @@ public:
   /// Return the upper value for this range.
   const APFloat &getUpper() const { return Upper; }
 
-  bool containsNaN() const { return MayBeQNaN || MayBeSNaN; }
-  bool containsQNaN() const { return MayBeQNaN; }
-  bool containsSNaN() const { return MayBeSNaN; }
+  bool containsNaN() const { return containsQNaN() || containsSNaN(); }
+  bool containsQNaN() const { return Lower.getExtraBit(); }
+  bool containsSNaN() const { return Upper.getExtraBit(); }
   LLVM_ABI bool isNaNOnly() const;
 
   /// Get the semantics of this ConstantFPRange.

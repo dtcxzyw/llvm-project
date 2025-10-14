@@ -628,6 +628,9 @@ public:
 
   LLVM_ABI cmpResult compareAbsoluteValue(const IEEEFloat &) const;
 
+  bool getExtraBit() const { return bit; }
+  void setExtraBit(bool B) { bit = B; }
+
 private:
   /// \name Simple Queries
   /// @{
@@ -773,6 +776,9 @@ private:
   /// Sign bit of the number.
   unsigned int sign : 1;
 
+  /// Extra bit used by ConstantFPRange.
+  unsigned int bit : 1;
+
   friend class IEEEFloatUnitTestHelper;
 };
 
@@ -886,6 +892,9 @@ public:
   LLVM_ABI friend DoubleAPFloat frexp(const DoubleAPFloat &X, int &Exp,
                                       roundingMode);
   LLVM_ABI friend hash_code hash_value(const DoubleAPFloat &Arg);
+
+  LLVM_ABI LLVM_READONLY bool getExtraBit() const;
+  LLVM_ABI void setExtraBit(bool B);
 };
 
 LLVM_ABI hash_code hash_value(const DoubleAPFloat &Arg);
@@ -1504,6 +1513,10 @@ public:
   int getExactLog2() const {
     return isNegative() ? INT_MIN : getExactLog2Abs();
   }
+
+  LLVM_READONLY
+  bool getExtraBit() const { APFLOAT_DISPATCH_ON_SEMANTICS(getExtraBit()); }
+  void setExtraBit(bool B) { APFLOAT_DISPATCH_ON_SEMANTICS(setExtraBit(B)); }
 
   LLVM_ABI friend hash_code hash_value(const APFloat &Arg);
   friend int ilogb(const APFloat &Arg);

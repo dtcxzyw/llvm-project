@@ -943,6 +943,7 @@ void IEEEFloat::freeSignificand() {
 void IEEEFloat::assign(const IEEEFloat &rhs) {
   assert(semantics == rhs.semantics);
 
+  bit = rhs.bit;
   sign = rhs.sign;
   category = rhs.category;
   exponent = rhs.exponent;
@@ -1053,6 +1054,7 @@ IEEEFloat &IEEEFloat::operator=(IEEEFloat &&rhs) {
   exponent = rhs.exponent;
   category = rhs.category;
   sign = rhs.sign;
+  bit = rhs.bit;
 
   rhs.semantics = &semBogus;
   return *this;
@@ -5820,6 +5822,9 @@ int DoubleAPFloat::getExactLog2Abs() const {
     return INT_MIN;
   return getFirst().getExactLog2Abs();
 }
+
+bool DoubleAPFloat::getExtraBit() const { return Floats->getExtraBit(); }
+void DoubleAPFloat::setExtraBit(bool B) { Floats->setExtraBit(B); }
 
 int ilogb(const DoubleAPFloat &Arg) {
   const APFloat &Hi = Arg.getFirst();
