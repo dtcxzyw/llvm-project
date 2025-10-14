@@ -9,6 +9,7 @@
 #ifndef LLVM_ANALYSIS_VALUELATTICE_H
 #define LLVM_ANALYSIS_VALUELATTICE_H
 
+#include "llvm/IR/ConstantFPRange.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/Support/Compiler.h"
@@ -86,6 +87,7 @@ class ValueLatticeElement {
   union {
     Constant *ConstVal;
     ConstantRange Range;
+    ConstantFPRange FPRange;
   };
 
   /// Destroy contents of lattice value, without destructing the object.
@@ -494,7 +496,7 @@ public:
   void setNumRangeExtensions(unsigned N) { NumRangeExtensions = N; }
 };
 
-static_assert(sizeof(ValueLatticeElement) <= 40,
+static_assert(sizeof(ValueLatticeElement) <= 64,
               "size of ValueLatticeElement changed unexpectedly");
 
 LLVM_ABI raw_ostream &operator<<(raw_ostream &OS,
