@@ -72,6 +72,21 @@ class ValueLatticeElement {
     ///  overdefined
     constantrange_including_undef,
 
+    /// The Value falls within this range. (Used only for floating point typed
+    /// values.)
+    /// Transition allowed to the following states:
+    ///  constantfprange (new range must be a superset of the existing range)
+    ///  constantfprange_including_undef
+    ///  overdefined
+    constantfprange,
+
+    /// This Value falls within this range, but also may be undef.
+    /// Merging it with other constant ranges results in
+    /// constantfprange_including_undef.
+    /// Transition allowed to the following states:
+    ///  overdefined
+    constantfprange_including_undef,
+
     /// We can not precisely model the dynamic values this value might take.
     /// No transitions are allowed after reaching overdefined.
     overdefined,
@@ -102,6 +117,10 @@ class ValueLatticeElement {
     case constantrange_including_undef:
     case constantrange:
       Range.~ConstantRange();
+      break;
+    case constantfprange_including_undef:
+    case constantfprange:
+      FPRange.~ConstantFPRange();
       break;
     };
   }
@@ -157,6 +176,11 @@ public:
       new (&Range) ConstantRange(Other.Range);
       NumRangeExtensions = Other.NumRangeExtensions;
       break;
+    case constantfprange:
+    case constantfprange_including_undef:
+      new (&FPRange) ConstantFPRange(Other.FPRange);
+      NumRangeExtensions = Other.NumRangeExtensions;
+      break;
     case constant:
     case notconstant:
       ConstVal = Other.ConstVal;
@@ -174,6 +198,11 @@ public:
     case constantrange:
     case constantrange_including_undef:
       new (&Range) ConstantRange(std::move(Other.Range));
+      NumRangeExtensions = Other.NumRangeExtensions;
+      break;
+    case constantfprange:
+    case constantfprange_including_undef:
+      new (&FPRange) ConstantFPRange(std::move(Other.FPRange));
       NumRangeExtensions = Other.NumRangeExtensions;
       break;
     case constant:
