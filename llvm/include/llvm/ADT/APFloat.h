@@ -189,33 +189,33 @@ struct fltSemantics {
   using ExponentType = int32_t;
   /* The largest E such that 2^E is representable; this matches the
      definition of IEEE 754.  */
-  ExponentType maxExponent;
+  ExponentType maxExponent: 16;
 
   /* The smallest E such that 2^E is a normalized number; this
      matches the definition of IEEE 754.  */
-  ExponentType minExponent;
+  ExponentType minExponent: 16;
 
   /* Number of bits in the significand.  This includes the integer
      bit.  */
-  unsigned int precision;
+  unsigned int precision: 8;
 
   /* Number of bits actually used in the semantics. */
-  unsigned int sizeInBits;
+  unsigned int sizeInBits: 8;
 
-  bool isIEEELikeFP;
+  bool isIEEELikeFP: 1;
 
-  fltNonfiniteBehavior nonFiniteBehavior;
+  fltNonfiniteBehavior nonFiniteBehavior: 2;
 
-  fltNanEncoding nanEncoding;
+  fltNanEncoding nanEncoding: 2;
 
   /* Whether this semantics has an encoding for Zero */
-  bool hasZero;
+  bool hasZero: 1;
 
   /* Whether this semantics can represent signed values */
-  bool hasSignedRepr;
+  bool hasSignedRepr: 1;
 
   /* Whether the sign bit of this semantics is the most significant bit */
-  bool hasSignBitInMSB;
+  bool hasSignBitInMSB: 1;
 
   constexpr fltSemantics(
       ExponentType maxExponent, ExponentType minExponent,
@@ -229,6 +229,7 @@ struct fltSemantics {
         nanEncoding(nanEncoding), hasZero(hasZero),
         hasSignedRepr(hasSignedRepr), hasSignBitInMSB(hasSignBitInMSB) {}
 };
+static_assert(sizeof(fltSemantics) <= 8);
 
 // This is the common type definitions shared by APFloat and its internal
 // implementation classes. This struct should not define any non-static data
