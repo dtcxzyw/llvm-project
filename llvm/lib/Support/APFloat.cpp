@@ -53,105 +53,48 @@ static_assert(APFloatBase::integerPartWidth % 4 == 0, "Part width must be divisi
 
 namespace llvm {
 
-// How the nonfinite values Inf and NaN are represented.
-enum class fltNonfiniteBehavior {
-  // Represents standard IEEE 754 behavior. A value is nonfinite if the
-  // exponent field is all 1s. In such cases, a value is Inf if the
-  // significand bits are all zero, and NaN otherwise
-  IEEE754,
-
-  // This behavior is present in the Float8ExMyFN* types (Float8E4M3FN,
-  // Float8E5M2FNUZ, Float8E4M3FNUZ, and Float8E4M3B11FNUZ). There is no
-  // representation for Inf, and operations that would ordinarily produce Inf
-  // produce NaN instead.
-  // The details of the NaN representation(s) in this form are determined by the
-  // `fltNanEncoding` enum. We treat all NaNs as quiet, as the available
-  // encodings do not distinguish between signalling and quiet NaN.
-  NanOnly,
-
-  // This behavior is present in Float6E3M2FN, Float6E2M3FN, and
-  // Float4E2M1FN types, which do not support Inf or NaN values.
-  FiniteOnly,
-};
-
-// How NaN values are represented. This is curently only used in combination
-// with fltNonfiniteBehavior::NanOnly, and using a variant other than IEEE
-// while having IEEE non-finite behavior is liable to lead to unexpected
-// results.
-enum class fltNanEncoding {
-  // Represents the standard IEEE behavior where a value is NaN if its
-  // exponent is all 1s and the significand is non-zero.
-  IEEE,
-
-  // Represents the behavior in the Float8E4M3FN floating point type where NaN
-  // is represented by having the exponent and mantissa set to all 1s.
-  // This behavior matches the FP8 E4M3 type described in
-  // https://arxiv.org/abs/2209.05433. We treat both signed and unsigned NaNs
-  // as non-signalling, although the paper does not state whether the NaN
-  // values are signalling or not.
-  AllOnes,
-
-  // Represents the behavior in Float8E{5,4}E{2,3}FNUZ floating point types
-  // where NaN is represented by a sign bit of 1 and all 0s in the exponent
-  // and mantissa (i.e. the negative zero encoding in a IEEE float). Since
-  // there is only one NaN value, it is treated as quiet NaN. This matches the
-  // behavior described in https://arxiv.org/abs/2206.02915 .
-  NegativeZero,
-};
-
-/* Represents floating point arithmetic semantics.  */
-struct fltSemantics {
-  /* The largest E such that 2^E is representable; this matches the
-     definition of IEEE 754.  */
-  APFloatBase::ExponentType maxExponent;
-
-  /* The smallest E such that 2^E is a normalized number; this
-     matches the definition of IEEE 754.  */
-  APFloatBase::ExponentType minExponent;
-
-  /* Number of bits in the significand.  This includes the integer
-     bit.  */
-  unsigned int precision;
-
-  /* Number of bits actually used in the semantics. */
-  unsigned int sizeInBits;
-
-  fltNonfiniteBehavior nonFiniteBehavior = fltNonfiniteBehavior::IEEE754;
-
-  fltNanEncoding nanEncoding = fltNanEncoding::IEEE;
-
-  /* Whether this semantics has an encoding for Zero */
-  bool hasZero = true;
-
-  /* Whether this semantics can represent signed values */
-  bool hasSignedRepr = true;
-
-  /* Whether the sign bit of this semantics is the most significant bit */
-  bool hasSignBitInMSB = true;
-};
-
-constexpr fltSemantics APFloatBase::semIEEEhalf = {15, -14, 11, 16};
-constexpr fltSemantics APFloatBase::semBFloat = {127, -126, 8, 16};
-constexpr fltSemantics APFloatBase::semIEEEsingle = {127, -126, 24, 32};
-constexpr fltSemantics APFloatBase::semIEEEdouble = {1023, -1022, 53, 64};
-constexpr fltSemantics APFloatBase::semIEEEquad = {16383, -16382, 113, 128};
-constexpr fltSemantics APFloatBase::semFloat8E5M2 = {15, -14, 3, 8};
+constexpr fltSemantics APFloatBase::semIEEEhalf = {15, -14, 11, 16, true};
+constexpr fltSemantics APFloatBase::semBFloat = {127, -126, 8, 16, true};
+constexpr fltSemantics APFloatBase::semIEEEsingle = {127, -126, 24, 32, true};
+constexpr fltSemantics APFloatBase::semIEEEdouble = {1023, -1022, 53, 64, true};
+constexpr fltSemantics APFloatBase::semIEEEquad = {16383, -16382, 113, 128,
+                                                   true};
+constexpr fltSemantics APFloatBase::semFloat8E5M2 = {15, -14, 3, 8, false};
 constexpr fltSemantics APFloatBase::semFloat8E5M2FNUZ = {
-    15, -15, 3, 8, fltNonfiniteBehavior::NanOnly, fltNanEncoding::NegativeZero};
-constexpr fltSemantics APFloatBase::semFloat8E4M3 = {7, -6, 4, 8};
+    15,
+    -15,
+    3,
+    8,
+    false,
+    fltNonfiniteBehavior::NanOnly,
+    fltNanEncoding::NegativeZero};
+constexpr fltSemantics APFloatBase::semFloat8E4M3 = {7, -6, 4, 8, false};
 constexpr fltSemantics APFloatBase::semFloat8E4M3FN = {
-    8, -6, 4, 8, fltNonfiniteBehavior::NanOnly, fltNanEncoding::AllOnes};
+    8, -6, 4, 8, false, fltNonfiniteBehavior::NanOnly, fltNanEncoding::AllOnes};
 constexpr fltSemantics APFloatBase::semFloat8E4M3FNUZ = {
-    7, -7, 4, 8, fltNonfiniteBehavior::NanOnly, fltNanEncoding::NegativeZero};
+    7,
+    -7,
+    4,
+    8,
+    false,
+    fltNonfiniteBehavior::NanOnly,
+    fltNanEncoding::NegativeZero};
 constexpr fltSemantics APFloatBase::semFloat8E4M3B11FNUZ = {
-    4, -10, 4, 8, fltNonfiniteBehavior::NanOnly, fltNanEncoding::NegativeZero};
-constexpr fltSemantics APFloatBase::semFloat8E3M4 = {3, -2, 5, 8};
-constexpr fltSemantics APFloatBase::semFloatTF32 = {127, -126, 11, 19};
+    4,
+    -10,
+    4,
+    8,
+    false,
+    fltNonfiniteBehavior::NanOnly,
+    fltNanEncoding::NegativeZero};
+constexpr fltSemantics APFloatBase::semFloat8E3M4 = {3, -2, 5, 8, false};
+constexpr fltSemantics APFloatBase::semFloatTF32 = {127, -126, 11, 19, false};
 constexpr fltSemantics APFloatBase::semFloat8E8M0FNU = {
     127,
     -127,
     1,
     8,
+    false,
     fltNonfiniteBehavior::NanOnly,
     fltNanEncoding::AllOnes,
     false,
@@ -159,17 +102,17 @@ constexpr fltSemantics APFloatBase::semFloat8E8M0FNU = {
     false};
 
 constexpr fltSemantics APFloatBase::semFloat6E3M2FN = {
-    4, -2, 3, 6, fltNonfiniteBehavior::FiniteOnly};
+    4, -2, 3, 6, false, fltNonfiniteBehavior::FiniteOnly};
 constexpr fltSemantics APFloatBase::semFloat6E2M3FN = {
-    2, 0, 4, 6, fltNonfiniteBehavior::FiniteOnly};
+    2, 0, 4, 6, false, fltNonfiniteBehavior::FiniteOnly};
 constexpr fltSemantics APFloatBase::semFloat4E2M1FN = {
-    2, 0, 2, 4, fltNonfiniteBehavior::FiniteOnly};
+    2, 0, 2, 4, false, fltNonfiniteBehavior::FiniteOnly};
 constexpr fltSemantics APFloatBase::semX87DoubleExtended = {16383, -16382, 64,
-                                                            80};
-constexpr fltSemantics APFloatBase::semBogus = {0, 0, 0, 0};
-constexpr fltSemantics APFloatBase::semPPCDoubleDouble = {-1, 0, 0, 128};
+                                                            80, false};
+constexpr fltSemantics APFloatBase::semBogus = {0, 0, 0, 0, false};
+constexpr fltSemantics APFloatBase::semPPCDoubleDouble = {-1, 0, 0, 128, false};
 constexpr fltSemantics APFloatBase::semPPCDoubleDoubleLegacy = {
-    1023, -1022 + 53, 53 + 53, 128};
+    1023, -1022 + 53, 53 + 53, 128, false};
 
 const llvm::fltSemantics &APFloatBase::EnumToSemantics(Semantics S) {
   switch (S) {
@@ -292,74 +235,6 @@ const unsigned int maxPowerOfFiveExponent = maxExponent + maxPrecision - 1;
 const unsigned int maxPowerOfFiveParts =
     2 +
     ((maxPowerOfFiveExponent * 815) / (351 * APFloatBase::integerPartWidth));
-
-unsigned int APFloatBase::semanticsPrecision(const fltSemantics &semantics) {
-  return semantics.precision;
-}
-APFloatBase::ExponentType
-APFloatBase::semanticsMaxExponent(const fltSemantics &semantics) {
-  return semantics.maxExponent;
-}
-APFloatBase::ExponentType
-APFloatBase::semanticsMinExponent(const fltSemantics &semantics) {
-  return semantics.minExponent;
-}
-unsigned int APFloatBase::semanticsSizeInBits(const fltSemantics &semantics) {
-  return semantics.sizeInBits;
-}
-unsigned int APFloatBase::semanticsIntSizeInBits(const fltSemantics &semantics,
-                                                 bool isSigned) {
-  // The max FP value is pow(2, MaxExponent) * (1 + MaxFraction), so we need
-  // at least one more bit than the MaxExponent to hold the max FP value.
-  unsigned int MinBitWidth = semanticsMaxExponent(semantics) + 1;
-  // Extra sign bit needed.
-  if (isSigned)
-    ++MinBitWidth;
-  return MinBitWidth;
-}
-
-bool APFloatBase::semanticsHasZero(const fltSemantics &semantics) {
-  return semantics.hasZero;
-}
-
-bool APFloatBase::semanticsHasSignedRepr(const fltSemantics &semantics) {
-  return semantics.hasSignedRepr;
-}
-
-bool APFloatBase::semanticsHasInf(const fltSemantics &semantics) {
-  return semantics.nonFiniteBehavior == fltNonfiniteBehavior::IEEE754;
-}
-
-bool APFloatBase::semanticsHasNaN(const fltSemantics &semantics) {
-  return semantics.nonFiniteBehavior != fltNonfiniteBehavior::FiniteOnly;
-}
-
-bool APFloatBase::isIEEELikeFP(const fltSemantics &semantics) {
-  // Keep in sync with Type::isIEEELikeFPTy
-  return SemanticsToEnum(semantics) <= S_IEEEquad;
-}
-
-bool APFloatBase::hasSignBitInMSB(const fltSemantics &semantics) {
-  return semantics.hasSignBitInMSB;
-}
-
-bool APFloatBase::isRepresentableAsNormalIn(const fltSemantics &Src,
-                                            const fltSemantics &Dst) {
-  // Exponent range must be larger.
-  if (Src.maxExponent >= Dst.maxExponent || Src.minExponent <= Dst.minExponent)
-    return false;
-
-  // If the mantissa is long enough, the result value could still be denormal
-  // with a larger exponent range.
-  //
-  // FIXME: This condition is probably not accurate but also shouldn't be a
-  // practical concern with existing types.
-  return Dst.precision >= Src.precision;
-}
-
-unsigned APFloatBase::getSizeInBits(const fltSemantics &Sem) {
-  return Sem.sizeInBits;
-}
 
 static constexpr APFloatBase::ExponentType
 exponentZero(const fltSemantics &semantics) {
@@ -1337,7 +1212,6 @@ lostFraction IEEEFloat::multiplySignificand(const IEEEFloat &rhs,
     //
     Significand savedSignificand = significand;
     const fltSemantics *savedSemantics = semantics;
-    fltSemantics extendedSemantics;
     opStatus status;
     unsigned int extendedPrecision;
 
@@ -1351,7 +1225,7 @@ lostFraction IEEEFloat::multiplySignificand(const IEEEFloat &rhs,
     }
 
     /* Create new semantics.  */
-    extendedSemantics = *semantics;
+    fltSemantics extendedSemantics = *semantics;
     extendedSemantics.precision = extendedPrecision;
 
     if (newPartsCount == 1)
@@ -2998,7 +2872,7 @@ IEEEFloat::roundSignificandWithExponent(const integerPart *decSigParts,
                                         unsigned sigPartCount, int exp,
                                         roundingMode rounding_mode) {
   unsigned int parts, pow5PartCount;
-  fltSemantics calcSemantics = { 32767, -32767, 0, 0 };
+  fltSemantics calcSemantics = {32767, -32767, 0, 0, false};
   integerPart pow5Parts[maxPowerOfFiveParts];
   bool isNearest;
 

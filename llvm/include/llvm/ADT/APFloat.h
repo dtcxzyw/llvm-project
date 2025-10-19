@@ -138,6 +138,98 @@ enum lostFraction { // Example of truncated bits:
 /// New operations: sqrt, IEEE remainder, C90 fmod, nexttoward.
 ///
 
+// How the nonfinite values Inf and NaN are represented.
+enum class fltNonfiniteBehavior {
+  // Represents standard IEEE 754 behavior. A value is nonfinite if the
+  // exponent field is all 1s. In such cases, a value is Inf if the
+  // significand bits are all zero, and NaN otherwise
+  IEEE754,
+
+  // This behavior is present in the Float8ExMyFN* types (Float8E4M3FN,
+  // Float8E5M2FNUZ, Float8E4M3FNUZ, and Float8E4M3B11FNUZ). There is no
+  // representation for Inf, and operations that would ordinarily produce Inf
+  // produce NaN instead.
+  // The details of the NaN representation(s) in this form are determined by the
+  // `fltNanEncoding` enum. We treat all NaNs as quiet, as the available
+  // encodings do not distinguish between signalling and quiet NaN.
+  NanOnly,
+
+  // This behavior is present in Float6E3M2FN, Float6E2M3FN, and
+  // Float4E2M1FN types, which do not support Inf or NaN values.
+  FiniteOnly,
+};
+
+// How NaN values are represented. This is curently only used in combination
+// with fltNonfiniteBehavior::NanOnly, and using a variant other than IEEE
+// while having IEEE non-finite behavior is liable to lead to unexpected
+// results.
+enum class fltNanEncoding {
+  // Represents the standard IEEE behavior where a value is NaN if its
+  // exponent is all 1s and the significand is non-zero.
+  IEEE,
+
+  // Represents the behavior in the Float8E4M3FN floating point type where NaN
+  // is represented by having the exponent and mantissa set to all 1s.
+  // This behavior matches the FP8 E4M3 type described in
+  // https://arxiv.org/abs/2209.05433. We treat both signed and unsigned NaNs
+  // as non-signalling, although the paper does not state whether the NaN
+  // values are signalling or not.
+  AllOnes,
+
+  // Represents the behavior in Float8E{5,4}E{2,3}FNUZ floating point types
+  // where NaN is represented by a sign bit of 1 and all 0s in the exponent
+  // and mantissa (i.e. the negative zero encoding in a IEEE float). Since
+  // there is only one NaN value, it is treated as quiet NaN. This matches the
+  // behavior described in https://arxiv.org/abs/2206.02915 .
+  NegativeZero,
+};
+
+/* Represents floating point arithmetic semantics.  */
+struct fltSemantics {
+  using ExponentType = int32_t;
+  /* The largest E such that 2^E is representable; this matches the
+     definition of IEEE 754.  */
+  ExponentType maxExponent;
+
+  /* The smallest E such that 2^E is a normalized number; this
+     matches the definition of IEEE 754.  */
+  ExponentType minExponent;
+
+  /* Number of bits in the significand.  This includes the integer
+     bit.  */
+  unsigned int precision;
+
+  /* Number of bits actually used in the semantics. */
+  unsigned int sizeInBits;
+
+  bool isIEEELikeFP;
+
+  fltNonfiniteBehavior nonFiniteBehavior;
+
+  fltNanEncoding nanEncoding;
+
+  /* Whether this semantics has an encoding for Zero */
+  bool hasZero;
+
+  /* Whether this semantics can represent signed values */
+  bool hasSignedRepr;
+
+  /* Whether the sign bit of this semantics is the most significant bit */
+  bool hasSignBitInMSB;
+
+  constexpr fltSemantics(
+      ExponentType maxExponent, ExponentType minExponent,
+      unsigned int precision, unsigned int sizeInBits, bool isIEEELikeFP,
+      fltNonfiniteBehavior nonFiniteBehavior = fltNonfiniteBehavior::IEEE754,
+      fltNanEncoding nanEncoding = fltNanEncoding::IEEE, bool hasZero = true,
+      bool hasSignedRepr = true, bool hasSignBitInMSB = true)
+      : maxExponent(maxExponent), minExponent(minExponent),
+        precision(precision), sizeInBits(sizeInBits),
+        isIEEELikeFP(isIEEELikeFP), nonFiniteBehavior(nonFiniteBehavior),
+        nanEncoding(nanEncoding), hasZero(hasZero),
+        hasSignedRepr(hasSignedRepr), hasSignBitInMSB(hasSignBitInMSB) {}
+};
+
 namespace detail {
 class IEEEFloat;
 class DoubleAPFloat;
@@ -152,7 +244,7 @@ public:
   static constexpr unsigned integerPartWidth = APInt::APINT_BITS_PER_WORD;
 
   /// A signed type to represent a floating point numbers unbiased exponent.
-  typedef int32_t ExponentType;
+  using ExponentType = fltSemantics::ExponentType;
 
   /// \name Floating Point Semantics.
   /// @{
@@ -386,27 +478,68 @@ public:
     IEK_Inf = INT_MAX
   };
 
-  LLVM_ABI static unsigned int semanticsPrecision(const fltSemantics &);
-  LLVM_ABI static ExponentType semanticsMinExponent(const fltSemantics &);
-  LLVM_ABI static ExponentType semanticsMaxExponent(const fltSemantics &);
-  LLVM_ABI static unsigned int semanticsSizeInBits(const fltSemantics &);
-  LLVM_ABI static unsigned int semanticsIntSizeInBits(const fltSemantics &,
-                                                      bool);
-  LLVM_ABI static bool semanticsHasZero(const fltSemantics &);
-  LLVM_ABI static bool semanticsHasSignedRepr(const fltSemantics &);
-  LLVM_ABI static bool semanticsHasInf(const fltSemantics &);
-  LLVM_ABI static bool semanticsHasNaN(const fltSemantics &);
-  LLVM_ABI static bool isIEEELikeFP(const fltSemantics &);
-  LLVM_ABI static bool hasSignBitInMSB(const fltSemantics &);
+  static unsigned int semanticsPrecision(const fltSemantics &Sem) {
+    return Sem.precision;
+  }
+  static ExponentType semanticsMinExponent(const fltSemantics &Sem) {
+    return Sem.minExponent;
+  }
+  static ExponentType semanticsMaxExponent(const fltSemantics &Sem) {
+    return Sem.maxExponent;
+  }
+  static unsigned int semanticsSizeInBits(const fltSemantics &Sem) {
+    return Sem.sizeInBits;
+  }
+  static unsigned int semanticsIntSizeInBits(const fltSemantics &Sem,
+                                             bool IsSigned) {
+    // The max FP value is pow(2, MaxExponent) * (1 + MaxFraction), so we need
+    // at least one more bit than the MaxExponent to hold the max FP value.
+    unsigned int MinBitWidth = semanticsMaxExponent(Sem) + 1;
+    // Extra sign bit needed.
+    if (IsSigned)
+      ++MinBitWidth;
+    return MinBitWidth;
+  }
+  static bool semanticsHasZero(const fltSemantics &Sem) { return Sem.hasZero; }
+  static bool semanticsHasSignedRepr(const fltSemantics &Sem) {
+    return Sem.hasSignedRepr;
+  }
+  static bool semanticsHasInf(const fltSemantics &Sem) {
+    return Sem.nonFiniteBehavior == fltNonfiniteBehavior::IEEE754;
+  }
+  static bool semanticsHasNaN(const fltSemantics &Sem) {
+    return Sem.nonFiniteBehavior != fltNonfiniteBehavior::FiniteOnly;
+  }
+  static bool isIEEELikeFP(const fltSemantics &Sem) {
+    // Keep in sync with Type::isIEEELikeFPTy
+    return Sem.isIEEELikeFP;
+  }
+  static bool hasSignBitInMSB(const fltSemantics &Sem) {
+    return Sem.hasSignBitInMSB;
+  }
 
   // Returns true if any number described by \p Src can be precisely represented
   // by a normal (not subnormal) value in \p Dst.
-  LLVM_ABI static bool isRepresentableAsNormalIn(const fltSemantics &Src,
-                                                 const fltSemantics &Dst);
+  static bool isRepresentableAsNormalIn(const fltSemantics &Src,
+                                        const fltSemantics &Dst) {
+    // Exponent range must be larger.
+    if (Src.maxExponent >= Dst.maxExponent ||
+        Src.minExponent <= Dst.minExponent)
+      return false;
+
+    // If the mantissa is long enough, the result value could still be denormal
+    // with a larger exponent range.
+    //
+    // FIXME: This condition is probably not accurate but also shouldn't be a
+    // practical concern with existing types.
+    return Dst.precision >= Src.precision;
+  }
 
   /// Returns the size of the floating point number (in bits) in the given
   /// semantics.
-  LLVM_ABI static unsigned getSizeInBits(const fltSemantics &Sem);
+  static unsigned getSizeInBits(const fltSemantics &Sem) {
+    return Sem.sizeInBits;
+  }
 };
 
 namespace detail {
