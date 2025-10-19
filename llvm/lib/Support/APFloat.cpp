@@ -389,8 +389,7 @@ static inline Error createError(const Twine &Err) {
 }
 
 static constexpr inline unsigned int partCountForBits(unsigned int bits) {
-  return std::max(1u, (bits + APFloatBase::integerPartWidth - 1) /
-                          APFloatBase::integerPartWidth);
+  return bits <= APFloatBase::integerPartWidth ? 1 : 2;
 }
 
 /* Returns 0U-9U.  Return values >= 10U are not digits.  */
