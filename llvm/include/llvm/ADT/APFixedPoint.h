@@ -25,7 +25,7 @@
 namespace llvm {
 
 class APFloat;
-struct fltSemantics;
+class fltSemantics;
 
 /// The fixed point semantics work similarly to fltSemantics. The width
 /// specifies the whole bit width of the underlying scaled integer (with padding

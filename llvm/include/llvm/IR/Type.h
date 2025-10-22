@@ -27,7 +27,7 @@
 namespace llvm {
 
 class IntegerType;
-struct fltSemantics;
+class fltSemantics;
 class LLVMContext;
 class PointerType;
 class raw_ostream;

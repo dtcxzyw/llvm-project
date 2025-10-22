@@ -13,7 +13,7 @@
 #include "mlir/IR/Types.h"
 
 namespace llvm {
-struct fltSemantics;
+class fltSemantics;
 } // namespace llvm
 
 namespace mlir {

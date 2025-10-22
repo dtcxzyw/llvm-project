@@ -50,7 +50,7 @@ namespace llvm {
 
 class APFixedPoint;
 class FixedPointSemantics;
-struct fltSemantics;
+class fltSemantics;
 template <typename T, unsigned N> class SmallPtrSet;
 
 struct ScalableVecTyKey {

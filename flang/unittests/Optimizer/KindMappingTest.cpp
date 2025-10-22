@@ -12,7 +12,7 @@
 
 using namespace fir;
 namespace llvm {
-struct fltSemantics;
+class fltSemantics;
 } // namespace llvm
 
 namespace mlir {

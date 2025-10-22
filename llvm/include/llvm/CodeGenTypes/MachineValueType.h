@@ -27,7 +27,7 @@
 namespace llvm {
 
   class Type;
-  struct fltSemantics;
+  class fltSemantics;
   class raw_ostream;
 
   /// Machine Value Type. Every type that is supported natively by some

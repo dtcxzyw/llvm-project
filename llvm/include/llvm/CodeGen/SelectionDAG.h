@@ -69,7 +69,7 @@ class Constant;
 class ConstantFP;
 class ConstantInt;
 class DataLayout;
-struct fltSemantics;
+class fltSemantics;
 class FunctionLoweringInfo;
 class FunctionVarLocs;
 class GlobalValue;

@@ -27,7 +27,7 @@ namespace llvm {
 
   class LLVMContext;
   class Type;
-  struct fltSemantics;
+  class fltSemantics;
 
   /// Extended Value Type. Capable of holding value types which are not native
   /// for any processor (such as the i12345 type), as well as the types an MVT

@@ -15,7 +15,7 @@
 
 namespace llvm {
 class BitVector;
-struct fltSemantics;
+class fltSemantics;
 } // namespace llvm
 
 //===----------------------------------------------------------------------===//

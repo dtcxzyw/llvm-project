@@ -34,7 +34,7 @@
 
 namespace llvm {
 
-struct fltSemantics;
+class fltSemantics;
 class APSInt;
 class StringRef;
 class APFloat;
@@ -185,50 +185,93 @@ enum class fltNanEncoding {
 };
 
 /* Represents floating point arithmetic semantics.  */
-struct fltSemantics {
-  using ExponentType = int32_t;
+class fltSemantics {
   /* The largest E such that 2^E is representable; this matches the
      definition of IEEE 754.  */
-  ExponentType maxExponent;
+  // int16_t maxExponent;
 
   /* The smallest E such that 2^E is a normalized number; this
      matches the definition of IEEE 754.  */
-  ExponentType minExponent;
+  // int16_t minExponent;
 
   /* Number of bits in the significand.  This includes the integer
      bit.  */
-  unsigned int precision;
+  // unsigned int precision: 8;
 
   /* Number of bits actually used in the semantics. */
-  unsigned int sizeInBits;
+  // unsigned int sizeInBits: 8;
 
-  bool isIEEELikeFP;
+  // bool isIEEELikeFP: 1;
 
-  fltNonfiniteBehavior nonFiniteBehavior;
+  // fltNonfiniteBehavior nonFiniteBehavior: 2;
 
-  fltNanEncoding nanEncoding;
+  // fltNanEncoding nanEncoding: 2;
 
   /* Whether this semantics has an encoding for Zero */
-  bool hasZero;
+  // bool hasZero: 1;
 
   /* Whether this semantics can represent signed values */
-  bool hasSignedRepr;
+  // bool hasSignedRepr: 1;
 
   /* Whether the sign bit of this semantics is the most significant bit */
-  bool hasSignBitInMSB;
+  // bool hasSignBitInMSB: 1;
 
+  uint64_t Storage;
+
+public:
+  using ExponentType = int32_t;
   constexpr fltSemantics(
       ExponentType maxExponent, ExponentType minExponent,
       unsigned int precision, unsigned int sizeInBits, bool isIEEELikeFP,
       fltNonfiniteBehavior nonFiniteBehavior = fltNonfiniteBehavior::IEEE754,
       fltNanEncoding nanEncoding = fltNanEncoding::IEEE, bool hasZero = true,
       bool hasSignedRepr = true, bool hasSignBitInMSB = true)
-      : maxExponent(maxExponent), minExponent(minExponent),
-        precision(precision), sizeInBits(sizeInBits),
-        isIEEELikeFP(isIEEELikeFP), nonFiniteBehavior(nonFiniteBehavior),
-        nanEncoding(nanEncoding), hasZero(hasZero),
-        hasSignedRepr(hasSignedRepr), hasSignBitInMSB(hasSignBitInMSB) {}
+      : Storage(0) {
+    Storage |= (static_cast<uint64_t>(maxExponent) & 0xFFFF) << 48;
+    Storage |= (static_cast<uint64_t>(minExponent) & 0xFFFF) << 32;
+    Storage |= (static_cast<uint64_t>(sizeInBits) & 0xFF) << 16;
+    Storage |= (static_cast<uint64_t>(isIEEELikeFP) & 0x1) << 15;
+    Storage |= (static_cast<uint64_t>(nonFiniteBehavior) & 0x3) << 13;
+    Storage |= (static_cast<uint64_t>(nanEncoding) & 0x3) << 11;
+    Storage |= (static_cast<uint64_t>(hasZero) & 0x1) << 10;
+    Storage |= (static_cast<uint64_t>(hasSignedRepr) & 0x1) << 9;
+    Storage |= (static_cast<uint64_t>(hasSignBitInMSB) & 0x1) << 8;
+    Storage |= (static_cast<uint64_t>(precision) & 0xFF);
+  }
+
+  constexpr ExponentType getMaxExponent() const {
+    return static_cast<int16_t>((Storage >> 48) & 0xFFFF);
+  }
+  constexpr void setMaxExponent(ExponentType E) {
+    Storage = (Storage & ~(0xFFFFULL << 48)) |
+              ((static_cast<uint64_t>(E) & 0xFFFF) << 48);
+  }
+  constexpr ExponentType getMinExponent() const {
+    return static_cast<int16_t>((Storage >> 32) & 0xFFFF);
+  }
+  constexpr void setMinExponent(ExponentType E) {
+    Storage = (Storage & ~(0xFFFFULL << 32)) |
+              ((static_cast<uint64_t>(E) & 0xFFFF) << 32);
+  }
+  constexpr unsigned int getPrecision() const { return Storage & 0xFF; }
+  constexpr void setPrecision(unsigned int P) {
+    Storage = (Storage & ~(0xFFULL)) | ((static_cast<uint64_t>(P) & 0xFF));
+  }
+  constexpr unsigned int getSizeInBits() const {
+    return (Storage >> 16) & 0xFF;
+  }
+  constexpr bool isIEEELike() const { return (Storage >> 15) & 0x1; }
+  constexpr fltNonfiniteBehavior getNonFiniteBehavior() const {
+    return static_cast<fltNonfiniteBehavior>((Storage >> 13) & 0x3);
+  }
+  constexpr fltNanEncoding getNanEncoding() const {
+    return static_cast<fltNanEncoding>((Storage >> 11) & 0x3);
+  }
+  constexpr bool hasZero() const { return (Storage >> 10) & 0x1; }
+  constexpr bool hasSignedRepr() const { return (Storage >> 9) & 0x1; }
+  constexpr bool hasSignBitInMSB() const { return (Storage >> 8) & 0x1; }
 };
+static_assert(sizeof(fltSemantics) == 8);
 
 namespace detail {
 class IEEEFloat;
@@ -324,7 +367,7 @@ public:
     // 8-bit floating point number following IEEE-754 conventions with bit
     // layout S1E3M4.
     S_Float8E3M4,
-    // Floating point number that occupies 32 bits or less of storage, providing
+    // Floating point number that occupies 32 bits or less of Storage, providing
     // improved range compared to half (16-bit) formats, at (potentially)
     // greater throughput than single precision (32-bit) formats.
     S_FloatTF32,
@@ -479,16 +522,16 @@ public:
   };
 
   static unsigned int semanticsPrecision(const fltSemantics &Sem) {
-    return Sem.precision;
+    return Sem.getPrecision();
   }
   static ExponentType semanticsMinExponent(const fltSemantics &Sem) {
-    return Sem.minExponent;
+    return Sem.getMinExponent();
   }
   static ExponentType semanticsMaxExponent(const fltSemantics &Sem) {
-    return Sem.maxExponent;
+    return Sem.getMaxExponent();
   }
   static unsigned int semanticsSizeInBits(const fltSemantics &Sem) {
-    return Sem.sizeInBits;
+    return Sem.getSizeInBits();
   }
   static unsigned int semanticsIntSizeInBits(const fltSemantics &Sem,
                                              bool IsSigned) {
@@ -500,22 +543,24 @@ public:
       ++MinBitWidth;
     return MinBitWidth;
   }
-  static bool semanticsHasZero(const fltSemantics &Sem) { return Sem.hasZero; }
+  static bool semanticsHasZero(const fltSemantics &Sem) {
+    return Sem.hasZero();
+  }
   static bool semanticsHasSignedRepr(const fltSemantics &Sem) {
-    return Sem.hasSignedRepr;
+    return Sem.hasSignedRepr();
   }
   static bool semanticsHasInf(const fltSemantics &Sem) {
-    return Sem.nonFiniteBehavior == fltNonfiniteBehavior::IEEE754;
+    return Sem.getNonFiniteBehavior() == fltNonfiniteBehavior::IEEE754;
   }
   static bool semanticsHasNaN(const fltSemantics &Sem) {
-    return Sem.nonFiniteBehavior != fltNonfiniteBehavior::FiniteOnly;
+    return Sem.getNonFiniteBehavior() != fltNonfiniteBehavior::FiniteOnly;
   }
   static bool isIEEELikeFP(const fltSemantics &Sem) {
     // Keep in sync with Type::isIEEELikeFPTy
-    return Sem.isIEEELikeFP;
+    return Sem.isIEEELike();
   }
   static bool hasSignBitInMSB(const fltSemantics &Sem) {
-    return Sem.hasSignBitInMSB;
+    return Sem.hasSignBitInMSB();
   }
 
   // Returns true if any number described by \p Src can be precisely represented
@@ -523,8 +568,8 @@ public:
   static bool isRepresentableAsNormalIn(const fltSemantics &Src,
                                         const fltSemantics &Dst) {
     // Exponent range must be larger.
-    if (Src.maxExponent >= Dst.maxExponent ||
-        Src.minExponent <= Dst.minExponent)
+    if (Src.getMaxExponent() >= Dst.getMaxExponent() ||
+        Src.getMinExponent() <= Dst.getMinExponent())
       return false;
 
     // If the mantissa is long enough, the result value could still be denormal
@@ -532,13 +577,13 @@ public:
     //
     // FIXME: This condition is probably not accurate but also shouldn't be a
     // practical concern with existing types.
-    return Dst.precision >= Src.precision;
+    return Dst.getPrecision() >= Src.getPrecision();
   }
 
   /// Returns the size of the floating point number (in bits) in the given
   /// semantics.
   static unsigned getSizeInBits(const fltSemantics &Sem) {
-    return Sem.sizeInBits;
+    return Sem.getSizeInBits();
   }
 };
 

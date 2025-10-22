@@ -47,7 +47,7 @@
 #include <vector>
 
 namespace llvm {
-struct fltSemantics;
+class fltSemantics;
 }
 
 namespace clang {

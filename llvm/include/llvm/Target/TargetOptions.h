@@ -22,7 +22,7 @@
 #include <memory>
 
 namespace llvm {
-struct fltSemantics;
+class fltSemantics;
 class MachineFunction;
 class MemoryBuffer;
 

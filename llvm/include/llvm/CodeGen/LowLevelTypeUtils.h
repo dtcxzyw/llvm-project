@@ -24,7 +24,7 @@ namespace llvm {
 
 class DataLayout;
 class Type;
-struct fltSemantics;
+class fltSemantics;
 
 /// Construct a low-level type based on an LLVM type.
 LLVM_ABI LLT getLLTForType(Type &Ty, const DataLayout &DL);
