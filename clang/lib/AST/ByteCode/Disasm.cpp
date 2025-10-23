@@ -27,6 +27,7 @@
 #include "clang/AST/ASTDumperUtils.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/ExprCXX.h"
+#include "llvm/ADT/APFloat.h"
 #include "llvm/Support/Compiler.h"
 
 using namespace clang;
@@ -60,6 +61,11 @@ inline static std::string printArg(Program &P, CodePtr &OpPC) {
 
     return Result;
   }
+}
+
+template <>
+inline std::string printArg<llvm::fltSemantics>(Program &P, CodePtr &OpPC) {
+  return "todo";
 }
 
 template <> inline std::string printArg<Floating>(Program &P, CodePtr &OpPC) {

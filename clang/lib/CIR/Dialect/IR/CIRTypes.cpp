@@ -518,7 +518,7 @@ bool cir::isValidFundamentalIntWidth(unsigned width) {
 // Floating-point type definitions
 //===----------------------------------------------------------------------===//
 
-const llvm::fltSemantics &SingleType::getFloatSemantics() const {
+llvm::fltSemantics SingleType::getFloatSemantics() const {
   return llvm::APFloat::IEEEsingle();
 }
 
@@ -534,7 +534,7 @@ SingleType::getABIAlignment(const mlir::DataLayout &dataLayout,
   return (uint64_t)(getWidth() / 8);
 }
 
-const llvm::fltSemantics &DoubleType::getFloatSemantics() const {
+llvm::fltSemantics DoubleType::getFloatSemantics() const {
   return llvm::APFloat::IEEEdouble();
 }
 
@@ -550,7 +550,7 @@ DoubleType::getABIAlignment(const mlir::DataLayout &dataLayout,
   return (uint64_t)(getWidth() / 8);
 }
 
-const llvm::fltSemantics &FP16Type::getFloatSemantics() const {
+llvm::fltSemantics FP16Type::getFloatSemantics() const {
   return llvm::APFloat::IEEEhalf();
 }
 
@@ -565,7 +565,7 @@ uint64_t FP16Type::getABIAlignment(const mlir::DataLayout &dataLayout,
   return (uint64_t)(getWidth() / 8);
 }
 
-const llvm::fltSemantics &BF16Type::getFloatSemantics() const {
+llvm::fltSemantics BF16Type::getFloatSemantics() const {
   return llvm::APFloat::BFloat();
 }
 
@@ -580,7 +580,7 @@ uint64_t BF16Type::getABIAlignment(const mlir::DataLayout &dataLayout,
   return (uint64_t)(getWidth() / 8);
 }
 
-const llvm::fltSemantics &FP80Type::getFloatSemantics() const {
+llvm::fltSemantics FP80Type::getFloatSemantics() const {
   return llvm::APFloat::x87DoubleExtended();
 }
 
@@ -596,7 +596,7 @@ uint64_t FP80Type::getABIAlignment(const mlir::DataLayout &dataLayout,
   return 16;
 }
 
-const llvm::fltSemantics &FP128Type::getFloatSemantics() const {
+llvm::fltSemantics FP128Type::getFloatSemantics() const {
   return llvm::APFloat::IEEEquad();
 }
 
@@ -611,7 +611,7 @@ uint64_t FP128Type::getABIAlignment(const mlir::DataLayout &dataLayout,
   return 16;
 }
 
-const llvm::fltSemantics &LongDoubleType::getFloatSemantics() const {
+llvm::fltSemantics LongDoubleType::getFloatSemantics() const {
   return mlir::cast<cir::FPTypeInterface>(getUnderlying()).getFloatSemantics();
 }
 

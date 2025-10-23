@@ -63,35 +63,31 @@ def CIR_FPTypeInterface : TypeInterface<"FPTypeInterface"> {
   }];
   let cppNamespace = "::cir";
 
-  let methods = [
-    InterfaceMethod<[{
+  let methods = [InterfaceMethod<[{
         Returns the bit width of this floating-point type.
       }],
-      /*retTy=*/"unsigned",
-      /*methodName=*/"getWidth",
-      /*args=*/(ins),
-      /*methodBody=*/"",
-      /*defaultImplementation=*/[{
+                                 /*retTy=*/"unsigned",
+                                 /*methodName=*/"getWidth",
+                                 /*args=*/(ins),
+                                 /*methodBody=*/"",
+                                 /*defaultImplementation=*/[{
           return llvm::APFloat::semanticsSizeInBits($_type.getFloatSemantics());
-        }]
-    >,
-    InterfaceMethod<[{
+        }]>,
+                 InterfaceMethod<[{
         Return the mantissa width.
       }],
-      /*retTy=*/"unsigned",
-      /*methodName=*/"getFPMantissaWidth",
-      /*args=*/(ins),
-      /*methodBody=*/"",
-      /*defaultImplementation=*/[{
+                                 /*retTy=*/"unsigned",
+                                 /*methodName=*/"getFPMantissaWidth",
+                                 /*args=*/(ins),
+                                 /*methodBody=*/"",
+                                 /*defaultImplementation=*/[{
           return llvm::APFloat::semanticsPrecision($_type.getFloatSemantics());
-        }]
-    >,
-    InterfaceMethod<[{
+        }]>,
+                 InterfaceMethod<[{
         Return the float semantics of this floating-point type.
       }],
-      /*retTy=*/"const llvm::fltSemantics &",
-      /*methodName=*/"getFloatSemantics"
-    >,
+                                 /*retTy=*/"llvm::fltSemantics ",
+                                 /*methodName=*/"getFloatSemantics">,
   ];
 }
 

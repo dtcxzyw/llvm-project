@@ -1092,7 +1092,7 @@ struct ConvertFPToUI final : OpConversionPattern<arith::FPToUIOp> {
     // lower part, we emit fptoui(fp - resHigh * 2^N). The special cases of
     // overflows including +-inf, NaNs and negative numbers are UB.
 
-    const llvm::fltSemantics &fSemantics =
+    llvm::fltSemantics fSemantics =
         cast<FloatType>(getElementTypeOrSelf(fpTy)).getFloatSemantics();
 
     auto powBitwidth = llvm::APFloat(fSemantics);

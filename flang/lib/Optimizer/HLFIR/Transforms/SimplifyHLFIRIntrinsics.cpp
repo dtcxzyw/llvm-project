@@ -362,7 +362,7 @@ static mlir::Value genMinMaxInitValue(mlir::Location loc,
                                       fir::FirOpBuilder &builder,
                                       mlir::Type type) {
   if (auto ty = mlir::dyn_cast<mlir::FloatType>(type)) {
-    const llvm::fltSemantics &sem = ty.getFloatSemantics();
+    llvm::fltSemantics sem = ty.getFloatSemantics();
     // We must not use +/-INF here. If the reduction input is empty,
     // the result of reduction must be +/-LARGEST.
     llvm::APFloat limit = llvm::APFloat::getLargest(sem, /*Negative=*/IS_MAX);

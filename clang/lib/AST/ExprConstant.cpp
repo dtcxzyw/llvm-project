@@ -7700,7 +7700,7 @@ class BufferToAPValueConverter {
     // is really just `long double` on x86, which is the only fundamental type
     // with padding bytes.
     if (T->isRealFloatingType()) {
-      const llvm::fltSemantics &Semantics =
+      llvm::fltSemantics Semantics =
           Info.Ctx.getFloatTypeSemantics(QualType(T, 0));
       unsigned NumBits = llvm::APFloatBase::getSizeInBits(Semantics);
       assert(NumBits % 8 == 0);
@@ -7746,7 +7746,7 @@ class BufferToAPValueConverter {
     }
 
     if (T->isRealFloatingType()) {
-      const llvm::fltSemantics &Semantics =
+      llvm::fltSemantics Semantics =
           Info.Ctx.getFloatTypeSemantics(QualType(T, 0));
       return APValue(APFloat(Semantics, Val));
     }
@@ -8004,7 +8004,7 @@ static bool checkBitCastConstexprEligibilityType(SourceLocation Loc,
     }
 
     if (EltTy->isRealFloatingType() &&
-        &Ctx.getFloatTypeSemantics(EltTy) == &APFloat::x87DoubleExtended()) {
+        Ctx.getFloatTypeSemantics(EltTy) == APFloat::x87DoubleExtended()) {
       // The layout for x86_fp80 vectors seems to be handled very inconsistently
       // by both clang and LLVM, so for now we won't allow bit_casts involving
       // it in a constexpr context.
@@ -17226,7 +17226,7 @@ static bool TryEvaluateBuiltinNaN(const ASTContext &Context,
   const StringLiteral *S = dyn_cast<StringLiteral>(Arg->IgnoreParenCasts());
   if (!S) return false;
 
-  const llvm::fltSemantics &Sem = Context.getFloatTypeSemantics(ResultTy);
+  llvm::fltSemantics Sem = Context.getFloatTypeSemantics(ResultTy);
 
   llvm::APInt fill;
 
@@ -17274,8 +17274,7 @@ bool FloatExprEvaluator::VisitCallExpr(const CallExpr *E) {
   case Builtin::BI__builtin_infl:
   case Builtin::BI__builtin_inff16:
   case Builtin::BI__builtin_inff128: {
-    const llvm::fltSemantics &Sem =
-      Info.Ctx.getFloatTypeSemantics(E->getType());
+    llvm::fltSemantics Sem = Info.Ctx.getFloatTypeSemantics(E->getType());
     Result = llvm::APFloat::getInf(Sem);
     return true;
   }
@@ -17440,7 +17439,7 @@ bool FloatExprEvaluator::VisitUnaryImag(const UnaryOperator *E) {
   }
 
   VisitIgnoredValue(E->getSubExpr());
-  const llvm::fltSemantics &Sem = Info.Ctx.getFloatTypeSemantics(E->getType());
+  llvm::fltSemantics Sem = Info.Ctx.getFloatTypeSemantics(E->getType());
   Result = llvm::APFloat::getZero(Sem);
   return true;
 }

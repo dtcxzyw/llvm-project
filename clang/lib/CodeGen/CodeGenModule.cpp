@@ -373,19 +373,19 @@ static void checkDataLayoutConsistency(const TargetInfo &Target,
     Check("__int128", llvm::Type::getIntNTy(Context, 128), Target.Int128Align);
 
   if (Target.hasFloat16Type())
-    Check("half", llvm::Type::getFloatingPointTy(Context, *Target.HalfFormat),
+    Check("half", llvm::Type::getFloatingPointTy(Context, Target.HalfFormat),
           Target.HalfAlign);
   if (Target.hasBFloat16Type())
     Check("bfloat", llvm::Type::getBFloatTy(Context), Target.BFloat16Align);
-  Check("float", llvm::Type::getFloatingPointTy(Context, *Target.FloatFormat),
+  Check("float", llvm::Type::getFloatingPointTy(Context, Target.FloatFormat),
         Target.FloatAlign);
   // FIXME: AIX specifies wrong double alignment in DataLayout
   if (!Triple.isOSAIX()) {
     Check("double",
-          llvm::Type::getFloatingPointTy(Context, *Target.DoubleFormat),
+          llvm::Type::getFloatingPointTy(Context, Target.DoubleFormat),
           Target.DoubleAlign);
     Check("long double",
-          llvm::Type::getFloatingPointTy(Context, *Target.LongDoubleFormat),
+          llvm::Type::getFloatingPointTy(Context, Target.LongDoubleFormat),
           Target.LongDoubleAlign);
   }
   if (Target.hasFloat128Type())

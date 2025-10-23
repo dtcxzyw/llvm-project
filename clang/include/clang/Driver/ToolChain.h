@@ -825,9 +825,10 @@ public:
   /// Returns the output denormal handling type in the default floating point
   /// environment for the given \p FPType if given. Otherwise, the default
   /// assumed mode for any floating point type.
-  virtual llvm::DenormalMode getDefaultDenormalModeForType(
-      const llvm::opt::ArgList &DriverArgs, const JobAction &JA,
-      const llvm::fltSemantics *FPType = nullptr) const {
+  virtual llvm::DenormalMode
+  getDefaultDenormalModeForType(const llvm::opt::ArgList &DriverArgs,
+                                const JobAction &JA,
+                                llvm::fltSemantics FPType = {}) const {
     return llvm::DenormalMode::getIEEE();
   }
 

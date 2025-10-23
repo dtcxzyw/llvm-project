@@ -2443,7 +2443,7 @@ SDValue SelectionDAGLegalize::expandLdexp(SDNode *Node) const {
 
   EVT SetCCVT =
       TLI.getSetCCResultType(DAG.getDataLayout(), *DAG.getContext(), ExpVT);
-  const fltSemantics &FltSem = VT.getFltSemantics();
+  fltSemantics FltSem = VT.getFltSemantics();
 
   const APFloat::ExponentType MaxExpVal = APFloat::semanticsMaxExponent(FltSem);
   const APFloat::ExponentType MinExpVal = APFloat::semanticsMinExponent(FltSem);
@@ -2543,7 +2543,7 @@ SDValue SelectionDAGLegalize::expandFrexp(SDNode *Node) const {
   if (AsIntVT == EVT()) // TODO: How to handle f80?
     return SDValue();
 
-  const fltSemantics &FltSem = VT.getFltSemantics();
+  fltSemantics FltSem = VT.getFltSemantics();
   const APFloat::ExponentType MinExpVal = APFloat::semanticsMinExponent(FltSem);
   const unsigned Precision = APFloat::semanticsPrecision(FltSem);
   const unsigned BitSize = VT.getScalarSizeInBits();

@@ -8389,7 +8389,7 @@ LegalizerHelper::lowerFPTOINT_SAT(MachineInstr &MI) {
     MaxInt = APInt::getMaxValue(SatWidth);
   }
 
-  const fltSemantics &Semantics = getFltSemanticForLLT(SrcTy.getScalarType());
+  fltSemantics Semantics = getFltSemanticForLLT(SrcTy.getScalarType());
   APFloat MinFloat(Semantics);
   APFloat MaxFloat(Semantics);
 
@@ -9781,7 +9781,7 @@ LegalizerHelper::lowerISFPCLASS(MachineInstr &MI) {
   // version
 
   unsigned BitSize = SrcTy.getScalarSizeInBits();
-  const fltSemantics &Semantics = getFltSemanticForLLT(SrcTy.getScalarType());
+  fltSemantics Semantics = getFltSemanticForLLT(SrcTy.getScalarType());
 
   LLT IntTy = LLT::scalar(BitSize);
   if (SrcTy.isVector())

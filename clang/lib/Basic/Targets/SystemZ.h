@@ -72,7 +72,7 @@ public:
     PointerWidth = PointerAlign = 64;
     LongDoubleWidth = 128;
     LongDoubleAlign = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
     DefaultAlignForAttributeAligned = 64;
     MinGlobalAlign = 16;
     HasUnalignedAccess = true;

@@ -1031,7 +1031,7 @@ TEST(APFloatTest, Denormal) {
 
 TEST(APFloatTest, IsSmallestNormalized) {
   for (unsigned I = 0; I != APFloat::S_MaxSemantics + 1; ++I) {
-    const fltSemantics &Semantics =
+    fltSemantics Semantics =
         APFloat::EnumToSemantics(static_cast<APFloat::Semantics>(I));
 
     // For Float8E8M0FNU format, the below cases are tested
@@ -1357,7 +1357,7 @@ TEST(APFloatTest, fromDecimalString) {
 }
 
 TEST(APFloatTest, fromStringSpecials) {
-  const fltSemantics &Sem = APFloat::IEEEdouble();
+  fltSemantics Sem = APFloat::IEEEdouble();
   const unsigned Precision = 53;
   const unsigned PayloadBits = Precision - 2;
   uint64_t PayloadMask = (uint64_t(1) << PayloadBits) - uint64_t(1);
@@ -1661,14 +1661,14 @@ TEST(APFloatTest, toInteger) {
 }
 
 class APFloatConvertFromAPIntParamTest
-    : public ::testing::TestWithParam<const fltSemantics *> {
+    : public ::testing::TestWithParam<fltSemantics> {
 protected:
   // Helper to run a conversion and compare the integer result directly.
   static void testConversionAndCompareInt(const APInt &InputValue,
                                           const bool IsSigned,
                                           APFloat::roundingMode RM,
                                           const APInt &ExpectedIntValue) {
-    const fltSemantics &Sem = *GetParam();
+    fltSemantics Sem = GetParam();
     APFloat F(Sem);
     F.convertFromAPInt(InputValue, /*IsSigned=*/IsSigned, RM);
 
@@ -1684,7 +1684,7 @@ protected:
 };
 
 TEST_P(APFloatConvertFromAPIntParamTest, HalfwayRounding) {
-  const fltSemantics &Sem = *GetParam();
+  fltSemantics Sem = GetParam();
   const unsigned Precision = APFloat::semanticsPrecision(Sem);
 
   if (Precision == 0)
@@ -1711,7 +1711,7 @@ TEST_P(APFloatConvertFromAPIntParamTest, HalfwayRounding) {
 }
 
 TEST_P(APFloatConvertFromAPIntParamTest, MaxMagnitude) {
-  const fltSemantics &Sem = *GetParam();
+  fltSemantics Sem = GetParam();
   const unsigned Precision = APFloat::semanticsPrecision(Sem);
 
   if (Precision == 0)
@@ -1738,13 +1738,13 @@ TEST_P(APFloatConvertFromAPIntParamTest, MaxMagnitude) {
 }
 
 INSTANTIATE_TEST_SUITE_P(IEEESemantics, APFloatConvertFromAPIntParamTest,
-                         ::testing::Values(&APFloat::IEEEhalf(),
-                                           &APFloat::BFloat(),
-                                           &APFloat::IEEEsingle(),
-                                           &APFloat::IEEEdouble(),
-                                           &APFloat::IEEEquad()));
+                         ::testing::Values(APFloat::IEEEhalf(),
+                                           APFloat::BFloat(),
+                                           APFloat::IEEEsingle(),
+                                           APFloat::IEEEdouble(),
+                                           APFloat::IEEEquad()));
 
-static APInt nanbitsFromAPInt(const fltSemantics &Sem, bool SNaN, bool Negative,
+static APInt nanbitsFromAPInt(fltSemantics Sem, bool SNaN, bool Negative,
                               uint64_t payload) {
   APInt appayload(64, payload);
   if (SNaN)
@@ -1756,7 +1756,7 @@ static APInt nanbitsFromAPInt(const fltSemantics &Sem, bool SNaN, bool Negative,
 TEST(APFloatTest, makeNaN) {
   const struct {
     uint64_t expected;
-    const fltSemantics &semantics;
+    fltSemantics semantics;
     bool SNaN;
     bool Negative;
     uint64_t payload;
@@ -2509,53 +2509,52 @@ TEST(APFloatTest, getSmallestNormalized) {
 
 TEST(APFloatTest, getZero) {
   struct {
-    const fltSemantics *semantics;
+    fltSemantics semantics;
     const bool sign;
     const bool signedZero;
     const unsigned long long bitPattern[2];
     const unsigned bitPatternLength;
   } const GetZeroTest[] = {
-      {&APFloat::IEEEhalf(), false, true, {0, 0}, 1},
-      {&APFloat::IEEEhalf(), true, true, {0x8000ULL, 0}, 1},
-      {&APFloat::IEEEsingle(), false, true, {0, 0}, 1},
-      {&APFloat::IEEEsingle(), true, true, {0x80000000ULL, 0}, 1},
-      {&APFloat::IEEEdouble(), false, true, {0, 0}, 1},
-      {&APFloat::IEEEdouble(), true, true, {0x8000000000000000ULL, 0}, 1},
-      {&APFloat::IEEEquad(), false, true, {0, 0}, 2},
-      {&APFloat::IEEEquad(), true, true, {0, 0x8000000000000000ULL}, 2},
-      {&APFloat::PPCDoubleDouble(), false, true, {0, 0}, 2},
-      {&APFloat::PPCDoubleDouble(), true, true, {0x8000000000000000ULL, 0}, 2},
-      {&APFloat::x87DoubleExtended(), false, true, {0, 0}, 2},
-      {&APFloat::x87DoubleExtended(), true, true, {0, 0x8000ULL}, 2},
-      {&APFloat::Float8E5M2(), false, true, {0, 0}, 1},
-      {&APFloat::Float8E5M2(), true, true, {0x80ULL, 0}, 1},
-      {&APFloat::Float8E5M2FNUZ(), false, false, {0, 0}, 1},
-      {&APFloat::Float8E5M2FNUZ(), true, false, {0, 0}, 1},
-      {&APFloat::Float8E4M3(), false, true, {0, 0}, 1},
-      {&APFloat::Float8E4M3(), true, true, {0x80ULL, 0}, 1},
-      {&APFloat::Float8E4M3FN(), false, true, {0, 0}, 1},
-      {&APFloat::Float8E4M3FN(), true, true, {0x80ULL, 0}, 1},
-      {&APFloat::Float8E4M3FNUZ(), false, false, {0, 0}, 1},
-      {&APFloat::Float8E4M3FNUZ(), true, false, {0, 0}, 1},
-      {&APFloat::Float8E4M3B11FNUZ(), false, false, {0, 0}, 1},
-      {&APFloat::Float8E4M3B11FNUZ(), true, false, {0, 0}, 1},
-      {&APFloat::Float8E3M4(), false, true, {0, 0}, 1},
-      {&APFloat::Float8E3M4(), true, true, {0x80ULL, 0}, 1},
-      {&APFloat::FloatTF32(), false, true, {0, 0}, 1},
-      {&APFloat::FloatTF32(), true, true, {0x40000ULL, 0}, 1},
-      {&APFloat::Float6E3M2FN(), false, true, {0, 0}, 1},
-      {&APFloat::Float6E3M2FN(), true, true, {0x20ULL, 0}, 1},
-      {&APFloat::Float6E2M3FN(), false, true, {0, 0}, 1},
-      {&APFloat::Float6E2M3FN(), true, true, {0x20ULL, 0}, 1},
-      {&APFloat::Float4E2M1FN(), false, true, {0, 0}, 1},
-      {&APFloat::Float4E2M1FN(), true, true, {0x8ULL, 0}, 1}};
+      {APFloat::IEEEhalf(), false, true, {0, 0}, 1},
+      {APFloat::IEEEhalf(), true, true, {0x8000ULL, 0}, 1},
+      {APFloat::IEEEsingle(), false, true, {0, 0}, 1},
+      {APFloat::IEEEsingle(), true, true, {0x80000000ULL, 0}, 1},
+      {APFloat::IEEEdouble(), false, true, {0, 0}, 1},
+      {APFloat::IEEEdouble(), true, true, {0x8000000000000000ULL, 0}, 1},
+      {APFloat::IEEEquad(), false, true, {0, 0}, 2},
+      {APFloat::IEEEquad(), true, true, {0, 0x8000000000000000ULL}, 2},
+      {APFloat::PPCDoubleDouble(), false, true, {0, 0}, 2},
+      {APFloat::PPCDoubleDouble(), true, true, {0x8000000000000000ULL, 0}, 2},
+      {APFloat::x87DoubleExtended(), false, true, {0, 0}, 2},
+      {APFloat::x87DoubleExtended(), true, true, {0, 0x8000ULL}, 2},
+      {APFloat::Float8E5M2(), false, true, {0, 0}, 1},
+      {APFloat::Float8E5M2(), true, true, {0x80ULL, 0}, 1},
+      {APFloat::Float8E5M2FNUZ(), false, false, {0, 0}, 1},
+      {APFloat::Float8E5M2FNUZ(), true, false, {0, 0}, 1},
+      {APFloat::Float8E4M3(), false, true, {0, 0}, 1},
+      {APFloat::Float8E4M3(), true, true, {0x80ULL, 0}, 1},
+      {APFloat::Float8E4M3FN(), false, true, {0, 0}, 1},
+      {APFloat::Float8E4M3FN(), true, true, {0x80ULL, 0}, 1},
+      {APFloat::Float8E4M3FNUZ(), false, false, {0, 0}, 1},
+      {APFloat::Float8E4M3FNUZ(), true, false, {0, 0}, 1},
+      {APFloat::Float8E4M3B11FNUZ(), false, false, {0, 0}, 1},
+      {APFloat::Float8E4M3B11FNUZ(), true, false, {0, 0}, 1},
+      {APFloat::Float8E3M4(), false, true, {0, 0}, 1},
+      {APFloat::Float8E3M4(), true, true, {0x80ULL, 0}, 1},
+      {APFloat::FloatTF32(), false, true, {0, 0}, 1},
+      {APFloat::FloatTF32(), true, true, {0x40000ULL, 0}, 1},
+      {APFloat::Float6E3M2FN(), false, true, {0, 0}, 1},
+      {APFloat::Float6E3M2FN(), true, true, {0x20ULL, 0}, 1},
+      {APFloat::Float6E2M3FN(), false, true, {0, 0}, 1},
+      {APFloat::Float6E2M3FN(), true, true, {0x20ULL, 0}, 1},
+      {APFloat::Float4E2M1FN(), false, true, {0, 0}, 1},
+      {APFloat::Float4E2M1FN(), true, true, {0x8ULL, 0}, 1}};
   const unsigned NumGetZeroTests = std::size(GetZeroTest);
   for (unsigned i = 0; i < NumGetZeroTests; ++i) {
-    APFloat test = APFloat::getZero(*GetZeroTest[i].semantics,
-                                    GetZeroTest[i].sign);
+    APFloat test =
+        APFloat::getZero(GetZeroTest[i].semantics, GetZeroTest[i].sign);
     const char *pattern = GetZeroTest[i].sign? "-0x0p+0" : "0x0p+0";
-    APFloat expected = APFloat(*GetZeroTest[i].semantics,
-                               pattern);
+    APFloat expected = APFloat(GetZeroTest[i].semantics, pattern);
     EXPECT_TRUE(test.isZero());
     if (GetZeroTest[i].signedZero)
       EXPECT_TRUE(GetZeroTest[i].sign ? test.isNegative() : !test.isNegative());
@@ -2581,7 +2580,7 @@ TEST(APFloatTest, copySign) {
   // For floating-point formats with unsigned 0, copySign() to a zero is a noop
   for (APFloat::Semantics S :
        {APFloat::S_Float8E4M3FNUZ, APFloat::S_Float8E4M3B11FNUZ}) {
-    const llvm::fltSemantics &Sem = APFloat::EnumToSemantics(S);
+    llvm::fltSemantics Sem = APFloat::EnumToSemantics(S);
     EXPECT_TRUE(APFloat::getZero(Sem).bitwiseIsEqual(
         APFloat::copySign(APFloat::getZero(Sem), APFloat(-1.0))));
     EXPECT_TRUE(APFloat::getNaN(Sem, true).bitwiseIsEqual(
@@ -2711,7 +2710,7 @@ TEST(APFloatTest, Float8UZConvert) {
   for (APFloat::Semantics S :
        {APFloat::S_Float8E5M2FNUZ, APFloat::S_Float8E4M3FNUZ,
         APFloat::S_Float8E4M3B11FNUZ}) {
-    const llvm::fltSemantics &Sem = APFloat::EnumToSemantics(S);
+    llvm::fltSemantics Sem = APFloat::EnumToSemantics(S);
     SCOPED_TRACE("Semantics = " + std::to_string(S));
     for (auto [toTest, expectedRes] : toNaNTests) {
       llvm::SmallString<16> value;
@@ -2808,28 +2807,28 @@ TEST(APFloatTest, PPCDoubleDouble) {
   {
     auto Result = APFloat(APFloat::PPCDoubleDouble(), "1.0") +
                   APFloat(APFloat::PPCDoubleDouble(), "1.0");
-    EXPECT_EQ(&APFloat::PPCDoubleDouble(), &Result.getSemantics());
+    EXPECT_EQ(APFloat::PPCDoubleDouble(), Result.getSemantics());
 
     Result = APFloat(APFloat::PPCDoubleDouble(), "1.0") -
              APFloat(APFloat::PPCDoubleDouble(), "1.0");
-    EXPECT_EQ(&APFloat::PPCDoubleDouble(), &Result.getSemantics());
+    EXPECT_EQ(APFloat::PPCDoubleDouble(), Result.getSemantics());
 
     Result = APFloat(APFloat::PPCDoubleDouble(), "1.0") *
              APFloat(APFloat::PPCDoubleDouble(), "1.0");
-    EXPECT_EQ(&APFloat::PPCDoubleDouble(), &Result.getSemantics());
+    EXPECT_EQ(APFloat::PPCDoubleDouble(), Result.getSemantics());
 
     Result = APFloat(APFloat::PPCDoubleDouble(), "1.0") /
              APFloat(APFloat::PPCDoubleDouble(), "1.0");
-    EXPECT_EQ(&APFloat::PPCDoubleDouble(), &Result.getSemantics());
+    EXPECT_EQ(APFloat::PPCDoubleDouble(), Result.getSemantics());
 
     int Exp;
     Result = frexp(APFloat(APFloat::PPCDoubleDouble(), "1.0"), Exp,
                    APFloat::rmNearestTiesToEven);
-    EXPECT_EQ(&APFloat::PPCDoubleDouble(), &Result.getSemantics());
+    EXPECT_EQ(APFloat::PPCDoubleDouble(), Result.getSemantics());
 
     Result = scalbn(APFloat(APFloat::PPCDoubleDouble(), "1.0"), 1,
                     APFloat::rmNearestTiesToEven);
-    EXPECT_EQ(&APFloat::PPCDoubleDouble(), &Result.getSemantics());
+    EXPECT_EQ(APFloat::PPCDoubleDouble(), Result.getSemantics());
   }
 }
 
@@ -2896,7 +2895,7 @@ TEST(APFloatTest, isInfinity) {
   EXPECT_FALSE(APFloat(APFloat::IEEEsingle(), "0x1p-149").isInfinity());
 
   for (unsigned I = 0; I != APFloat::S_MaxSemantics + 1; ++I) {
-    const fltSemantics &Semantics =
+    fltSemantics Semantics =
         APFloat::EnumToSemantics(static_cast<APFloat::Semantics>(I));
     if (APFloat::semanticsHasInf(Semantics)) {
       EXPECT_TRUE(APFloat::getInf(Semantics).isInfinity());
@@ -2914,7 +2913,7 @@ TEST(APFloatTest, isNaN) {
   EXPECT_FALSE(APFloat(APFloat::IEEEsingle(), "0x1p-149").isNaN());
 
   for (unsigned I = 0; I != APFloat::S_MaxSemantics + 1; ++I) {
-    const fltSemantics &Semantics =
+    fltSemantics Semantics =
         APFloat::EnumToSemantics(static_cast<APFloat::Semantics>(I));
     if (APFloat::semanticsHasNaN(Semantics)) {
       EXPECT_TRUE(APFloat::getNaN(Semantics).isNaN());
@@ -6886,7 +6885,7 @@ TEST(APFloatTest, PPCDoubleDoubleNext) {
 
   // 2^-52
   auto Eps = [&] {
-    const fltSemantics &Sem = APFloat::IEEEdouble();
+    fltSemantics Sem = APFloat::IEEEdouble();
     return scalbn(One(), 1 - APFloat::semanticsPrecision(Sem),
                   APFloat::rmNearestTiesToEven);
   };
@@ -7382,7 +7381,7 @@ TEST(APFloatTest, Float8ExhaustivePair) {
   for (APFloat::Semantics Sem :
        {APFloat::S_Float8E4M3FN, APFloat::S_Float8E5M2FNUZ,
         APFloat::S_Float8E4M3FNUZ, APFloat::S_Float8E4M3B11FNUZ}) {
-    const llvm::fltSemantics &S = APFloat::EnumToSemantics(Sem);
+    llvm::fltSemantics S = APFloat::EnumToSemantics(Sem);
     for (int i = 0; i < 256; i++) {
       for (int j = 0; j < 256; j++) {
         SCOPED_TRACE("sem=" + std::to_string(Sem) + ",i=" + std::to_string(i) +
@@ -7461,7 +7460,7 @@ TEST(APFloatTest, Float8ExhaustivePair) {
 TEST(APFloatTest, Float8E8M0FNUExhaustivePair) {
   // Test each pair of 8-bit values for Float8E8M0FNU format
   APFloat::Semantics Sem = APFloat::S_Float8E8M0FNU;
-  const llvm::fltSemantics &S = APFloat::EnumToSemantics(Sem);
+  llvm::fltSemantics S = APFloat::EnumToSemantics(Sem);
   for (int i = 0; i < 256; i++) {
     for (int j = 0; j < 256; j++) {
       SCOPED_TRACE("sem=" + std::to_string(Sem) + ",i=" + std::to_string(i) +
@@ -7560,7 +7559,7 @@ TEST(APFloatTest, Float6ExhaustivePair) {
   // Test each pair of 6-bit floats with non-standard semantics
   for (APFloat::Semantics Sem :
        {APFloat::S_Float6E3M2FN, APFloat::S_Float6E2M3FN}) {
-    const llvm::fltSemantics &S = APFloat::EnumToSemantics(Sem);
+    llvm::fltSemantics S = APFloat::EnumToSemantics(Sem);
     for (int i = 1; i < 64; i++) {
       for (int j = 1; j < 64; j++) {
         SCOPED_TRACE("sem=" + std::to_string(Sem) + ",i=" + std::to_string(i) +
@@ -7643,7 +7642,7 @@ TEST(APFloatTest, Float6ExhaustivePair) {
 TEST(APFloatTest, Float4ExhaustivePair) {
   // Test each pair of 4-bit floats with non-standard semantics
   for (APFloat::Semantics Sem : {APFloat::S_Float4E2M1FN}) {
-    const llvm::fltSemantics &S = APFloat::EnumToSemantics(Sem);
+    llvm::fltSemantics S = APFloat::EnumToSemantics(Sem);
     for (int i = 0; i < 16; i++) {
       for (int j = 0; j < 16; j++) {
         SCOPED_TRACE("sem=" + std::to_string(Sem) + ",i=" + std::to_string(i) +
@@ -8171,7 +8170,7 @@ TEST(APFloatTest, UnsignedZeroArithmeticSpecial) {
   // The IEEE round towards negative rule doesn't apply
   for (APFloat::Semantics S :
        {APFloat::S_Float8E4M3FNUZ, APFloat::S_Float8E4M3B11FNUZ}) {
-    const llvm::fltSemantics &Sem = APFloat::EnumToSemantics(S);
+    llvm::fltSemantics Sem = APFloat::EnumToSemantics(S);
     APFloat test = APFloat::getSmallest(Sem);
     APFloat rhs = test;
     EXPECT_EQ(test.subtract(rhs, APFloat::rmTowardNegative), APFloat::opOK);
@@ -8276,14 +8275,14 @@ TEST(APFloatTest, Float8E5M2FNUZDivideByZero) {
 
 TEST(APFloatTest, Float8UnsignedZeroExhaustive) {
   struct {
-    const fltSemantics *semantics;
+    fltSemantics semantics;
     const double largest;
     const double smallest;
-  } const exhaustiveTests[] = {{&APFloat::Float8E5M2FNUZ(), 57344., 0x1.0p-17},
-                               {&APFloat::Float8E4M3FNUZ(), 240., 0x1.0p-10},
-                               {&APFloat::Float8E4M3B11FNUZ(), 30., 0x1.0p-13}};
+  } const exhaustiveTests[] = {{APFloat::Float8E5M2FNUZ(), 57344., 0x1.0p-17},
+                               {APFloat::Float8E4M3FNUZ(), 240., 0x1.0p-10},
+                               {APFloat::Float8E4M3B11FNUZ(), 30., 0x1.0p-13}};
   for (const auto &testInfo : exhaustiveTests) {
-    const fltSemantics &sem = *testInfo.semantics;
+    fltSemantics sem = testInfo.semantics;
     SCOPED_TRACE("Semantics=" + std::to_string(APFloat::SemanticsToEnum(sem)));
     // Test each of the 256 values.
     for (int i = 0; i < 256; i++) {
@@ -8327,7 +8326,7 @@ TEST(APFloatTest, Float8UnsignedZeroExhaustive) {
 TEST(APFloatTest, Float8E4M3FNUZNext) {
   for (APFloat::Semantics S :
        {APFloat::S_Float8E4M3FNUZ, APFloat::S_Float8E4M3B11FNUZ}) {
-    const llvm::fltSemantics &Sem = APFloat::EnumToSemantics(S);
+    llvm::fltSemantics Sem = APFloat::EnumToSemantics(S);
     APFloat test(Sem, APFloat::uninitialized);
     APFloat expected(Sem, APFloat::uninitialized);
 
@@ -8382,7 +8381,7 @@ TEST(APFloatTest, Float8E4M3FNUZNext) {
 TEST(APFloatTest, Float8E4M3FNUZChangeSign) {
   for (APFloat::Semantics S :
        {APFloat::S_Float8E4M3FNUZ, APFloat::S_Float8E4M3B11FNUZ}) {
-    const llvm::fltSemantics &Sem = APFloat::EnumToSemantics(S);
+    llvm::fltSemantics Sem = APFloat::EnumToSemantics(S);
     APFloat test = APFloat(Sem, "1.0");
     APFloat expected = APFloat(Sem, "-1.0");
     test.changeSign();
@@ -8621,7 +8620,7 @@ TEST(APFloatTest, F8ToBitsToF8) {
         APFloat::S_Float8E5M2FNUZ, APFloat::S_Float8E4M3FNUZ,
         APFloat::S_Float8E4M3B11FNUZ}) {
     SCOPED_TRACE("Semantics=" + std::to_string(S));
-    auto &Sem = APFloat::EnumToSemantics(S);
+    auto Sem = APFloat::EnumToSemantics(S);
     for (bool negative : {false, true}) {
       SCOPED_TRACE("negative=" + std::to_string(negative));
       APFloat test = APFloat::getZero(Sem, /*Negative=*/negative);
@@ -9348,7 +9347,7 @@ TEST(APFloatTest, FloatTF32ToFloat) {
 TEST(APFloatTest, getExactLog2) {
   for (unsigned I = 0; I != APFloat::S_MaxSemantics + 1; ++I) {
     auto SemEnum = static_cast<APFloat::Semantics>(I);
-    const fltSemantics &Semantics = APFloat::EnumToSemantics(SemEnum);
+    fltSemantics Semantics = APFloat::EnumToSemantics(SemEnum);
 
     // For the Float8E8M0FNU format, the below cases along
     // with some more corner cases are tested through
@@ -9493,7 +9492,7 @@ TEST(APFloatTest, Float8E8M0FNUDivideByZero) {
 }
 
 TEST(APFloatTest, Float8E8M0FNUGetExactLog2) {
-  const fltSemantics &Semantics = APFloat::Float8E8M0FNU();
+  fltSemantics Semantics = APFloat::Float8E8M0FNU();
   APFloat One(Semantics, "1.0");
   EXPECT_EQ(0, One.getExactLog2());
 

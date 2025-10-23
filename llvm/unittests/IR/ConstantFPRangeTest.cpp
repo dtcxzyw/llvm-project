@@ -19,7 +19,7 @@ namespace {
 
 class ConstantFPRangeTest : public ::testing::Test {
 protected:
-  static const fltSemantics &Sem;
+  static fltSemantics Sem;
   static ConstantFPRange Full;
   static ConstantFPRange Empty;
   static ConstantFPRange Finite;
@@ -39,7 +39,7 @@ protected:
   static ConstantFPRange SomeNeg;
 };
 
-const fltSemantics &ConstantFPRangeTest::Sem = APFloat::IEEEdouble();
+fltSemantics ConstantFPRangeTest::Sem = APFloat::IEEEdouble();
 ConstantFPRange ConstantFPRangeTest::Full =
     ConstantFPRange::getFull(APFloat::IEEEdouble());
 ConstantFPRange ConstantFPRangeTest::Empty =
@@ -92,7 +92,7 @@ enum class SparseLevel {
 template <typename Fn>
 static void EnumerateConstantFPRangesImpl(Fn TestFn, SparseLevel Level,
                                           bool MayBeQNaN, bool MayBeSNaN) {
-  const fltSemantics &Sem = APFloat::Float8E4M3();
+  fltSemantics Sem = APFloat::Float8E4M3();
   APFloat PosInf = APFloat::getInf(Sem, /*Negative=*/false);
   APFloat NegInf = APFloat::getInf(Sem, /*Negative=*/true);
   TestFn(ConstantFPRange(PosInf, NegInf, MayBeQNaN, MayBeSNaN));
@@ -169,7 +169,7 @@ static void EnumerateTwoInterestingConstantFPRanges(Fn TestFn,
 template <typename Fn>
 static void EnumerateValuesInConstantFPRange(const ConstantFPRange &CR,
                                              Fn TestFn, bool IgnoreNaNPayload) {
-  const fltSemantics &Sem = CR.getSemantics();
+  fltSemantics Sem = CR.getSemantics();
   if (IgnoreNaNPayload) {
     if (CR.containsSNaN()) {
       TestFn(APFloat::getSNaN(Sem, false));
@@ -206,7 +206,7 @@ static void EnumerateValuesInConstantFPRange(const ConstantFPRange &CR,
 template <typename Fn>
 static bool AnyOfValueInConstantFPRange(const ConstantFPRange &CR, Fn TestFn,
                                         bool IgnoreNaNPayload) {
-  const fltSemantics &Sem = CR.getSemantics();
+  fltSemantics Sem = CR.getSemantics();
   if (IgnoreNaNPayload) {
     if (CR.containsSNaN()) {
       if (TestFn(APFloat::getSNaN(Sem, false)))
@@ -704,7 +704,7 @@ TEST_F(ConstantFPRangeTest, makeSatisfyingFCmpRegion) {
 
 TEST_F(ConstantFPRangeTest, fcmp) {
   std::vector<ConstantFPRange> InterestingRanges;
-  const fltSemantics &Sem = APFloat::Float8E4M3();
+  fltSemantics Sem = APFloat::Float8E4M3();
   auto FpImm = [&](double V) {
     bool ignored;
     APFloat APF(V);
@@ -846,10 +846,10 @@ TEST_F(ConstantFPRangeTest, getWithout) {
 }
 
 TEST_F(ConstantFPRangeTest, cast) {
-  const fltSemantics &F16Sem = APFloat::IEEEhalf();
-  const fltSemantics &BF16Sem = APFloat::BFloat();
-  const fltSemantics &F32Sem = APFloat::IEEEsingle();
-  const fltSemantics &F8NanOnlySem = APFloat::Float8E4M3FN();
+  fltSemantics F16Sem = APFloat::IEEEhalf();
+  fltSemantics BF16Sem = APFloat::BFloat();
+  fltSemantics F32Sem = APFloat::IEEEsingle();
+  fltSemantics F8NanOnlySem = APFloat::Float8E4M3FN();
   // normal -> normal (exact)
   EXPECT_EQ(ConstantFPRange::getNonNaN(APFloat(1.0), APFloat(2.0)).cast(F32Sem),
             ConstantFPRange::getNonNaN(APFloat(1.0f), APFloat(2.0f)));
@@ -940,7 +940,7 @@ TEST_F(ConstantFPRangeTest, cast) {
             << "Casting " << V << " to double failed. " << DoubleCR
             << " doesn't contain " << DoubleV;
 
-        auto &FP4Sem = APFloat::Float4E2M1FN();
+        auto FP4Sem = APFloat::Float4E2M1FN();
         APFloat FP4V = V;
         FP4V.convert(FP4Sem, APFloat::rmNearestTiesToEven, &LosesInfo);
         ConstantFPRange FP4CR = ConstantFPRange(V).cast(FP4Sem);
@@ -1176,7 +1176,7 @@ TEST_F(ConstantFPRangeTest, div) {
 }
 
 TEST_F(ConstantFPRangeTest, flushDenormals) {
-  const fltSemantics &FP8Sem = APFloat::Float8E4M3();
+  fltSemantics FP8Sem = APFloat::Float8E4M3();
   APFloat NormalVal = APFloat::getSmallestNormalized(FP8Sem);
   APFloat Subnormal1 = NormalVal;
   Subnormal1.next(/*nextDown=*/true);

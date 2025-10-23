@@ -51,10 +51,10 @@ public:
     HasFeatureSCQ = false;
     BFloat16Width = 16;
     BFloat16Align = 16;
-    BFloat16Format = &llvm::APFloat::BFloat();
+    BFloat16Format = llvm::APFloat::BFloat();
     LongDoubleWidth = 128;
     LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
     MCountName = "_mcount";
     HasFloat16 = true;
     SuitableAlign = 128;

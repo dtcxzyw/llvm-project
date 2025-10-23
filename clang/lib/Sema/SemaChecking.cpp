@@ -4513,8 +4513,8 @@ ExprResult Sema::BuildAtomicExpr(SourceRange CallRange, SourceRange ExprRange,
         return false;
       // LLVM Parser does not allow atomicrmw with x86_fp80 type.
       if (ValType->isSpecificBuiltinType(BuiltinType::LongDouble) &&
-          &Context.getTargetInfo().getLongDoubleFormat() ==
-              &llvm::APFloat::x87DoubleExtended())
+          Context.getTargetInfo().getLongDoubleFormat() ==
+              llvm::APFloat::x87DoubleExtended())
         return false;
       return true;
     };
@@ -11266,8 +11266,8 @@ static std::optional<IntRange> TryGetExprRange(ASTContext &C, const Expr *E,
 /// source semantics, has the same value when coerced through the
 /// target semantics.
 static bool IsSameFloatAfterCast(const llvm::APFloat &value,
-                                 const llvm::fltSemantics &Src,
-                                 const llvm::fltSemantics &Tgt) {
+                                 llvm::fltSemantics Src,
+                                 llvm::fltSemantics Tgt) {
   llvm::APFloat truncated = value;
 
   bool ignored;
@@ -11282,9 +11282,8 @@ static bool IsSameFloatAfterCast(const llvm::APFloat &value,
 /// target semantics.
 ///
 /// The value might be a vector of floats (or a complex number).
-static bool IsSameFloatAfterCast(const APValue &value,
-                                 const llvm::fltSemantics &Src,
-                                 const llvm::fltSemantics &Tgt) {
+static bool IsSameFloatAfterCast(const APValue &value, llvm::fltSemantics Src,
+                                 llvm::fltSemantics Tgt) {
   if (value.isFloat())
     return IsSameFloatAfterCast(value.getFloat(), Src, Tgt);
 

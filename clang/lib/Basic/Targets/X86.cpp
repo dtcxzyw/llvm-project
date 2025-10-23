@@ -497,7 +497,7 @@ bool X86TargetInfo::handleTargetFeatures(std::vector<std::string> &Features,
 
   // FIXME: We should allow long double type on 32-bits to match with GCC.
   // This requires backend to be able to lower f80 without x87 first.
-  if (!HasX87 && LongDoubleFormat == &llvm::APFloat::x87DoubleExtended())
+  if (!HasX87 && LongDoubleFormat == llvm::APFloat::x87DoubleExtended())
     HasLongDouble = false;
 
   return true;

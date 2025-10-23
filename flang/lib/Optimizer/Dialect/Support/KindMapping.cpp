@@ -101,8 +101,7 @@ static LLVMTypeID getFloatLikeTypeID(KindTy kind, const MAP &map) {
 }
 
 template <char KEY, typename MAP>
-static const llvm::fltSemantics &getFloatSemanticsOfKind(KindTy kind,
-                                                         const MAP &map) {
+static llvm::fltSemantics getFloatSemanticsOfKind(KindTy kind, const MAP &map) {
   switch (doLookup<LLVMTypeID, KEY>(defaultRealKind, map, kind)) {
   case LLVMTypeID::HalfTyID:
     return llvm::APFloat::IEEEhalf();
@@ -302,8 +301,7 @@ Bitsize fir::KindMapping::getRealBitsize(KindTy kind) const {
   return llvm::Type::getPrimitiveType(llCtxt, typeId)->getPrimitiveSizeInBits();
 }
 
-const llvm::fltSemantics &
-fir::KindMapping::getFloatSemantics(KindTy kind) const {
+llvm::fltSemantics fir::KindMapping::getFloatSemantics(KindTy kind) const {
   return getFloatSemanticsOfKind<'r'>(kind, floatMap);
 }
 

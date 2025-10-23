@@ -87,9 +87,10 @@ public:
   /// for the subtarget.
   static bool getDefaultDenormsAreZeroForTarget(llvm::AMDGPU::GPUKind GPUKind);
 
-  llvm::DenormalMode getDefaultDenormalModeForType(
-      const llvm::opt::ArgList &DriverArgs, const JobAction &JA,
-      const llvm::fltSemantics *FPType = nullptr) const override;
+  llvm::DenormalMode
+  getDefaultDenormalModeForType(const llvm::opt::ArgList &DriverArgs,
+                                const JobAction &JA,
+                                llvm::fltSemantics FPType = {}) const override;
 
   static bool isWave64(const llvm::opt::ArgList &DriverArgs,
                        llvm::AMDGPU::GPUKind Kind);

@@ -39,8 +39,8 @@ _LIBCPP_HIDE_FROM_ABI constexpr bool __has_rmw_builtin() {
   // lib/Sema/SemaChecking.cpp function IsAllowedValueType
   // LLVM Parser does not allow atomicrmw with x86_fp80 type.
   // if (ValType->isSpecificBuiltinType(BuiltinType::LongDouble) &&
-  //    &Context.getTargetInfo().getLongDoubleFormat() ==
-  //        &llvm::APFloat::x87DoubleExtended())
+  //    Context.getTargetInfo().getLongDoubleFormat() ==
+  //        llvm::APFloat::x87DoubleExtended())
   // For more info
   // https://llvm.org/PR68602
   // https://reviews.llvm.org/D53965

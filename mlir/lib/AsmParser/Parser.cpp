@@ -360,7 +360,7 @@ OptionalParseResult Parser::parseOptionalDecimalInteger(APInt &result) {
 
 ParseResult Parser::parseFloatFromLiteral(std::optional<APFloat> &result,
                                           const Token &tok, bool isNegative,
-                                          const llvm::fltSemantics &semantics) {
+                                          llvm::fltSemantics semantics) {
   // Check for a floating point value.
   if (tok.is(Token::floatliteral)) {
     auto val = tok.getFloatingPointValue();
@@ -381,10 +381,10 @@ ParseResult Parser::parseFloatFromLiteral(std::optional<APFloat> &result,
 }
 
 /// Parse a floating point value from an integer literal token.
-ParseResult
-Parser::parseFloatFromIntegerLiteral(std::optional<APFloat> &result,
-                                     const Token &tok, bool isNegative,
-                                     const llvm::fltSemantics &semantics) {
+ParseResult Parser::parseFloatFromIntegerLiteral(std::optional<APFloat> &result,
+                                                 const Token &tok,
+                                                 bool isNegative,
+                                                 llvm::fltSemantics semantics) {
   StringRef spelling = tok.getSpelling();
   bool isHex = spelling.size() > 1 && spelling[1] == 'x';
   if (!isHex) {

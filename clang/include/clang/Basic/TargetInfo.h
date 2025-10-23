@@ -139,8 +139,8 @@ struct TransferrableTargetInfo {
   unsigned MaxVectorAlign;
   unsigned MaxTLSAlign;
 
-  const llvm::fltSemantics *HalfFormat, *BFloat16Format, *FloatFormat,
-      *DoubleFormat, *LongDoubleFormat, *Float128Format, *Ibm128Format;
+  llvm::fltSemantics HalfFormat, BFloat16Format, FloatFormat, DoubleFormat,
+      LongDoubleFormat, Float128Format, Ibm128Format;
 
   ///===---- Target Data Type Query Methods -------------------------------===//
   enum IntType {
@@ -780,44 +780,40 @@ public:
   /// getHalfWidth/Align/Format - Return the size/align/format of 'half'.
   unsigned getHalfWidth() const { return HalfWidth; }
   unsigned getHalfAlign() const { return HalfAlign; }
-  const llvm::fltSemantics &getHalfFormat() const { return *HalfFormat; }
+  llvm::fltSemantics getHalfFormat() const { return HalfFormat; }
 
   /// getFloatWidth/Align/Format - Return the size/align/format of 'float'.
   unsigned getFloatWidth() const { return FloatWidth; }
   unsigned getFloatAlign() const { return FloatAlign; }
-  const llvm::fltSemantics &getFloatFormat() const { return *FloatFormat; }
+  llvm::fltSemantics getFloatFormat() const { return FloatFormat; }
 
   /// getBFloat16Width/Align/Format - Return the size/align/format of '__bf16'.
   unsigned getBFloat16Width() const { return BFloat16Width; }
   unsigned getBFloat16Align() const { return BFloat16Align; }
-  const llvm::fltSemantics &getBFloat16Format() const { return *BFloat16Format; }
+  llvm::fltSemantics getBFloat16Format() const { return BFloat16Format; }
 
   /// getDoubleWidth/Align/Format - Return the size/align/format of 'double'.
   unsigned getDoubleWidth() const { return DoubleWidth; }
   unsigned getDoubleAlign() const { return DoubleAlign; }
-  const llvm::fltSemantics &getDoubleFormat() const { return *DoubleFormat; }
+  llvm::fltSemantics getDoubleFormat() const { return DoubleFormat; }
 
   /// getLongDoubleWidth/Align/Format - Return the size/align/format of 'long
   /// double'.
   unsigned getLongDoubleWidth() const { return LongDoubleWidth; }
   unsigned getLongDoubleAlign() const { return LongDoubleAlign; }
-  const llvm::fltSemantics &getLongDoubleFormat() const {
-    return *LongDoubleFormat;
-  }
+  llvm::fltSemantics getLongDoubleFormat() const { return LongDoubleFormat; }
 
   /// getFloat128Width/Align/Format - Return the size/align/format of
   /// '__float128'.
   unsigned getFloat128Width() const { return 128; }
   unsigned getFloat128Align() const { return Float128Align; }
-  const llvm::fltSemantics &getFloat128Format() const {
-    return *Float128Format;
-  }
+  llvm::fltSemantics getFloat128Format() const { return Float128Format; }
 
   /// getIbm128Width/Align/Format - Return the size/align/format of
   /// '__ibm128'.
   unsigned getIbm128Width() const { return 128; }
   unsigned getIbm128Align() const { return Ibm128Align; }
-  const llvm::fltSemantics &getIbm128Format() const { return *Ibm128Format; }
+  llvm::fltSemantics getIbm128Format() const { return Ibm128Format; }
 
   /// Return the mangled code of long double.
   virtual const char *getLongDoubleMangling() const { return "e"; }

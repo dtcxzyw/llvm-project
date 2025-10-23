@@ -217,9 +217,9 @@ static Value castToF32(Value value, Location loc, PatternRewriter &rewriter) {
 static Value clampInput(PatternRewriter &rewriter, Location loc,
                         Type outElemType, Value source) {
   Type sourceType = source.getType();
-  const llvm::fltSemantics &sourceSem =
+  llvm::fltSemantics sourceSem =
       cast<FloatType>(getElementTypeOrSelf(sourceType)).getFloatSemantics();
-  const llvm::fltSemantics &targetSem =
+  llvm::fltSemantics targetSem =
       cast<FloatType>(outElemType).getFloatSemantics();
 
   APFloat min = APFloat::getLargest(targetSem, /*Negative=*/true);

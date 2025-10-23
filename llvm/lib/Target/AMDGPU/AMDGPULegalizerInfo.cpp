@@ -5696,11 +5696,11 @@ bool AMDGPULegalizerInfo::legalizeRsqClampIntrinsic(MachineInstr &MI,
 
   LLT Ty = MRI.getType(Dst);
 
-  const fltSemantics *FltSemantics;
+  fltSemantics FltSemantics;
   if (Ty == LLT::scalar(32))
-    FltSemantics = &APFloat::IEEEsingle();
+    FltSemantics = APFloat::IEEEsingle();
   else if (Ty == LLT::scalar(64))
-    FltSemantics = &APFloat::IEEEdouble();
+    FltSemantics = APFloat::IEEEdouble();
   else
     return false;
 

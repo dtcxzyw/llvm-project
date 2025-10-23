@@ -249,7 +249,7 @@ public:
   /// Read an APFloat that is known to have been encoded with the given
   /// semantics.
   virtual FailureOr<APFloat>
-  readAPFloatWithKnownSemantics(const llvm::fltSemantics &semantics) = 0;
+  readAPFloatWithKnownSemantics(llvm::fltSemantics semantics) = 0;
 
   /// Read a string from the bytecode.
   virtual LogicalResult readString(StringRef &result) = 0;

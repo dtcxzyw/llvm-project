@@ -1014,8 +1014,8 @@ void ScalarExprEmitter::EmitFloatConversionCheck(
   using llvm::APSInt;
 
   llvm::Value *Check = nullptr;
-  const llvm::fltSemantics &SrcSema =
-    CGF.getContext().getFloatTypeSemantics(OrigSrcType);
+  llvm::fltSemantics SrcSema =
+      CGF.getContext().getFloatTypeSemantics(OrigSrcType);
 
   // Floating-point to integer. This has undefined behavior if the source is
   // +-Inf, NaN, or doesn't fit into the destination type (after truncation
@@ -1050,8 +1050,7 @@ void ScalarExprEmitter::EmitFloatConversionCheck(
   // If we're converting from __half, convert the range to float to match
   // the type of src.
   if (OrigSrcType->isHalfType()) {
-    const llvm::fltSemantics &Sema =
-      CGF.getContext().getFloatTypeSemantics(SrcType);
+    llvm::fltSemantics Sema = CGF.getContext().getFloatTypeSemantics(SrcType);
     bool IsInexact;
     MinSrc.convert(Sema, APFloat::rmTowardZero, &IsInexact);
     MaxSrc.convert(Sema, APFloat::rmTowardZero, &IsInexact);
@@ -3320,20 +3319,20 @@ ScalarExprEmitter::EmitScalarPrePostIncDec(const UnaryOperator *E, LValue LV,
       // Convert from float.
       llvm::APFloat F(static_cast<float>(amount));
       bool ignored;
-      const llvm::fltSemantics *FS;
+      llvm::fltSemantics FS;
       // Don't use getFloatTypeSemantics because Half isn't
       // necessarily represented using the "half" LLVM type.
       if (value->getType()->isFP128Ty())
-        FS = &CGF.getTarget().getFloat128Format();
+        FS = CGF.getTarget().getFloat128Format();
       else if (value->getType()->isHalfTy())
-        FS = &CGF.getTarget().getHalfFormat();
+        FS = CGF.getTarget().getHalfFormat();
       else if (value->getType()->isBFloatTy())
-        FS = &CGF.getTarget().getBFloat16Format();
+        FS = CGF.getTarget().getBFloat16Format();
       else if (value->getType()->isPPC_FP128Ty())
-        FS = &CGF.getTarget().getIbm128Format();
+        FS = CGF.getTarget().getIbm128Format();
       else
-        FS = &CGF.getTarget().getLongDoubleFormat();
-      F.convert(*FS, llvm::APFloat::rmTowardZero, &ignored);
+        FS = CGF.getTarget().getLongDoubleFormat();
+      F.convert(FS, llvm::APFloat::rmTowardZero, &ignored);
       amt = llvm::ConstantFP::get(VMContext, F);
     }
     value = Builder.CreateFAdd(value, amt, isInc ? "inc" : "dec");

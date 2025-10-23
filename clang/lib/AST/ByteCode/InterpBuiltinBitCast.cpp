@@ -244,7 +244,7 @@ static bool CheckBitcastType(InterpState &S, CodePtr OpPC, QualType T,
     }
 
     if (EltTy->isRealFloatingType() &&
-        &ASTCtx.getFloatTypeSemantics(EltTy) == &APFloat::x87DoubleExtended()) {
+        ASTCtx.getFloatTypeSemantics(EltTy) == APFloat::x87DoubleExtended()) {
       // The layout for x86_fp80 vectors seems to be handled very inconsistently
       // by both clang and LLVM, so for now we won't allow bit_casts involving
       // it in a constexpr context.
@@ -393,7 +393,7 @@ bool clang::interp::DoBitCastPtr(InterpState &S, CodePtr OpPC,
           bool PackedBools) -> bool {
         QualType PtrType = P.getType();
         if (T == PT_Float) {
-          const auto &Semantics = ASTCtx.getFloatTypeSemantics(PtrType);
+          const auto Semantics = ASTCtx.getFloatTypeSemantics(PtrType);
           Bits NumBits = Bits(llvm::APFloatBase::getSizeInBits(Semantics));
           assert(NumBits.isFullByte());
           assert(NumBits.getQuantity() <= FullBitWidth.getQuantity());

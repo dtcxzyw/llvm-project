@@ -14,6 +14,7 @@
 #ifndef LLVM_IR_TYPE_H
 #define LLVM_IR_TYPE_H
 
+#include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/CBindingWrapping.h"
 #include "llvm/Support/Casting.h"
@@ -27,7 +28,6 @@
 namespace llvm {
 
 class IntegerType;
-class fltSemantics;
 class LLVMContext;
 class PointerType;
 class raw_ostream;
@@ -194,7 +194,7 @@ public:
     return getTypeID() == PPC_FP128TyID;
   }
 
-  LLVM_ABI const fltSemantics &getFltSemantics() const;
+  LLVM_ABI fltSemantics getFltSemantics() const;
 
   /// Return true if this is X86 AMX.
   bool isX86_AMXTy() const { return getTypeID() == X86_AMXTyID; }
@@ -472,8 +472,7 @@ public:
     }
     llvm_unreachable("Unsupported type in Type::getScalarTy");
   }
-  LLVM_ABI static Type *getFloatingPointTy(LLVMContext &C,
-                                           const fltSemantics &S);
+  LLVM_ABI static Type *getFloatingPointTy(LLVMContext &C, fltSemantics S);
 
   //===--------------------------------------------------------------------===//
   // Convenience methods for getting pointer types.

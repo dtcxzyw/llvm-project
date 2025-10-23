@@ -148,12 +148,12 @@ TargetInfo::TargetInfo(const llvm::Triple &T) : Triple(T) {
   ZeroLengthBitfieldBoundary = 0;
   LargestOverSizedBitfieldContainer = 64;
   MaxAlignedAttribute = 0;
-  HalfFormat = &llvm::APFloat::IEEEhalf();
-  FloatFormat = &llvm::APFloat::IEEEsingle();
-  DoubleFormat = &llvm::APFloat::IEEEdouble();
-  LongDoubleFormat = &llvm::APFloat::IEEEdouble();
-  Float128Format = &llvm::APFloat::IEEEquad();
-  Ibm128Format = &llvm::APFloat::PPCDoubleDouble();
+  HalfFormat = llvm::APFloat::IEEEhalf();
+  FloatFormat = llvm::APFloat::IEEEsingle();
+  DoubleFormat = llvm::APFloat::IEEEdouble();
+  LongDoubleFormat = llvm::APFloat::IEEEdouble();
+  Float128Format = llvm::APFloat::IEEEquad();
+  Ibm128Format = llvm::APFloat::PPCDoubleDouble();
   MCountName = "mcount";
   UserLabelPrefix = "_";
   RegParmMax = 0;
@@ -348,7 +348,7 @@ FloatModeKind TargetInfo::getRealTypeByWidth(unsigned BitWidth,
 
   switch (BitWidth) {
   case 96:
-    if (&getLongDoubleFormat() == &llvm::APFloat::x87DoubleExtended())
+    if (getLongDoubleFormat() == llvm::APFloat::x87DoubleExtended())
       return FloatModeKind::LongDouble;
     break;
   case 128:
@@ -360,8 +360,8 @@ FloatModeKind TargetInfo::getRealTypeByWidth(unsigned BitWidth,
     if (ExplicitType == FloatModeKind::Ibm128)
       return hasIbm128Type() ? FloatModeKind::Ibm128
                              : FloatModeKind::NoFloat;
-    if (&getLongDoubleFormat() == &llvm::APFloat::PPCDoubleDouble() ||
-        &getLongDoubleFormat() == &llvm::APFloat::IEEEquad())
+    if (getLongDoubleFormat() == llvm::APFloat::PPCDoubleDouble() ||
+        getLongDoubleFormat() == llvm::APFloat::IEEEquad())
       return FloatModeKind::LongDouble;
     if (hasFloat128Type())
       return FloatModeKind::Float128;
@@ -437,7 +437,7 @@ void TargetInfo::adjust(DiagnosticsEngine &Diags, LangOptions &Opts,
     BoolWidth = BoolAlign = 32;
     LongWidth = LongAlign = 64;
     if (!Opts.NativeHalfType) {
-      HalfFormat = &llvm::APFloat::IEEEsingle();
+      HalfFormat = llvm::APFloat::IEEEsingle();
       HalfWidth = HalfAlign = 32;
     }
   }
@@ -459,7 +459,7 @@ void TargetInfo::adjust(DiagnosticsEngine &Diags, LangOptions &Opts,
     // to generating illegal code that uses 64bit doubles.
     if (DoubleWidth != FloatWidth) {
       DoubleWidth = DoubleAlign = 64;
-      DoubleFormat = &llvm::APFloat::IEEEdouble();
+      DoubleFormat = llvm::APFloat::IEEEdouble();
     }
     LongDoubleWidth = LongDoubleAlign = 128;
 
@@ -473,9 +473,9 @@ void TargetInfo::adjust(DiagnosticsEngine &Diags, LangOptions &Opts,
     IntMaxType = SignedLongLong;
     Int64Type = SignedLong;
 
-    HalfFormat = &llvm::APFloat::IEEEhalf();
-    FloatFormat = &llvm::APFloat::IEEEsingle();
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    HalfFormat = llvm::APFloat::IEEEhalf();
+    FloatFormat = llvm::APFloat::IEEEsingle();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
 
     // OpenCL C v3.0 s6.7.5 - The generic address space requires support for
     // OpenCL C 2.0 or OpenCL C 3.0 with the __opencl_c_generic_address_space
@@ -501,13 +501,13 @@ void TargetInfo::adjust(DiagnosticsEngine &Diags, LangOptions &Opts,
     if (Opts.DoubleSize == 32) {
       DoubleWidth = 32;
       LongDoubleWidth = 32;
-      DoubleFormat = &llvm::APFloat::IEEEsingle();
-      LongDoubleFormat = &llvm::APFloat::IEEEsingle();
+      DoubleFormat = llvm::APFloat::IEEEsingle();
+      LongDoubleFormat = llvm::APFloat::IEEEsingle();
     } else if (Opts.DoubleSize == 64) {
       DoubleWidth = 64;
       LongDoubleWidth = 64;
-      DoubleFormat = &llvm::APFloat::IEEEdouble();
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      DoubleFormat = llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
     }
   }
 
@@ -518,9 +518,9 @@ void TargetInfo::adjust(DiagnosticsEngine &Diags, LangOptions &Opts,
       LongDoubleFormat = DoubleFormat;
     } else if (Opts.LongDoubleSize == 128) {
       LongDoubleWidth = LongDoubleAlign = 128;
-      LongDoubleFormat = &llvm::APFloat::IEEEquad();
+      LongDoubleFormat = llvm::APFloat::IEEEquad();
     } else if (Opts.LongDoubleSize == 80) {
-      LongDoubleFormat = &llvm::APFloat::x87DoubleExtended();
+      LongDoubleFormat = llvm::APFloat::x87DoubleExtended();
       if (getTriple().isWindowsMSVCEnvironment()) {
         LongDoubleWidth = 128;
         LongDoubleAlign = 128;

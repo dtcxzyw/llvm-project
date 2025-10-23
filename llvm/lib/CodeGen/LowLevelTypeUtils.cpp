@@ -71,7 +71,7 @@ LLT llvm::getLLTForMVT(MVT Ty) {
                              Ty.getVectorElementType().getSizeInBits());
 }
 
-const llvm::fltSemantics &llvm::getFltSemanticForLLT(LLT Ty) {
+llvm::fltSemantics llvm::getFltSemanticForLLT(LLT Ty) {
   assert(Ty.isScalar() && "Expected a scalar type.");
   switch (Ty.getSizeInBits()) {
   case 16:

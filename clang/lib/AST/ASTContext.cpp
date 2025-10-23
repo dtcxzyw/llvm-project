@@ -1709,7 +1709,7 @@ void ASTContext::addedLocalImportDecl(ImportDecl *Import) {
 
 /// getFloatTypeSemantics - Return the APFloat 'semantics' for the specified
 /// scalar floating point type.
-const llvm::fltSemantics &ASTContext::getFloatTypeSemantics(QualType T) const {
+llvm::fltSemantics ASTContext::getFloatTypeSemantics(QualType T) const {
   switch (T->castAs<BuiltinType>()->getKind()) {
   default:
     llvm_unreachable("Not a floating point type!");
@@ -8081,7 +8081,7 @@ int ASTContext::getFloatingTypeOrder(QualType LHS, QualType RHS) const {
 }
 
 int ASTContext::getFloatingTypeSemanticOrder(QualType LHS, QualType RHS) const {
-  if (&getFloatTypeSemantics(LHS) == &getFloatTypeSemantics(RHS))
+  if (getFloatTypeSemantics(LHS) == getFloatTypeSemantics(RHS))
     return 0;
   return getFloatingTypeOrder(LHS, RHS);
 }

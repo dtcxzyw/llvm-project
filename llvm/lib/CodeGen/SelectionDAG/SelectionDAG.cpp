@@ -12898,7 +12898,7 @@ bool llvm::isNeutralConstant(unsigned Opcode, SDNodeFlags Flags, SDValue V,
     case ISD::FMAXNUM: {
       // Neutral element for fminnum is NaN, Inf or FLT_MAX, depending on FMF.
       EVT VT = V.getValueType();
-      const fltSemantics &Semantics = VT.getFltSemantics();
+      fltSemantics Semantics = VT.getFltSemantics();
       APFloat NeutralAF = !Flags.hasNoNaNs()
                               ? APFloat::getQNaN(Semantics)
                               : !Flags.hasNoInfs()
@@ -14195,7 +14195,7 @@ SDValue SelectionDAG::getNeutralElement(unsigned Opcode, const SDLoc &DL,
   case ISD::FMINNUM:
   case ISD::FMAXNUM: {
     // Neutral element for fminnum is NaN, Inf or FLT_MAX, depending on FMF.
-    const fltSemantics &Semantics = VT.getFltSemantics();
+    fltSemantics Semantics = VT.getFltSemantics();
     APFloat NeutralAF = !Flags.hasNoNaNs() ? APFloat::getQNaN(Semantics) :
                         !Flags.hasNoInfs() ? APFloat::getInf(Semantics) :
                         APFloat::getLargest(Semantics);
@@ -14207,7 +14207,7 @@ SDValue SelectionDAG::getNeutralElement(unsigned Opcode, const SDLoc &DL,
   case ISD::FMINIMUM:
   case ISD::FMAXIMUM: {
     // Neutral element for fminimum is Inf or FLT_MAX, depending on FMF.
-    const fltSemantics &Semantics = VT.getFltSemantics();
+    fltSemantics Semantics = VT.getFltSemantics();
     APFloat NeutralAF = !Flags.hasNoInfs() ? APFloat::getInf(Semantics)
                                            : APFloat::getLargest(Semantics);
     if (Opcode == ISD::FMAXIMUM)

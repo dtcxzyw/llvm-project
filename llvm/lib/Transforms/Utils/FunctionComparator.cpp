@@ -93,7 +93,7 @@ int FunctionComparator::cmpConstantRanges(const ConstantRange &L,
 int FunctionComparator::cmpAPFloats(const APFloat &L, const APFloat &R) const {
   // Floats are ordered first by semantics (i.e. float, double, half, etc.),
   // then by value interpreted as a bitstring (aka APInt).
-  const fltSemantics &SL = L.getSemantics(), &SR = R.getSemantics();
+  fltSemantics SL = L.getSemantics(), SR = R.getSemantics();
   if (int Res = cmpNumbers(APFloat::semanticsPrecision(SL),
                            APFloat::semanticsPrecision(SR)))
     return Res;

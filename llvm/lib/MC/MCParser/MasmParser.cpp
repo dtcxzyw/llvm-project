@@ -528,7 +528,7 @@ public:
 
   /// Parse a floating point expression using the float \p Semantics
   /// and set \p Res to the value.
-  bool parseRealValue(const fltSemantics &Semantics, APInt &Res);
+  bool parseRealValue(fltSemantics Semantics, APInt &Res);
 
   /// Parse an identifier or string (as a quoted identifier)
   /// and set \p Res to the identifier contents.
@@ -793,15 +793,14 @@ private:
                                 StringRef Name, SMLoc NameLoc);
 
   // "real4", "real8", "real10"
-  bool emitRealValues(const fltSemantics &Semantics, unsigned *Count = nullptr);
-  bool addRealField(StringRef Name, const fltSemantics &Semantics, size_t Size);
-  bool parseDirectiveRealValue(StringRef IDVal, const fltSemantics &Semantics,
+  bool emitRealValues(fltSemantics Semantics, unsigned *Count = nullptr);
+  bool addRealField(StringRef Name, fltSemantics Semantics, size_t Size);
+  bool parseDirectiveRealValue(StringRef IDVal, fltSemantics Semantics,
                                size_t Size);
   bool parseRealInstList(
-      const fltSemantics &Semantics, SmallVectorImpl<APInt> &Values,
+      fltSemantics Semantics, SmallVectorImpl<APInt> &Values,
       const AsmToken::TokenKind EndToken = AsmToken::EndOfStatement);
-  bool parseDirectiveNamedRealValue(StringRef TypeName,
-                                    const fltSemantics &Semantics,
+  bool parseDirectiveNamedRealValue(StringRef TypeName, fltSemantics Semantics,
                                     unsigned Size, StringRef Name,
                                     SMLoc NameLoc);
 
@@ -3336,7 +3335,7 @@ bool MasmParser::parseDirectiveNamedValue(StringRef TypeName, unsigned Size,
   return false;
 }
 
-bool MasmParser::parseRealValue(const fltSemantics &Semantics, APInt &Res) {
+bool MasmParser::parseRealValue(fltSemantics Semantics, APInt &Res) {
   // We don't truly support arithmetic on floating point expressions, so we
   // have to manually parse unary prefixes.
   bool IsNeg = false;
@@ -3398,7 +3397,7 @@ bool MasmParser::parseRealValue(const fltSemantics &Semantics, APInt &Res) {
   return false;
 }
 
-bool MasmParser::parseRealInstList(const fltSemantics &Semantics,
+bool MasmParser::parseRealInstList(fltSemantics Semantics,
                                    SmallVectorImpl<APInt> &ValuesAsInt,
                                    const AsmToken::TokenKind EndToken) {
   while (getTok().isNot(EndToken) ||
@@ -3444,8 +3443,7 @@ bool MasmParser::parseRealInstList(const fltSemantics &Semantics,
 }
 
 // Initialize real data values.
-bool MasmParser::emitRealValues(const fltSemantics &Semantics,
-                                unsigned *Count) {
+bool MasmParser::emitRealValues(fltSemantics Semantics, unsigned *Count) {
   if (checkForValidSection())
     return true;
 
@@ -3462,7 +3460,7 @@ bool MasmParser::emitRealValues(const fltSemantics &Semantics,
 }
 
 // Add a real field to the current struct.
-bool MasmParser::addRealField(StringRef Name, const fltSemantics &Semantics,
+bool MasmParser::addRealField(StringRef Name, fltSemantics Semantics,
                               size_t Size) {
   StructInfo &Struct = StructInProgress.back();
   FieldInfo &Field = Struct.addField(Name, FT_REAL, Size);
@@ -3488,8 +3486,7 @@ bool MasmParser::addRealField(StringRef Name, const fltSemantics &Semantics,
 /// parseDirectiveRealValue
 ///  ::= (real4 | real8 | real10) [ expression (, expression)* ]
 bool MasmParser::parseDirectiveRealValue(StringRef IDVal,
-                                         const fltSemantics &Semantics,
-                                         size_t Size) {
+                                         fltSemantics Semantics, size_t Size) {
   if (StructInProgress.empty()) {
     // Initialize data value.
     if (emitRealValues(Semantics))
@@ -3503,7 +3500,7 @@ bool MasmParser::parseDirectiveRealValue(StringRef IDVal,
 /// parseDirectiveNamedRealValue
 ///  ::= name (real4 | real8 | real10) [ expression (, expression)* ]
 bool MasmParser::parseDirectiveNamedRealValue(StringRef TypeName,
-                                              const fltSemantics &Semantics,
+                                              fltSemantics Semantics,
                                               unsigned Size, StringRef Name,
                                               SMLoc NameLoc) {
   if (StructInProgress.empty()) {
@@ -3595,16 +3592,16 @@ bool MasmParser::parseFieldInitializer(const FieldInfo &Field,
 bool MasmParser::parseFieldInitializer(const FieldInfo &Field,
                                        const RealFieldInfo &Contents,
                                        FieldInitializer &Initializer) {
-  const fltSemantics *Semantics;
+  fltSemantics Semantics;
   switch (Field.Type) {
   case 4:
-    Semantics = &APFloat::IEEEsingle();
+    Semantics = APFloat::IEEEsingle();
     break;
   case 8:
-    Semantics = &APFloat::IEEEdouble();
+    Semantics = APFloat::IEEEdouble();
     break;
   case 10:
-    Semantics = &APFloat::x87DoubleExtended();
+    Semantics = APFloat::x87DoubleExtended();
     break;
   default:
     llvm_unreachable("unknown real field type");
@@ -3616,20 +3613,20 @@ bool MasmParser::parseFieldInitializer(const FieldInfo &Field,
   if (parseOptionalToken(AsmToken::LCurly)) {
     if (Field.LengthOf == 1)
       return Error(Loc, "Cannot initialize scalar field with array value");
-    if (parseRealInstList(*Semantics, AsIntValues, AsmToken::RCurly) ||
+    if (parseRealInstList(Semantics, AsIntValues, AsmToken::RCurly) ||
         parseToken(AsmToken::RCurly))
       return true;
   } else if (parseOptionalAngleBracketOpen()) {
     if (Field.LengthOf == 1)
       return Error(Loc, "Cannot initialize scalar field with array value");
-    if (parseRealInstList(*Semantics, AsIntValues, AsmToken::Greater) ||
+    if (parseRealInstList(Semantics, AsIntValues, AsmToken::Greater) ||
         parseAngleBracketClose())
       return true;
   } else if (Field.LengthOf > 1) {
     return Error(Loc, "Cannot initialize array field with scalar value");
   } else {
     AsIntValues.emplace_back();
-    if (parseRealValue(*Semantics, AsIntValues.back()))
+    if (parseRealValue(Semantics, AsIntValues.back()))
       return true;
   }
 

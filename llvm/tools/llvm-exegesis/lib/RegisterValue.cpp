@@ -13,7 +13,7 @@
 namespace llvm {
 namespace exegesis {
 
-static APFloat getFloatValue(const fltSemantics &FltSemantics,
+static APFloat getFloatValue(fltSemantics FltSemantics,
                              PredefinedValues Value) {
   switch (Value) {
   case PredefinedValues::POS_ZERO:
@@ -42,8 +42,7 @@ static APFloat getFloatValue(const fltSemantics &FltSemantics,
   llvm_unreachable("Unhandled exegesis::PredefinedValues");
 }
 
-APInt bitcastFloatValue(const fltSemantics &FltSemantics,
-                        PredefinedValues Value) {
+APInt bitcastFloatValue(fltSemantics FltSemantics, PredefinedValues Value) {
   return getFloatValue(FltSemantics, Value).bitcastToAPInt();
 }
 

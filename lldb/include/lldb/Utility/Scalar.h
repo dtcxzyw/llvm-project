@@ -114,7 +114,7 @@ public:
   void TruncOrExtendTo(uint16_t bits, bool sign);
 
   bool IntegralPromote(uint16_t bits, bool sign);
-  bool FloatPromote(const llvm::fltSemantics &semantics);
+  bool FloatPromote(llvm::fltSemantics semantics);
 
   bool IsSigned() const;
   bool MakeSigned();
@@ -211,7 +211,7 @@ protected:
   using PromotionKey = std::tuple<Type, unsigned, bool>;
   PromotionKey GetPromoKey() const;
 
-  static PromotionKey GetFloatPromoKey(const llvm::fltSemantics &semantics);
+  static PromotionKey GetFloatPromoKey(llvm::fltSemantics semantics);
 
 private:
   friend llvm::APFloat::cmpResult compare(Scalar lhs, Scalar rhs);

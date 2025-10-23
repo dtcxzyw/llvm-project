@@ -71,10 +71,10 @@ LogicalResult complex::NumberAttr::verify(
 
   const auto &typeFloatSemantics =
       llvm::cast<FloatType>(elementType).getFloatSemantics();
-  if (&real.getSemantics() != &typeFloatSemantics)
+  if (real.getSemantics() != typeFloatSemantics)
     return emitError()
            << "type doesn't match the type implied by its `real` value";
-  if (&imag.getSemantics() != &typeFloatSemantics)
+  if (imag.getSemantics() != typeFloatSemantics)
     return emitError()
            << "type doesn't match the type implied by its `imag` value";
 

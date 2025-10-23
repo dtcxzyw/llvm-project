@@ -305,7 +305,7 @@ double FloatAttr::getValueAsDouble() const {
   return getValueAsDouble(getValue());
 }
 double FloatAttr::getValueAsDouble(APFloat value) {
-  if (&value.getSemantics() != &APFloat::IEEEdouble()) {
+  if (value.getSemantics() != APFloat::IEEEdouble()) {
     bool losesInfo = false;
     value.convert(APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven,
                   &losesInfo);
@@ -320,8 +320,7 @@ LogicalResult FloatAttr::verify(function_ref<InFlightDiagnostic()> emitError,
     return emitError() << "expected floating point type";
 
   // Verify that the type semantics match that of the value.
-  if (&llvm::cast<FloatType>(type).getFloatSemantics() !=
-      &value.getSemantics()) {
+  if (llvm::cast<FloatType>(type).getFloatSemantics() != value.getSemantics()) {
     return emitError()
            << "FloatAttr type doesn't match the type implied by its value";
   }

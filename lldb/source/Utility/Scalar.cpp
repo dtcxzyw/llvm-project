@@ -40,12 +40,12 @@ Scalar::PromotionKey Scalar::GetPromoKey() const {
   llvm_unreachable("Unhandled category!");
 }
 
-Scalar::PromotionKey Scalar::GetFloatPromoKey(const llvm::fltSemantics &sem) {
-  static const llvm::fltSemantics *const order[] = {
-      &APFloat::IEEEsingle(), &APFloat::IEEEdouble(),
-      &APFloat::x87DoubleExtended()};
+Scalar::PromotionKey Scalar::GetFloatPromoKey(llvm::fltSemantics sem) {
+  static const llvm::fltSemantics order[] = {APFloat::IEEEsingle(),
+                                             APFloat::IEEEdouble(),
+                                             APFloat::x87DoubleExtended()};
   for (const auto &entry : llvm::enumerate(order)) {
-    if (entry.value() == &sem)
+    if (entry.value() == sem)
       return PromotionKey{e_float, entry.index(), false};
   }
   llvm_unreachable("Unsupported semantics!");
@@ -221,7 +221,7 @@ bool Scalar::IntegralPromote(uint16_t bits, bool sign) {
   return false;
 }
 
-bool Scalar::FloatPromote(const llvm::fltSemantics &semantics) {
+bool Scalar::FloatPromote(llvm::fltSemantics semantics) {
   bool success = false;
   switch (m_type) {
   case e_void:
@@ -691,10 +691,9 @@ Status Scalar::SetValueFromCString(const char *value_str, Encoding encoding,
     // FIXME: It's not possible to unambiguously map a byte size to a floating
     // point type. This function should be refactored to take an explicit
     // semantics argument.
-    const llvm::fltSemantics &sem =
-        byte_size <= 4 ? APFloat::IEEEsingle()
-                       : byte_size <= 8 ? APFloat::IEEEdouble()
-                                        : APFloat::x87DoubleExtended();
+    llvm::fltSemantics sem = byte_size <= 4   ? APFloat::IEEEsingle()
+                             : byte_size <= 8 ? APFloat::IEEEdouble()
+                                              : APFloat::x87DoubleExtended();
     APFloat f(sem);
     if (llvm::Expected<APFloat::opStatus> op =
             f.convertFromString(value_str, APFloat::rmNearestTiesToEven)) {
@@ -842,7 +841,7 @@ llvm::APFloat Scalar::CreateAPFloatFromAPSInt(lldb::BasicType basic_type) {
             ? llvm::APIntOps::RoundSignedAPIntToDouble(m_integer)
             : llvm::APIntOps::RoundAPIntToDouble(m_integer));
   default:
-    const llvm::fltSemantics &sem = APFloat::IEEEsingle();
+    llvm::fltSemantics sem = APFloat::IEEEsingle();
     return llvm::APFloat::getNaN(sem);
   }
 }
@@ -864,7 +863,7 @@ llvm::APFloat Scalar::CreateAPFloatFromAPFloat(lldb::BasicType basic_type) {
     return m_float;
   }
   default:
-    const llvm::fltSemantics &sem = APFloat::IEEEsingle();
+    llvm::fltSemantics sem = APFloat::IEEEsingle();
     return llvm::APFloat::getNaN(sem);
   }
 }

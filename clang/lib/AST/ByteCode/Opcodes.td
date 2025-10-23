@@ -55,7 +55,7 @@ def ArgFixedPoint : ArgType { let Name = "FixedPoint"; let AsRef = true; }
 def ArgFunction : ArgType { let Name = "const Function *"; }
 def ArgRecordDecl : ArgType { let Name = "const RecordDecl *"; }
 def ArgRecordField : ArgType { let Name = "const Record::Field *"; }
-def ArgFltSemantics : ArgType { let Name = "const llvm::fltSemantics *"; }
+def ArgFltSemantics : ArgType { let Name = "llvm::fltSemantics"; }
 def ArgRoundingMode : ArgType { let Name = "llvm::RoundingMode"; }
 def ArgLETD: ArgType { let Name = "const LifetimeExtendedTemporaryDecl *"; }
 def ArgCastKind : ArgType { let Name = "interp::CastKind"; }

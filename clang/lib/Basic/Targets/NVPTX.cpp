@@ -57,7 +57,7 @@ NVPTXTargetInfo::NVPTXTargetInfo(const llvm::Triple &Triple,
   UseAddrSpaceMapMangling = true;
   // __bf16 is always available as a load/store only type.
   BFloat16Width = BFloat16Align = 16;
-  BFloat16Format = &llvm::APFloat::BFloat();
+  BFloat16Format = llvm::APFloat::BFloat();
 
   // Define available target features
   // These must be defined in sorted order!

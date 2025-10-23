@@ -587,8 +587,7 @@ Interpreter::Visit(const FloatLiteralNode *node) {
   if (!type_system)
     return type_system.takeError();
 
-  bool isFloat =
-      &node->GetValue().getSemantics() == &llvm::APFloat::IEEEsingle();
+  bool isFloat = node->GetValue().getSemantics() == llvm::APFloat::IEEEsingle();
   lldb::BasicType basic_type =
       isFloat ? lldb::eBasicTypeFloat : lldb::eBasicTypeDouble;
   CompilerType type = GetBasicType(*type_system, basic_type);

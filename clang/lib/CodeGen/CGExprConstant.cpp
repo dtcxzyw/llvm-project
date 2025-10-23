@@ -2470,7 +2470,7 @@ ConstantEmitter::tryEmitPrivate(const APValue &Value, QualType DestType,
   }
   case APValue::Float: {
     const llvm::APFloat &Init = Value.getFloat();
-    if (&Init.getSemantics() == &llvm::APFloat::IEEEhalf() &&
+    if (Init.getSemantics() == llvm::APFloat::IEEEhalf() &&
         !CGM.getContext().getLangOpts().NativeHalfType &&
         CGM.getContext().getTargetInfo().useFP16ConversionIntrinsics())
       return llvm::ConstantInt::get(CGM.getLLVMContext(),

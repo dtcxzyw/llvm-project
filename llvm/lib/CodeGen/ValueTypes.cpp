@@ -316,7 +316,7 @@ EVT EVT::getEVT(Type *Ty, bool HandleUnknown){
   }
 }
 
-const fltSemantics &MVT::getFltSemantics() const {
+fltSemantics MVT::getFltSemantics() const {
   switch (getScalarType().SimpleTy) {
   default: llvm_unreachable("Unknown FP format");
   case MVT::f16:     return APFloat::IEEEhalf();
@@ -329,7 +329,7 @@ const fltSemantics &MVT::getFltSemantics() const {
   }
 }
 
-const fltSemantics &EVT::getFltSemantics() const {
+fltSemantics EVT::getFltSemantics() const {
   return getScalarType().getSimpleVT().getFltSemantics();
 }
 

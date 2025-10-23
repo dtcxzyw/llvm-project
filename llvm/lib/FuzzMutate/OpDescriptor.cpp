@@ -30,7 +30,7 @@ void fuzzerop::makeConstantsWithType(Type *T, std::vector<Constant *> &Cs) {
     Cs.push_back(ConstantInt::get(IntTy, APInt::getOneBitSet(W, W / 2)));
   } else if (T->isFloatingPointTy()) {
     auto &Ctx = T->getContext();
-    auto &Sem = T->getFltSemantics();
+    auto Sem = T->getFltSemantics();
     Cs.push_back(ConstantFP::get(Ctx, APFloat::getZero(Sem)));
     Cs.push_back(ConstantFP::get(Ctx, APFloat(Sem, 1)));
     Cs.push_back(ConstantFP::get(Ctx, APFloat(Sem, 42)));

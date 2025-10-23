@@ -26,7 +26,7 @@ void ARMTargetInfo::setABIAAPCS() {
 
   DoubleAlign = LongLongAlign = LongDoubleAlign = SuitableAlign = 64;
   BFloat16Width = BFloat16Align = 16;
-  BFloat16Format = &llvm::APFloat::BFloat();
+  BFloat16Format = llvm::APFloat::BFloat();
 
   const llvm::Triple &T = getTriple();
 
@@ -76,7 +76,7 @@ void ARMTargetInfo::setABIAPCS(bool IsAAPCS16) {
   else
     DoubleAlign = LongLongAlign = LongDoubleAlign = SuitableAlign = 32;
   BFloat16Width = BFloat16Align = 16;
-  BFloat16Format = &llvm::APFloat::BFloat();
+  BFloat16Format = llvm::APFloat::BFloat();
 
   WCharType = SignedInt;
 

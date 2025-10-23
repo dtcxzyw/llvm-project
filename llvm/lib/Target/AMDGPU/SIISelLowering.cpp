@@ -18298,7 +18298,7 @@ static bool atomicIgnoresDenormalModeOrFPModeIsFTZ(const AtomicRMWInst *RMW) {
   if (RMW->hasMetadata("amdgpu.ignore.denormal.mode"))
     return true;
 
-  const fltSemantics &Flt = RMW->getType()->getScalarType()->getFltSemantics();
+  fltSemantics Flt = RMW->getType()->getScalarType()->getFltSemantics();
   auto DenormMode = RMW->getFunction()->getDenormalMode(Flt);
   if (DenormMode == DenormalMode::getPreserveSign())
     return true;

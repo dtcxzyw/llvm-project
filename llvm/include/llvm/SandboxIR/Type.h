@@ -134,9 +134,7 @@ public:
   /// consists of two IEEE 754 doubles.
   bool isMultiUnitFPType() const { return LLVMTy->isMultiUnitFPType(); }
 
-  const fltSemantics &getFltSemantics() const {
-    return LLVMTy->getFltSemantics();
-  }
+  fltSemantics getFltSemantics() const { return LLVMTy->getFltSemantics(); }
 
   /// Return true if this is X86 AMX.
   bool isX86_AMXTy() const { return LLVMTy->isX86_AMXTy(); }

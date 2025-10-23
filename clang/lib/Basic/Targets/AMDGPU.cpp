@@ -247,7 +247,7 @@ AMDGPUTargetInfo::AMDGPUTargetInfo(const llvm::Triple &Triple,
   if (isAMDGCN(Triple)) {
     // __bf16 is always available as a load/store only type on AMDGCN.
     BFloat16Width = BFloat16Align = 16;
-    BFloat16Format = &llvm::APFloat::BFloat();
+    BFloat16Format = llvm::APFloat::BFloat();
   }
 
   HasFastHalfType = true;

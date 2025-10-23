@@ -321,7 +321,7 @@ getOrCreateJumpTableInfo(unsigned EntryKind) {
   return JumpTableInfo;
 }
 
-DenormalMode MachineFunction::getDenormalMode(const fltSemantics &FPType) const {
+DenormalMode MachineFunction::getDenormalMode(fltSemantics FPType) const {
   return F.getDenormalMode(FPType);
 }
 

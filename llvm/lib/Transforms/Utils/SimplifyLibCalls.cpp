@@ -2629,7 +2629,7 @@ Value *LibCallSimplifier::optimizeLog(CallInst *Log, IRBuilderBase &B) {
           Log->getOperand(0),
           KnownFPClass::OrderedLessThanZeroMask | fcSubnormal, SQ);
       Function *F = Log->getParent()->getParent();
-      const fltSemantics &FltSem = Ty->getScalarType()->getFltSemantics();
+      fltSemantics FltSem = Ty->getScalarType()->getFltSemantics();
       IsKnownNoErrno =
           Known.cannotBeOrderedLessThanZero() &&
           Known.isKnownNeverLogicalZero(F->getDenormalMode(FltSem));
@@ -2860,8 +2860,7 @@ Value *LibCallSimplifier::optimizeFMod(CallInst *CI, IRBuilderBase &B) {
       KnownFPClass Known1 =
           computeKnownFPClass(CI->getOperand(1), fcZero | fcSubnormal, SQ);
       Function *F = CI->getParent()->getParent();
-      const fltSemantics &FltSem =
-          CI->getType()->getScalarType()->getFltSemantics();
+      fltSemantics FltSem = CI->getType()->getScalarType()->getFltSemantics();
       IsNoNan = Known1.isKnownNeverLogicalZero(F->getDenormalMode(FltSem));
     }
   }

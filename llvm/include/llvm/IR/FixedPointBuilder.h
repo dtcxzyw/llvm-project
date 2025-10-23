@@ -126,10 +126,10 @@ template <class IRBuilderTy> class FixedPointBuilder {
   /// point type which can accommodate the fixed-point semantic. This is either
   /// \p Ty, or a floating point type with a larger exponent than Ty.
   Type *getAccommodatingFloatType(Type *Ty, const FixedPointSemantics &Sema) {
-    const fltSemantics *FloatSema = &Ty->getFltSemantics();
-    while (!Sema.fitsInFloatSemantics(*FloatSema))
+    fltSemantics FloatSema = Ty->getFltSemantics();
+    while (!Sema.fitsInFloatSemantics(FloatSema))
       FloatSema = APFixedPoint::promoteFloatSemantics(FloatSema);
-    return Type::getFloatingPointTy(Ty->getContext(), *FloatSema);
+    return Type::getFloatingPointTy(Ty->getContext(), FloatSema);
   }
 
 public:

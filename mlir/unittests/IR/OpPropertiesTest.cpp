@@ -53,7 +53,7 @@ setPropertiesFromAttribute(TestProperties &prop, Attribute attr,
   }
   auto bAttr = dict.getAs<FloatAttr>("b");
   if (!bAttr ||
-      &bAttr.getValue().getSemantics() != &llvm::APFloatBase::IEEEsingle()) {
+      bAttr.getValue().getSemantics() != llvm::APFloatBase::IEEEsingle()) {
     emitError() << "expected FloatAttr for key `b`";
     return failure();
   }

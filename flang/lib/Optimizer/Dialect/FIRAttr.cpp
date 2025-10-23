@@ -170,7 +170,7 @@ static mlir::Attribute parseFirRealAttr(FIROpsDialect *dialect,
       parser.emitError(parser.getNameLoc(), "expected real constant '>'");
       return {};
     }
-    const llvm::fltSemantics &sem = kindMap.getFloatSemantics(kind);
+    llvm::fltSemantics sem = kindMap.getFloatSemantics(kind);
     unsigned int numBits = llvm::APFloat::semanticsSizeInBits(sem);
     auto bits = llvm::APInt(numBits, hex.drop_front(), 16);
     value = llvm::APFloat(sem, bits);

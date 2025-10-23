@@ -98,7 +98,7 @@ public:
   /// minimum integer representation of 127 and -128, respectively. If both of
   /// these values can be represented (possibly inexactly) in the floating
   /// point semantic without overflowing, this returns true.
-  LLVM_ABI bool fitsInFloatSemantics(const fltSemantics &FloatSema) const;
+  LLVM_ABI bool fitsInFloatSemantics(fltSemantics FloatSema) const;
 
   /// Return the FixedPointSemantics for an integer type.
   static FixedPointSemantics GetIntegerSemantics(unsigned Width,
@@ -244,7 +244,7 @@ public:
 
   /// Convert this fixed point number to a floating point value with the
   /// provided semantics.
-  LLVM_ABI APFloat convertToFloat(const fltSemantics &FloatSema) const;
+  LLVM_ABI APFloat convertToFloat(fltSemantics FloatSema) const;
 
   LLVM_ABI void toString(SmallVectorImpl<char> &Str) const;
   std::string toString() const {
@@ -282,8 +282,7 @@ public:
 
   /// Given a floating point semantic, return the next floating point semantic
   /// with a larger exponent and larger or equal mantissa.
-  LLVM_ABI static const fltSemantics *
-  promoteFloatSemantics(const fltSemantics *S);
+  LLVM_ABI static fltSemantics promoteFloatSemantics(fltSemantics S);
 
   /// Create an APFixedPoint with a value equal to that of the provided integer,
   /// and in the same semantics as the provided target semantics. If the value

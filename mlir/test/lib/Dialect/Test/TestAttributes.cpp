@@ -307,19 +307,19 @@ static ParseResult parseCustomFloatAttr(AsmParser &p, StringAttr &typeStrAttr,
   if (p.parseColon())
     return failure();
 
-  const llvm::fltSemantics *semantics;
+  llvm::fltSemantics semantics;
   if (str == "float")
-    semantics = &llvm::APFloat::IEEEsingle();
+    semantics = llvm::APFloat::IEEEsingle();
   else if (str == "double")
-    semantics = &llvm::APFloat::IEEEdouble();
+    semantics = llvm::APFloat::IEEEdouble();
   else if (str == "fp80")
-    semantics = &llvm::APFloat::x87DoubleExtended();
+    semantics = llvm::APFloat::x87DoubleExtended();
   else
     return p.emitError(p.getCurrentLocation(), "unknown float type, expected "
                                                "'float', 'double' or 'fp80'");
 
   APFloat parsedValue(0.0);
-  if (p.parseFloat(*semantics, parsedValue))
+  if (p.parseFloat(semantics, parsedValue))
     return failure();
 
   value.emplace(parsedValue);

@@ -127,7 +127,7 @@ void SystemZTDCPass::convertFCmp(CmpInst &I) {
   if (!Const)
     return;
   // Compute the smallest normal number (and its negation).
-  auto &Sem = Op0->getType()->getFltSemantics();
+  auto Sem = Op0->getType()->getFltSemantics();
   APFloat Smallest = APFloat::getSmallestNormalized(Sem);
   APFloat NegSmallest = Smallest;
   NegSmallest.changeSign();

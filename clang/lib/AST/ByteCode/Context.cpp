@@ -445,7 +445,7 @@ unsigned Context::getCharBit() const {
 
 /// Simple wrapper around getFloatTypeSemantics() to make code a
 /// little shorter.
-const llvm::fltSemantics &Context::getFloatSemantics(QualType T) const {
+llvm::fltSemantics Context::getFloatSemantics(QualType T) const {
   return Ctx.getFloatTypeSemantics(T);
 }
 

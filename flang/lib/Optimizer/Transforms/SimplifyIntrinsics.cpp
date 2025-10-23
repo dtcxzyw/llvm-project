@@ -383,7 +383,7 @@ static void genRuntimeSumBody(fir::FirOpBuilder &builder,
   auto zero = [](fir::FirOpBuilder builder, mlir::Location loc,
                  mlir::Type elementType) {
     if (auto ty = mlir::dyn_cast<mlir::FloatType>(elementType)) {
-      const llvm::fltSemantics &sem = ty.getFloatSemantics();
+      llvm::fltSemantics sem = ty.getFloatSemantics();
       return builder.createRealConstant(loc, elementType,
                                         llvm::APFloat::getZero(sem));
     }
@@ -416,7 +416,7 @@ static void genRuntimeMaxvalBody(fir::FirOpBuilder &builder,
   auto init = [](fir::FirOpBuilder builder, mlir::Location loc,
                  mlir::Type elementType) {
     if (auto ty = mlir::dyn_cast<mlir::FloatType>(elementType)) {
-      const llvm::fltSemantics &sem = ty.getFloatSemantics();
+      llvm::fltSemantics sem = ty.getFloatSemantics();
       return builder.createRealConstant(
           loc, elementType, llvm::APFloat::getLargest(sem, /*Negative=*/true));
     }
@@ -664,7 +664,7 @@ static void genRuntimeMinMaxlocBody(fir::FirOpBuilder &builder,
   auto init = [isMax](fir::FirOpBuilder builder, mlir::Location loc,
                       mlir::Type elementType) {
     if (auto ty = mlir::dyn_cast<mlir::FloatType>(elementType)) {
-      const llvm::fltSemantics &sem = ty.getFloatSemantics();
+      llvm::fltSemantics sem = ty.getFloatSemantics();
       llvm::APFloat limit = llvm::APFloat::getInf(sem, /*Negative=*/isMax);
       return builder.createRealConstant(loc, elementType, limit);
     }

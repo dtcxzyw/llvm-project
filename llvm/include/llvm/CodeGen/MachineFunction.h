@@ -886,7 +886,7 @@ public:
 
   /// Returns the denormal handling type for the default rounding mode of the
   /// function.
-  DenormalMode getDenormalMode(const fltSemantics &FPType) const;
+  DenormalMode getDenormalMode(fltSemantics FPType) const;
 
   /// getBlockNumbered - MachineBasicBlocks are automatically numbered when they
   /// are inserted into the machine function.  The block number for a machine

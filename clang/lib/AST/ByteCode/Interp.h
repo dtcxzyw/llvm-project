@@ -2412,10 +2412,10 @@ template <PrimType TIn, PrimType TOut> bool Cast(InterpState &S, CodePtr OpPC) {
 
 /// 1) Pops a Floating from the stack.
 /// 2) Pushes a new floating on the stack that uses the given semantics.
-inline bool CastFP(InterpState &S, CodePtr OpPC, const llvm::fltSemantics *Sem,
+inline bool CastFP(InterpState &S, CodePtr OpPC, llvm::fltSemantics Sem,
                    llvm::RoundingMode RM) {
   Floating F = S.Stk.pop<Floating>();
-  Floating Result = S.allocFloat(*Sem);
+  Floating Result = S.allocFloat(Sem);
   F.toSemantics(Sem, RM, &Result);
   S.Stk.push<Floating>(Result);
   return true;
@@ -2463,15 +2463,15 @@ bool CastAPS(InterpState &S, CodePtr OpPC, uint32_t BitWidth) {
 }
 
 template <PrimType Name, class T = typename PrimConv<Name>::T>
-bool CastIntegralFloating(InterpState &S, CodePtr OpPC,
-                          const llvm::fltSemantics *Sem, uint32_t FPOI) {
+bool CastIntegralFloating(InterpState &S, CodePtr OpPC, llvm::fltSemantics Sem,
+                          uint32_t FPOI) {
   const T &From = S.Stk.pop<T>();
   APSInt FromAP = From.toAPSInt();
 
   FPOptions FPO = FPOptions::getFromOpaqueInt(FPOI);
-  Floating Result = S.allocFloat(*Sem);
+  Floating Result = S.allocFloat(Sem);
   auto Status =
-      Floating::fromIntegral(FromAP, *Sem, getRoundingMode(FPO), &Result);
+      Floating::fromIntegral(FromAP, Sem, getRoundingMode(FPO), &Result);
   S.Stk.push<Floating>(Result);
 
   return CheckFloatResult(S, OpPC, Result, Status, FPO);
@@ -2604,9 +2604,9 @@ static inline bool CastFloatingFixedPoint(InterpState &S, CodePtr OpPC,
 }
 
 static inline bool CastFixedPointFloating(InterpState &S, CodePtr OpPC,
-                                          const llvm::fltSemantics *Sem) {
+                                          llvm::fltSemantics Sem) {
   const auto &Fixed = S.Stk.pop<FixedPoint>();
-  Floating Result = S.allocFloat(*Sem);
+  Floating Result = S.allocFloat(Sem);
   Result.copy(Fixed.toFloat(Sem));
   S.Stk.push<Floating>(Result);
   return true;
@@ -3502,7 +3502,7 @@ bool InvalidNewDeleteExpr(InterpState &S, CodePtr OpPC, const Expr *E);
 
 template <PrimType Name, class T = typename PrimConv<Name>::T>
 inline bool BitCastPrim(InterpState &S, CodePtr OpPC, bool TargetIsUCharOrByte,
-                        uint32_t ResultBitWidth, const llvm::fltSemantics *Sem,
+                        uint32_t ResultBitWidth, llvm::fltSemantics Sem,
                         const Type *TargetType) {
   const Pointer &FromPtr = S.Stk.pop<Pointer>();
 
@@ -3534,8 +3534,8 @@ inline bool BitCastPrim(InterpState &S, CodePtr OpPC, bool TargetIsUCharOrByte,
     Bits BitWidth = FullBitWidth;
 
     if constexpr (std::is_same_v<T, Floating>) {
-      assert(Sem);
-      BitWidth = Bits(llvm::APFloatBase::getSizeInBits(*Sem));
+      assert(Sem != llvm::fltSemantics{});
+      BitWidth = Bits(llvm::APFloatBase::getSizeInBits(Sem));
     }
 
     if (!DoBitCast(S, OpPC, FromPtr, Buff.data(), BitWidth, FullBitWidth,
@@ -3546,9 +3546,9 @@ inline bool BitCastPrim(InterpState &S, CodePtr OpPC, bool TargetIsUCharOrByte,
       return false;
 
     if constexpr (std::is_same_v<T, Floating>) {
-      assert(Sem);
-      Floating Result = S.allocFloat(*Sem);
-      Floating::bitcastFromMemory(Buff.data(), *Sem, &Result);
+      assert(Sem != llvm::fltSemantics{});
+      Floating Result = S.allocFloat(Sem);
+      Floating::bitcastFromMemory(Buff.data(), Sem, &Result);
       S.Stk.push<Floating>(Result);
     } else if constexpr (needsAlloc<T>()) {
       T Result = S.allocAP<T>(ResultBitWidth);
@@ -3567,7 +3567,7 @@ inline bool BitCastPrim(InterpState &S, CodePtr OpPC, bool TargetIsUCharOrByte,
       }
       S.Stk.push<T>(T::bitcastFromMemory(Buff.data(), ResultBitWidth));
     } else {
-      assert(!Sem);
+      assert(Sem == llvm::fltSemantics{});
       S.Stk.push<T>(T::bitcastFromMemory(Buff.data(), ResultBitWidth));
     }
     return true;
@@ -3611,8 +3611,17 @@ template <typename T> inline T ReadArg(InterpState &S, CodePtr &OpPC) {
   }
 }
 
+template <>
+inline llvm::fltSemantics ReadArg<llvm::fltSemantics>(InterpState &S,
+                                                      CodePtr &OpPC) {
+  uint64_t SemBits = OpPC.read<uint64_t>();
+  llvm::fltSemantics Sem;
+  memcpy(&Sem, &SemBits, sizeof(llvm::fltSemantics));
+  return Sem;
+}
+
 template <> inline Floating ReadArg<Floating>(InterpState &S, CodePtr &OpPC) {
-  auto &Semantics =
+  auto Semantics =
       llvm::APFloatBase::EnumToSemantics(Floating::deserializeSemantics(*OpPC));
 
   auto F = S.allocFloat(Semantics);

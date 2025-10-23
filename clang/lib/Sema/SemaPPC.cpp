@@ -136,7 +136,7 @@ bool SemaPPC::CheckPPCBuiltinFunctionCall(const TargetInfo &TI,
       return true;
     [[fallthrough]];
   case PPC::BI__builtin_pack_longdouble:
-    if (&TI.getLongDoubleFormat() != &llvm::APFloat::PPCDoubleDouble())
+    if (TI.getLongDoubleFormat() != llvm::APFloat::PPCDoubleDouble())
       return Diag(TheCall->getBeginLoc(), diag::err_ppc_builtin_requires_abi)
              << "ibmlongdouble";
     return false;

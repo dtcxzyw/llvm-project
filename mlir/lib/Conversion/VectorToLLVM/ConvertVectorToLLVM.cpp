@@ -667,15 +667,13 @@ class MaskNeutralFMaximum {};
 class MaskNeutralFMinimum {};
 
 /// Get the mask neutral floating point maximum value
-static llvm::APFloat
-getMaskNeutralValue(MaskNeutralFMaximum,
-                    const llvm::fltSemantics &floatSemantics) {
+static llvm::APFloat getMaskNeutralValue(MaskNeutralFMaximum,
+                                         llvm::fltSemantics floatSemantics) {
   return llvm::APFloat::getSmallest(floatSemantics, /*Negative=*/true);
 }
 /// Get the mask neutral floating point minimum value
-static llvm::APFloat
-getMaskNeutralValue(MaskNeutralFMinimum,
-                    const llvm::fltSemantics &floatSemantics) {
+static llvm::APFloat getMaskNeutralValue(MaskNeutralFMinimum,
+                                         llvm::fltSemantics floatSemantics) {
   return llvm::APFloat::getLargest(floatSemantics, /*Negative=*/false);
 }
 

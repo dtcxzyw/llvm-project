@@ -22113,7 +22113,7 @@ X86TargetLowering::LowerFP_TO_INT_SAT(SDValue Op, SelectionDAG &DAG) const {
     MaxInt = APInt::getMaxValue(SatWidth).zext(DstWidth);
   }
 
-  const fltSemantics &Sem = SrcVT.getFltSemantics();
+  fltSemantics Sem = SrcVT.getFltSemantics();
   APFloat MinFloat(Sem);
   APFloat MaxFloat(Sem);
 
@@ -22593,7 +22593,7 @@ static SDValue LowerFROUND(SDValue Op, SelectionDAG &DAG) {
   MVT VT = Op.getSimpleValueType();
 
   // N0 += copysign(nextafter(0.5, 0.0), N0)
-  const fltSemantics &Sem = VT.getFltSemantics();
+  fltSemantics Sem = VT.getFltSemantics();
   bool Ignored;
   APFloat Point5Pred = APFloat(0.5f);
   Point5Pred.convert(Sem, APFloat::rmNearestTiesToEven, &Ignored);
@@ -22649,7 +22649,7 @@ static SDValue LowerFABSorFNEG(SDValue Op, SelectionDAG &DAG) {
   // For FABS, mask is 0x7f...; for FNEG, mask is 0x80...
   APInt MaskElt = IsFABS ? APInt::getSignedMaxValue(EltBits) :
                            APInt::getSignMask(EltBits);
-  const fltSemantics &Sem = VT.getFltSemantics();
+  fltSemantics Sem = VT.getFltSemantics();
   SDValue Mask = DAG.getConstantFP(APFloat(Sem, MaskElt), dl, LogicVT);
 
   SDValue Op0 = Op.getOperand(0);
@@ -22692,7 +22692,7 @@ static SDValue LowerFCOPYSIGN(SDValue Op, SelectionDAG &DAG) {
          DAG.getTargetLoweringInfo().isTypeLegal(VT) &&
          "Unexpected type in LowerFCOPYSIGN");
 
-  const fltSemantics &Sem = VT.getFltSemantics();
+  fltSemantics Sem = VT.getFltSemantics();
 
   // Perform all scalar logic operations as 16-byte vectors because there are no
   // scalar FP logic instructions in SSE.
@@ -58461,7 +58461,7 @@ CastIntSETCCtoFP(MVT VT, ISD::CondCode CC, unsigned NumSignificantBitsLHS,
                  unsigned NumSignificantBitsRHS) {
   MVT SVT = VT.getScalarType();
   assert(SVT == MVT::f32 && "Only tested for float so far");
-  const fltSemantics &Sem = SVT.getFltSemantics();
+  fltSemantics Sem = SVT.getFltSemantics();
   assert((CC == ISD::SETEQ || CC == ISD::SETGT) &&
          "Only PCMPEQ/PCMPGT currently supported");
 

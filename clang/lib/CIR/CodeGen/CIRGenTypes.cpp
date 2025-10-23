@@ -353,14 +353,14 @@ mlir::Type CIRGenTypes::convertType(QualType type) {
       resultType = cgm.BFloat16Ty;
       break;
     case BuiltinType::Float:
-      assert(&astContext.getFloatTypeSemantics(type) ==
-                 &llvm::APFloat::IEEEsingle() &&
+      assert(astContext.getFloatTypeSemantics(type) ==
+                 llvm::APFloat::IEEEsingle() &&
              "ClangIR NYI: 'float' in a format other than IEEE 32-bit");
       resultType = cgm.FloatTy;
       break;
     case BuiltinType::Double:
-      assert(&astContext.getFloatTypeSemantics(type) ==
-                 &llvm::APFloat::IEEEdouble() &&
+      assert(astContext.getFloatTypeSemantics(type) ==
+                 llvm::APFloat::IEEEdouble() &&
              "ClangIR NYI: 'double' in a format other than IEEE 64-bit");
       resultType = cgm.DoubleTy;
       break;

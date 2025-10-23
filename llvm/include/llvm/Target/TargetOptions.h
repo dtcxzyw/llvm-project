@@ -434,7 +434,7 @@ public:
 
   DenormalMode getRawFP32DenormalMode() const { return FP32DenormalMode; }
 
-  LLVM_ABI DenormalMode getDenormalMode(const fltSemantics &FPType) const;
+  LLVM_ABI DenormalMode getDenormalMode(fltSemantics FPType) const;
 
   /// What exception model to use
   ExceptionHandling ExceptionModel = ExceptionHandling::None;

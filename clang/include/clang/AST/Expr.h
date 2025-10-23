@@ -1667,7 +1667,7 @@ public:
     return APFloatStorage::getValue(getSemantics());
   }
   void setValue(const ASTContext &C, const llvm::APFloat &Val) {
-    assert(&getSemantics() == &Val.getSemantics() && "Inconsistent semantics");
+    assert(getSemantics() == Val.getSemantics() && "Inconsistent semantics");
     APFloatStorage::setValue(C, Val);
   }
 
@@ -1685,14 +1685,14 @@ public:
   }
 
   /// Return the APFloat semantics this literal uses.
-  const llvm::fltSemantics &getSemantics() const {
+  llvm::fltSemantics getSemantics() const {
     return llvm::APFloatBase::EnumToSemantics(
         static_cast<llvm::APFloatBase::Semantics>(
             FloatingLiteralBits.Semantics));
   }
 
   /// Set the APFloat semantics this literal uses.
-  void setSemantics(const llvm::fltSemantics &Sem) {
+  void setSemantics(llvm::fltSemantics Sem) {
     FloatingLiteralBits.Semantics = llvm::APFloatBase::SemanticsToEnum(Sem);
   }
 

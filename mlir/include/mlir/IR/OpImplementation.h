@@ -744,7 +744,7 @@ public:
   virtual ParseResult parseFloat(double &result) = 0;
 
   /// Parse a floating point value into APFloat from the stream.
-  virtual ParseResult parseFloat(const llvm::fltSemantics &semantics,
+  virtual ParseResult parseFloat(llvm::fltSemantics semantics,
                                  APFloat &result) = 0;
 
   /// Parse an integer value from the stream.

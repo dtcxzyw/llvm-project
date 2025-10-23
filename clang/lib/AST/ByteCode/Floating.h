@@ -73,11 +73,11 @@ public:
                                        &IsExact);
   }
 
-  void toSemantics(const llvm::fltSemantics *Sem, llvm::RoundingMode RM,
+  void toSemantics(llvm::fltSemantics Sem, llvm::RoundingMode RM,
                    Floating *Result) const {
     APFloat Copy = getValue();
     bool LosesInfo;
-    Copy.convert(*Sem, RM, &LosesInfo);
+    Copy.convert(Sem, RM, &LosesInfo);
     (void)LosesInfo;
     Result->copy(Copy);
   }
@@ -109,13 +109,13 @@ public:
 #endif
     return numWords() == 1;
   }
-  static bool singleWord(const llvm::fltSemantics &Sem) {
+  static bool singleWord(llvm::fltSemantics Sem) {
 #if ALLOCATE_ALL
     return false;
 #endif
     return APInt::getNumWords(llvm::APFloatBase::getSizeInBits(Sem)) == 1;
   }
-  const llvm::fltSemantics &getSemantics() const {
+  llvm::fltSemantics getSemantics() const {
     return llvm::APFloatBase::EnumToSemantics(Semantics);
   }
 
@@ -168,8 +168,7 @@ public:
     llvm_unreachable("Inavlid cmpResult value");
   }
 
-  static APFloat::opStatus fromIntegral(APSInt Val,
-                                        const llvm::fltSemantics &Sem,
+  static APFloat::opStatus fromIntegral(APSInt Val, llvm::fltSemantics Sem,
                                         llvm::RoundingMode RM,
                                         Floating *Result) {
     APFloat F = APFloat(Sem);
@@ -178,8 +177,7 @@ public:
     return Status;
   }
 
-  static void bitcastFromMemory(const std::byte *Buff,
-                                const llvm::fltSemantics &Sem,
+  static void bitcastFromMemory(const std::byte *Buff, llvm::fltSemantics Sem,
                                 Floating *Result) {
     size_t Size = APFloat::semanticsSizeInBits(Sem);
     llvm::APInt API(Size, true);

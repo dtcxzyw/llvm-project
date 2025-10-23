@@ -1109,7 +1109,7 @@ void GISelValueTracking::computeKnownFPClass(Register R,
     // If the parent function flushes denormals, the canonical output cannot
     // be a denormal.
     LLT Ty = MRI.getType(Val).getScalarType();
-    const fltSemantics &FPType = getFltSemanticForLLT(Ty);
+    fltSemantics FPType = getFltSemanticForLLT(Ty);
     DenormalMode DenormMode = MF->getDenormalMode(FPType);
     if (DenormMode == DenormalMode::getIEEE()) {
       if (KnownSrc.isKnownNever(fcPosZero))
@@ -1220,7 +1220,7 @@ void GISelValueTracking::computeKnownFPClass(Register R,
       Known.knownNot(fcNan);
 
     LLT Ty = MRI.getType(Val).getScalarType();
-    const fltSemantics &FltSem = getFltSemanticForLLT(Ty);
+    fltSemantics FltSem = getFltSemanticForLLT(Ty);
     DenormalMode Mode = MF->getDenormalMode(FltSem);
 
     if (KnownSrc.isKnownNeverLogicalZero(Mode))
@@ -1495,9 +1495,9 @@ void GISelValueTracking::computeKnownFPClass(Register R,
     computeKnownFPClass(R, DemandedElts, InterestedClasses, Known, Depth + 1);
 
     LLT DstTy = MRI.getType(Dst).getScalarType();
-    const fltSemantics &DstSem = getFltSemanticForLLT(DstTy);
+    fltSemantics DstSem = getFltSemanticForLLT(DstTy);
     LLT SrcTy = MRI.getType(Src).getScalarType();
-    const fltSemantics &SrcSem = getFltSemanticForLLT(SrcTy);
+    fltSemantics SrcSem = getFltSemanticForLLT(SrcTy);
 
     // All subnormal inputs should be in the normal range in the result type.
     if (APFloat::isRepresentableAsNormalIn(SrcSem, DstSem)) {
@@ -1545,7 +1545,7 @@ void GISelValueTracking::computeKnownFPClass(Register R,
       // If the exponent of the largest finite FP value can hold the largest
       // integer, the result of the cast must be finite.
       LLT FPTy = DstTy.getScalarType();
-      const fltSemantics &FltSem = getFltSemanticForLLT(FPTy);
+      fltSemantics FltSem = getFltSemanticForLLT(FPTy);
       if (ilogb(APFloat::getLargest(FltSem)) >= IntSize)
         Known.knownNot(fcInf);
     }

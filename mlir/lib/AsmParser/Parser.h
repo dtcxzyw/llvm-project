@@ -158,12 +158,12 @@ public:
   /// Parse a floating point value from a literal.
   ParseResult parseFloatFromLiteral(std::optional<APFloat> &result,
                                     const Token &tok, bool isNegative,
-                                    const llvm::fltSemantics &semantics);
+                                    llvm::fltSemantics semantics);
 
   /// Parse a floating point value from an integer literal token.
   ParseResult parseFloatFromIntegerLiteral(std::optional<APFloat> &result,
                                            const Token &tok, bool isNegative,
-                                           const llvm::fltSemantics &semantics);
+                                           llvm::fltSemantics semantics);
 
   /// Returns true if the current token corresponds to a keyword.
   bool isCurrentTokenAKeyword() const {

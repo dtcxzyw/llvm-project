@@ -125,7 +125,7 @@ public:
   void setO32ABITypes() {
     Int64Type = SignedLongLong;
     IntMaxType = Int64Type;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
     LongDoubleWidth = LongDoubleAlign = 64;
     LongWidth = LongAlign = 32;
     MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 32;
@@ -137,10 +137,10 @@ public:
 
   void setN32N64ABITypes() {
     LongDoubleWidth = LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
     if (getTriple().isOSFreeBSD()) {
       LongDoubleWidth = LongDoubleAlign = 64;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
     }
     MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
     SuitableAlign = 128;

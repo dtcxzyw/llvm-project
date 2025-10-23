@@ -2790,7 +2790,7 @@ static void RenderFloatingPointOptions(const ToolChain &TC, const Driver &D,
   llvm::DenormalMode DenormalFPMath =
       TC.getDefaultDenormalModeForType(Args, JA);
   llvm::DenormalMode DenormalFP32Math =
-      TC.getDefaultDenormalModeForType(Args, JA, &llvm::APFloat::IEEEsingle());
+      TC.getDefaultDenormalModeForType(Args, JA, llvm::APFloat::IEEEsingle());
 
   // CUDA and HIP don't rely on the frontend to pass an ffp-contract option.
   // If one wasn't given by the user, don't pass it here.

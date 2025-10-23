@@ -70,8 +70,8 @@ public:
   }
   llvm::FixedPointSemantics getSemantics() const { return V.getSemantics(); }
 
-  llvm::APFloat toFloat(const llvm::fltSemantics *Sem) const {
-    return V.convertToFloat(*Sem);
+  llvm::APFloat toFloat(llvm::fltSemantics Sem) const {
+    return V.convertToFloat(Sem);
   }
 
   llvm::APSInt toInt(unsigned BitWidth, bool Signed, bool *Overflow) const {

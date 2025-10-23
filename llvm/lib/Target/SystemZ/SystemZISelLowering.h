@@ -885,7 +885,7 @@ public:
   SystemZVectorConstantInfo(APInt IntImm);
   SystemZVectorConstantInfo(APFloat FPImm)
       : SystemZVectorConstantInfo(FPImm.bitcastToAPInt()) {
-    isFP128 = (&FPImm.getSemantics() == &APFloat::IEEEquad());
+    isFP128 = (FPImm.getSemantics() == APFloat::IEEEquad());
   }
   SystemZVectorConstantInfo(BuildVectorSDNode *BVN);
   bool isVectorConstantLegal(const SystemZSubtarget &Subtarget);

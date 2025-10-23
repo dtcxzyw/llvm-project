@@ -1027,7 +1027,7 @@ Constant *ConstantFP::get(Type *Ty, StringRef Str) {
 }
 
 Constant *ConstantFP::getNaN(Type *Ty, bool Negative, uint64_t Payload) {
-  const fltSemantics &Semantics = Ty->getScalarType()->getFltSemantics();
+  fltSemantics Semantics = Ty->getScalarType()->getFltSemantics();
   APFloat NaN = APFloat::getNaN(Semantics, Negative, Payload);
   Constant *C = get(Ty->getContext(), NaN);
 
@@ -1038,7 +1038,7 @@ Constant *ConstantFP::getNaN(Type *Ty, bool Negative, uint64_t Payload) {
 }
 
 Constant *ConstantFP::getQNaN(Type *Ty, bool Negative, APInt *Payload) {
-  const fltSemantics &Semantics = Ty->getScalarType()->getFltSemantics();
+  fltSemantics Semantics = Ty->getScalarType()->getFltSemantics();
   APFloat NaN = APFloat::getQNaN(Semantics, Negative, Payload);
   Constant *C = get(Ty->getContext(), NaN);
 
@@ -1049,7 +1049,7 @@ Constant *ConstantFP::getQNaN(Type *Ty, bool Negative, APInt *Payload) {
 }
 
 Constant *ConstantFP::getSNaN(Type *Ty, bool Negative, APInt *Payload) {
-  const fltSemantics &Semantics = Ty->getScalarType()->getFltSemantics();
+  fltSemantics Semantics = Ty->getScalarType()->getFltSemantics();
   APFloat NaN = APFloat::getSNaN(Semantics, Negative, Payload);
   Constant *C = get(Ty->getContext(), NaN);
 
@@ -1060,7 +1060,7 @@ Constant *ConstantFP::getSNaN(Type *Ty, bool Negative, APInt *Payload) {
 }
 
 Constant *ConstantFP::getZero(Type *Ty, bool Negative) {
-  const fltSemantics &Semantics = Ty->getScalarType()->getFltSemantics();
+  fltSemantics Semantics = Ty->getScalarType()->getFltSemantics();
   APFloat NegZero = APFloat::getZero(Semantics, Negative);
   Constant *C = get(Ty->getContext(), NegZero);
 
@@ -1106,7 +1106,7 @@ ConstantFP *ConstantFP::get(LLVMContext &Context, ElementCount EC,
 }
 
 Constant *ConstantFP::getInfinity(Type *Ty, bool Negative) {
-  const fltSemantics &Semantics = Ty->getScalarType()->getFltSemantics();
+  fltSemantics Semantics = Ty->getScalarType()->getFltSemantics();
   Constant *C = get(Ty->getContext(), APFloat::getInf(Semantics, Negative));
 
   if (VectorType *VTy = dyn_cast<VectorType>(Ty))
@@ -1117,7 +1117,7 @@ Constant *ConstantFP::getInfinity(Type *Ty, bool Negative) {
 
 ConstantFP::ConstantFP(Type *Ty, const APFloat &V)
     : ConstantData(Ty, ConstantFPVal), Val(V) {
-  assert(&V.getSemantics() == &Ty->getScalarType()->getFltSemantics() &&
+  assert(V.getSemantics() == Ty->getScalarType()->getFltSemantics() &&
          "FP type Mismatch");
 }
 
@@ -1626,50 +1626,50 @@ bool ConstantFP::isValueValidForType(Type *Ty, const APFloat& Val) {
 
   // FIXME rounding mode needs to be more flexible
   case Type::HalfTyID: {
-    if (&Val2.getSemantics() == &APFloat::IEEEhalf())
+    if (Val2.getSemantics() == APFloat::IEEEhalf())
       return true;
     Val2.convert(APFloat::IEEEhalf(), APFloat::rmNearestTiesToEven, &losesInfo);
     return !losesInfo;
   }
   case Type::BFloatTyID: {
-    if (&Val2.getSemantics() == &APFloat::BFloat())
+    if (Val2.getSemantics() == APFloat::BFloat())
       return true;
     Val2.convert(APFloat::BFloat(), APFloat::rmNearestTiesToEven, &losesInfo);
     return !losesInfo;
   }
   case Type::FloatTyID: {
-    if (&Val2.getSemantics() == &APFloat::IEEEsingle())
+    if (Val2.getSemantics() == APFloat::IEEEsingle())
       return true;
     Val2.convert(APFloat::IEEEsingle(), APFloat::rmNearestTiesToEven, &losesInfo);
     return !losesInfo;
   }
   case Type::DoubleTyID: {
-    if (&Val2.getSemantics() == &APFloat::IEEEhalf() ||
-        &Val2.getSemantics() == &APFloat::BFloat() ||
-        &Val2.getSemantics() == &APFloat::IEEEsingle() ||
-        &Val2.getSemantics() == &APFloat::IEEEdouble())
+    if (Val2.getSemantics() == APFloat::IEEEhalf() ||
+        Val2.getSemantics() == APFloat::BFloat() ||
+        Val2.getSemantics() == APFloat::IEEEsingle() ||
+        Val2.getSemantics() == APFloat::IEEEdouble())
       return true;
     Val2.convert(APFloat::IEEEdouble(), APFloat::rmNearestTiesToEven, &losesInfo);
     return !losesInfo;
   }
   case Type::X86_FP80TyID:
-    return &Val2.getSemantics() == &APFloat::IEEEhalf() ||
-           &Val2.getSemantics() == &APFloat::BFloat() ||
-           &Val2.getSemantics() == &APFloat::IEEEsingle() ||
-           &Val2.getSemantics() == &APFloat::IEEEdouble() ||
-           &Val2.getSemantics() == &APFloat::x87DoubleExtended();
+    return Val2.getSemantics() == APFloat::IEEEhalf() ||
+           Val2.getSemantics() == APFloat::BFloat() ||
+           Val2.getSemantics() == APFloat::IEEEsingle() ||
+           Val2.getSemantics() == APFloat::IEEEdouble() ||
+           Val2.getSemantics() == APFloat::x87DoubleExtended();
   case Type::FP128TyID:
-    return &Val2.getSemantics() == &APFloat::IEEEhalf() ||
-           &Val2.getSemantics() == &APFloat::BFloat() ||
-           &Val2.getSemantics() == &APFloat::IEEEsingle() ||
-           &Val2.getSemantics() == &APFloat::IEEEdouble() ||
-           &Val2.getSemantics() == &APFloat::IEEEquad();
+    return Val2.getSemantics() == APFloat::IEEEhalf() ||
+           Val2.getSemantics() == APFloat::BFloat() ||
+           Val2.getSemantics() == APFloat::IEEEsingle() ||
+           Val2.getSemantics() == APFloat::IEEEdouble() ||
+           Val2.getSemantics() == APFloat::IEEEquad();
   case Type::PPC_FP128TyID:
-    return &Val2.getSemantics() == &APFloat::IEEEhalf() ||
-           &Val2.getSemantics() == &APFloat::BFloat() ||
-           &Val2.getSemantics() == &APFloat::IEEEsingle() ||
-           &Val2.getSemantics() == &APFloat::IEEEdouble() ||
-           &Val2.getSemantics() == &APFloat::PPCDoubleDouble();
+    return Val2.getSemantics() == APFloat::IEEEhalf() ||
+           Val2.getSemantics() == APFloat::BFloat() ||
+           Val2.getSemantics() == APFloat::IEEEsingle() ||
+           Val2.getSemantics() == APFloat::IEEEdouble() ||
+           Val2.getSemantics() == APFloat::PPCDoubleDouble();
   }
 }
 

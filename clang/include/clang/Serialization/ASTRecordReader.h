@@ -305,7 +305,7 @@ public:
   // llvm::APSInt readAPSInt(); (inherited)
 
   /// Read a floating-point value, advancing Idx.
-  llvm::APFloat readAPFloat(const llvm::fltSemantics &Sem);
+  llvm::APFloat readAPFloat(llvm::fltSemantics Sem);
 
   /// Read a boolean value, advancing Idx.
   bool readBool() { return readInt() != 0; }

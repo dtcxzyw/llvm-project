@@ -110,18 +110,17 @@ TEST_F(DefaultStringTests, getComplexTypeIDTest) {
 }
 
 TEST_F(DefaultStringTests, getFloatSemanticsTest) {
-  EXPECT_EQ(&defaultString->getFloatSemantics(2), &llvm::APFloat::IEEEhalf());
-  EXPECT_EQ(&defaultString->getFloatSemantics(3), &llvm::APFloat::BFloat());
-  EXPECT_EQ(&defaultString->getFloatSemantics(4), &llvm::APFloat::IEEEsingle());
-  EXPECT_EQ(&defaultString->getFloatSemantics(8), &llvm::APFloat::IEEEdouble());
+  EXPECT_EQ(&defaultString->getFloatSemantics(2), llvm::APFloat::IEEEhalf());
+  EXPECT_EQ(&defaultString->getFloatSemantics(3), llvm::APFloat::BFloat());
+  EXPECT_EQ(&defaultString->getFloatSemantics(4), llvm::APFloat::IEEEsingle());
+  EXPECT_EQ(&defaultString->getFloatSemantics(8), llvm::APFloat::IEEEdouble());
   EXPECT_EQ(&defaultString->getFloatSemantics(10),
-      &llvm::APFloat::x87DoubleExtended());
-  EXPECT_EQ(&defaultString->getFloatSemantics(16), &llvm::APFloat::IEEEquad());
+      llvm::APFloat::x87DoubleExtended());
+  EXPECT_EQ(&defaultString->getFloatSemantics(16), llvm::APFloat::IEEEquad());
 
   // Default cases
-  EXPECT_EQ(
-      &defaultString->getFloatSemantics(-1), &llvm::APFloat::IEEEsingle());
-  EXPECT_EQ(&defaultString->getFloatSemantics(1), &llvm::APFloat::IEEEsingle());
+  EXPECT_EQ(&defaultString->getFloatSemantics(-1), llvm::APFloat::IEEEsingle());
+  EXPECT_EQ(&defaultString->getFloatSemantics(1), llvm::APFloat::IEEEsingle());
 }
 
 TEST_F(CommandLineStringTests, getIntegerBitsizeTest) {
@@ -133,23 +132,22 @@ TEST_F(CommandLineStringTests, getIntegerBitsizeTest) {
   EXPECT_EQ(commandLineString->getRealTypeID(54), LLVMTypeID::DoubleTyID);
   EXPECT_EQ(commandLineString->getRealTypeID(11), LLVMTypeID::PPC_FP128TyID);
   EXPECT_EQ(&commandLineString->getFloatSemantics(11),
-      &llvm::APFloat::PPCDoubleDouble());
+      llvm::APFloat::PPCDoubleDouble());
   EXPECT_EQ(
-      &commandLineString->getFloatSemantics(12), &llvm::APFloat::IEEEquad());
+      &commandLineString->getFloatSemantics(12), llvm::APFloat::IEEEquad());
   EXPECT_EQ(&commandLineString->getFloatSemantics(13),
-      &llvm::APFloat::x87DoubleExtended());
+      llvm::APFloat::x87DoubleExtended());
   EXPECT_EQ(
-      &commandLineString->getFloatSemantics(14), &llvm::APFloat::IEEEdouble());
+      &commandLineString->getFloatSemantics(14), llvm::APFloat::IEEEdouble());
   EXPECT_EQ(
-      &commandLineString->getFloatSemantics(15), &llvm::APFloat::IEEEsingle());
+      &commandLineString->getFloatSemantics(15), llvm::APFloat::IEEEsingle());
   EXPECT_EQ(
-      &commandLineString->getFloatSemantics(16), &llvm::APFloat::IEEEhalf());
-  EXPECT_EQ(
-      &commandLineString->getFloatSemantics(23), &llvm::APFloat::BFloat());
+      &commandLineString->getFloatSemantics(16), llvm::APFloat::IEEEhalf());
+  EXPECT_EQ(&commandLineString->getFloatSemantics(23), llvm::APFloat::BFloat());
 
   // Converts to default case
   EXPECT_EQ(
-      &commandLineString->getFloatSemantics(20), &llvm::APFloat::IEEEsingle());
+      &commandLineString->getFloatSemantics(20), llvm::APFloat::IEEEsingle());
 
   // KEY is absent from map, Default values are expected.
   EXPECT_EQ(commandLineString->getIntegerBitsize(9), 72u);

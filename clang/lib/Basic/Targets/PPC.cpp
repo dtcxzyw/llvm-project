@@ -65,7 +65,7 @@ bool PPCTargetInfo::handleTargetFeatures(std::vector<std::string> &Features,
       HasStrictFP = false;
       HasSPE = true;
       LongDoubleWidth = LongDoubleAlign = 64;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
     } else if (Feature == "+frsqrte") {
       HasFrsqrte = true;
     } else if (Feature == "+frsqrtes") {
@@ -765,10 +765,10 @@ void PPCTargetInfo::adjust(DiagnosticsEngine &Diags, LangOptions &Opts,
   if (HasAltivec)
     Opts.AltiVec = 1;
   TargetInfo::adjust(Diags, Opts, Aux);
-  if (LongDoubleFormat != &llvm::APFloat::IEEEdouble())
+  if (LongDoubleFormat != llvm::APFloat::IEEEdouble())
     LongDoubleFormat = Opts.PPCIEEELongDouble
-                           ? &llvm::APFloat::IEEEquad()
-                           : &llvm::APFloat::PPCDoubleDouble();
+                           ? llvm::APFloat::IEEEquad()
+                           : llvm::APFloat::PPCDoubleDouble();
   Opts.IEEE128 = 1;
   if (getTriple().isOSAIX() && Opts.EnableAIXQuadwordAtomicsABI &&
       HasQuadwordAtomics)

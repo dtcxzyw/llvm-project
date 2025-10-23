@@ -341,11 +341,11 @@ public:
     friend DenseElementsAttr;
 
     /// Initializes the float element iterator to the specified iterator.
-    FloatElementIterator(const llvm::fltSemantics &smt, IntElementIterator it)
-        : BaseT(it), smt(&smt) {}
+    FloatElementIterator(llvm::fltSemantics smt, IntElementIterator it)
+        : BaseT(it), smt(smt) {}
 
     /// The float semantics to use when constructing the APFloat.
-    const llvm::fltSemantics *smt;
+    llvm::fltSemantics smt;
   };
 
   /// Iterator for walking over complex APFloat values.
@@ -363,12 +363,12 @@ public:
     friend DenseElementsAttr;
 
     /// Initializes the float element iterator to the specified iterator.
-    ComplexFloatElementIterator(const llvm::fltSemantics &smt,
+    ComplexFloatElementIterator(llvm::fltSemantics smt,
                                 ComplexIntElementIterator it)
-        : BaseT(it), smt(&smt) {}
+        : BaseT(it), smt(smt) {}
 
     /// The float semantics to use when constructing the APFloat.
-    const llvm::fltSemantics *smt;
+    llvm::fltSemantics smt;
   };
 
   //===--------------------------------------------------------------------===//

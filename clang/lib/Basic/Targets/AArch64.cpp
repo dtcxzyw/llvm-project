@@ -158,10 +158,10 @@ AArch64TargetInfo::AArch64TargetInfo(const llvm::Triple &Triple,
   MaxAtomicPromoteWidth = 128;
 
   LongDoubleWidth = LongDoubleAlign = SuitableAlign = 128;
-  LongDoubleFormat = &llvm::APFloat::IEEEquad();
+  LongDoubleFormat = llvm::APFloat::IEEEquad();
 
   BFloat16Width = BFloat16Align = 16;
-  BFloat16Format = &llvm::APFloat::BFloat();
+  BFloat16Format = llvm::APFloat::BFloat();
 
   // Make __builtin_ms_va_list available.
   HasBuiltinMSVaList = true;
@@ -1678,7 +1678,7 @@ WindowsARM64TargetInfo::WindowsARM64TargetInfo(const llvm::Triple &Triple,
   LongWidth = LongAlign = 32;
   DoubleAlign = LongLongAlign = 64;
   LongDoubleWidth = LongDoubleAlign = 64;
-  LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+  LongDoubleFormat = llvm::APFloat::IEEEdouble();
   IntMaxType = SignedLongLong;
   Int64Type = SignedLongLong;
   SizeType = UnsignedLongLong;
@@ -1788,7 +1788,7 @@ DarwinAArch64TargetInfo::DarwinAArch64TargetInfo(const llvm::Triple &Triple,
   UseSignedCharForObjCBool = false;
 
   LongDoubleWidth = LongDoubleAlign = SuitableAlign = 64;
-  LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+  LongDoubleFormat = llvm::APFloat::IEEEdouble();
 
   UseZeroLengthBitfieldAlignment = false;
 

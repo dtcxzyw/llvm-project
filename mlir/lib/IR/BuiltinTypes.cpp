@@ -90,9 +90,7 @@ IntegerType IntegerType::scaleElementBitwidth(unsigned scale) {
 
 // Mapping from MLIR FloatType to APFloat semantics.
 #define FLOAT_TYPE_SEMANTICS(TYPE, SEM)                                        \
-  const llvm::fltSemantics &TYPE::getFloatSemantics() const {                  \
-    return APFloat::SEM();                                                     \
-  }
+  llvm::fltSemantics TYPE::getFloatSemantics() const { return APFloat::SEM(); }
 FLOAT_TYPE_SEMANTICS(Float4E2M1FNType, Float4E2M1FN)
 FLOAT_TYPE_SEMANTICS(Float6E2M3FNType, Float6E2M3FN)
 FLOAT_TYPE_SEMANTICS(Float6E3M2FNType, Float6E3M2FN)

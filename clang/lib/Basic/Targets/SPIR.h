@@ -428,7 +428,7 @@ public:
                     "v256:256-v512:512-v1024:1024-n32:64-S32-G1-P4-A0");
 
     BFloat16Width = BFloat16Align = 16;
-    BFloat16Format = &llvm::APFloat::BFloat();
+    BFloat16Format = llvm::APFloat::BFloat();
 
     HasFastHalfType = true;
     HasFloat16 = true;

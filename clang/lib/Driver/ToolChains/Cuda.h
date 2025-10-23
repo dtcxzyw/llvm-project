@@ -151,9 +151,10 @@ public:
                         llvm::opt::ArgStringList &CC1Args,
                         Action::OffloadKind DeviceOffloadKind) const override;
 
-  llvm::DenormalMode getDefaultDenormalModeForType(
-      const llvm::opt::ArgList &DriverArgs, const JobAction &JA,
-      const llvm::fltSemantics *FPType = nullptr) const override;
+  llvm::DenormalMode
+  getDefaultDenormalModeForType(const llvm::opt::ArgList &DriverArgs,
+                                const JobAction &JA,
+                                llvm::fltSemantics FPType = {}) const override;
 
   void AddCudaIncludeArgs(const llvm::opt::ArgList &DriverArgs,
                           llvm::opt::ArgStringList &CC1Args) const override;

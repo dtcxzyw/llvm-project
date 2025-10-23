@@ -529,7 +529,7 @@ namespace llvm {
 
     /// Returns an APFloat semantics tag appropriate for the value type. If this
     /// is a vector type, the element semantics are returned.
-    LLVM_ABI const fltSemantics &getFltSemantics() const;
+    LLVM_ABI fltSemantics getFltSemantics() const;
 
   private:
     // Methods for handling the Extended-type case in functions above.

@@ -45,10 +45,10 @@ public:
     FloatAlign = 8;
     DoubleWidth = 32;
     DoubleAlign = 8;
-    DoubleFormat = &llvm::APFloat::IEEEsingle();
+    DoubleFormat = llvm::APFloat::IEEEsingle();
     LongDoubleWidth = 32;
     LongDoubleAlign = 8;
-    LongDoubleFormat = &llvm::APFloat::IEEEsingle();
+    LongDoubleFormat = llvm::APFloat::IEEEsingle();
     SizeType = UnsignedInt;
     PtrDiffType = SignedInt;
     IntPtrType = SignedInt;

@@ -16,7 +16,7 @@
 using namespace llvm;
 
 void ConstantFPRange::makeEmpty() {
-  auto &Sem = Lower.getSemantics();
+  auto Sem = Lower.getSemantics();
   Lower = APFloat::getInf(Sem, /*Negative=*/false);
   Upper = APFloat::getInf(Sem, /*Negative=*/true);
   MayBeQNaN = false;
@@ -24,7 +24,7 @@ void ConstantFPRange::makeEmpty() {
 }
 
 void ConstantFPRange::makeFull() {
-  auto &Sem = Lower.getSemantics();
+  auto Sem = Lower.getSemantics();
   Lower = APFloat::getInf(Sem, /*Negative=*/true);
   Upper = APFloat::getInf(Sem, /*Negative=*/false);
   MayBeQNaN = true;
@@ -35,7 +35,7 @@ bool ConstantFPRange::isNaNOnly() const {
   return Lower.isPosInfinity() && Upper.isNegInfinity();
 }
 
-ConstantFPRange::ConstantFPRange(const fltSemantics &Sem, bool IsFullSet)
+ConstantFPRange::ConstantFPRange(fltSemantics Sem, bool IsFullSet)
     : Lower(Sem, APFloat::uninitialized), Upper(Sem, APFloat::uninitialized) {
   Lower = APFloat::getInf(Sem, /*Negative=*/IsFullSet);
   Upper = APFloat::getInf(Sem, /*Negative=*/!IsFullSet);
@@ -85,25 +85,25 @@ ConstantFPRange::ConstantFPRange(APFloat LowerVal, APFloat UpperVal,
                                  bool MayBeQNaNVal, bool MayBeSNaNVal)
     : Lower(std::move(LowerVal)), Upper(std::move(UpperVal)),
       MayBeQNaN(MayBeQNaNVal), MayBeSNaN(MayBeSNaNVal) {
-  assert(&Lower.getSemantics() == &Upper.getSemantics() &&
+  assert(Lower.getSemantics() == Upper.getSemantics() &&
          "Should only use the same semantics");
   assert(!isNonCanonicalEmptySet(Lower, Upper) && "Non-canonical form");
 }
 
-ConstantFPRange ConstantFPRange::getFinite(const fltSemantics &Sem) {
+ConstantFPRange ConstantFPRange::getFinite(fltSemantics Sem) {
   return ConstantFPRange(APFloat::getLargest(Sem, /*Negative=*/true),
                          APFloat::getLargest(Sem, /*Negative=*/false),
                          /*MayBeQNaN=*/false, /*MayBeSNaN=*/false);
 }
 
-ConstantFPRange ConstantFPRange::getNaNOnly(const fltSemantics &Sem,
-                                            bool MayBeQNaN, bool MayBeSNaN) {
+ConstantFPRange ConstantFPRange::getNaNOnly(fltSemantics Sem, bool MayBeQNaN,
+                                            bool MayBeSNaN) {
   return ConstantFPRange(APFloat::getInf(Sem, /*Negative=*/false),
                          APFloat::getInf(Sem, /*Negative=*/true), MayBeQNaN,
                          MayBeSNaN);
 }
 
-ConstantFPRange ConstantFPRange::getNonNaN(const fltSemantics &Sem) {
+ConstantFPRange ConstantFPRange::getNonNaN(fltSemantics Sem) {
   return ConstantFPRange(APFloat::getInf(Sem, /*Negative=*/true),
                          APFloat::getInf(Sem, /*Negative=*/false),
                          /*MayBeQNaN=*/false, /*MayBeSNaN=*/false);
@@ -116,7 +116,7 @@ static bool fcmpPredExcludesEqual(FCmpInst::Predicate Pred) {
 
 /// Return [-inf, V) or [-inf, V]
 static ConstantFPRange makeLessThan(APFloat V, FCmpInst::Predicate Pred) {
-  const fltSemantics &Sem = V.getSemantics();
+  fltSemantics Sem = V.getSemantics();
   if (fcmpPredExcludesEqual(Pred)) {
     if (V.isNegInfinity())
       return ConstantFPRange::getEmpty(Sem);
@@ -128,7 +128,7 @@ static ConstantFPRange makeLessThan(APFloat V, FCmpInst::Predicate Pred) {
 
 /// Return (V, +inf] or [V, +inf]
 static ConstantFPRange makeGreaterThan(APFloat V, FCmpInst::Predicate Pred) {
-  const fltSemantics &Sem = V.getSemantics();
+  fltSemantics Sem = V.getSemantics();
   if (fcmpPredExcludesEqual(Pred)) {
     if (V.isPosInfinity())
       return ConstantFPRange::getEmpty(Sem);
@@ -188,7 +188,7 @@ ConstantFPRange::makeAllowedFCmpRegion(FCmpInst::Predicate Pred,
   case FCmpInst::FCMP_UNE:
     if (const APFloat *SingleElement =
             Other.getSingleElement(/*ExcludesNaN=*/true)) {
-      const fltSemantics &Sem = SingleElement->getSemantics();
+      fltSemantics Sem = SingleElement->getSemantics();
       if (SingleElement->isPosInfinity())
         return setNaNField(
             getNonNaN(APFloat::getInf(Sem, /*Negative=*/true),
@@ -291,7 +291,7 @@ bool ConstantFPRange::isEmptySet() const {
 }
 
 bool ConstantFPRange::contains(const APFloat &Val) const {
-  assert(&getSemantics() == &Val.getSemantics() &&
+  assert(getSemantics() == Val.getSemantics() &&
          "Should only use the same semantics");
 
   if (Val.isNaN())
@@ -301,7 +301,7 @@ bool ConstantFPRange::contains(const APFloat &Val) const {
 }
 
 bool ConstantFPRange::contains(const ConstantFPRange &CR) const {
-  assert(&getSemantics() == &CR.getSemantics() &&
+  assert(getSemantics() == CR.getSemantics() &&
          "Should only use the same semantics");
 
   if (CR.MayBeQNaN && !MayBeQNaN)
@@ -327,7 +327,7 @@ std::optional<bool> ConstantFPRange::getSignBit() const {
 }
 
 bool ConstantFPRange::operator==(const ConstantFPRange &CR) const {
-  assert(&getSemantics() == &CR.getSemantics() &&
+  assert(getSemantics() == CR.getSemantics() &&
          "Should only use the same semantics");
   if (MayBeSNaN != CR.MayBeSNaN || MayBeQNaN != CR.MayBeQNaN)
     return false;
@@ -379,7 +379,7 @@ LLVM_DUMP_METHOD void ConstantFPRange::dump() const { print(dbgs()); }
 
 ConstantFPRange
 ConstantFPRange::intersectWith(const ConstantFPRange &CR) const {
-  assert(&getSemantics() == &CR.getSemantics() &&
+  assert(getSemantics() == CR.getSemantics() &&
          "Should only use the same semantics");
   APFloat NewLower = maxnum(Lower, CR.Lower);
   APFloat NewUpper = minnum(Upper, CR.Upper);
@@ -389,7 +389,7 @@ ConstantFPRange::intersectWith(const ConstantFPRange &CR) const {
 }
 
 ConstantFPRange ConstantFPRange::unionWith(const ConstantFPRange &CR) const {
-  assert(&getSemantics() == &CR.getSemantics() &&
+  assert(getSemantics() == CR.getSemantics() &&
          "Should only use the same semantics");
   return ConstantFPRange(minnum(Lower, CR.Lower), maxnum(Upper, CR.Upper),
                          MayBeQNaN | CR.MayBeQNaN, MayBeSNaN | CR.MayBeSNaN);
@@ -420,7 +420,7 @@ static bool removeInf(APFloat &Lower, APFloat &Upper, bool &HasPosInf,
                       bool &HasNegInf) {
   assert(strictCompare(Lower, Upper) != APFloat::cmpGreaterThan &&
          "Non-NaN part is empty.");
-  auto &Sem = Lower.getSemantics();
+  auto Sem = Lower.getSemantics();
   if (Lower.isNegInfinity()) {
     Lower = APFloat::getLargest(Sem, /*Negative=*/true);
     HasNegInf = true;
@@ -445,7 +445,7 @@ ConstantFPRange ConstantFPRange::getWithoutInf() const {
                          MayBeSNaN);
 }
 
-ConstantFPRange ConstantFPRange::cast(const fltSemantics &DstSem,
+ConstantFPRange ConstantFPRange::cast(fltSemantics DstSem,
                                       APFloat::roundingMode RM) const {
   bool LosesInfo;
   APFloat NewLower = Lower;
@@ -515,7 +515,7 @@ void ConstantFPRange::flushDenormals(DenormalMode::DenormalModeKind Mode) {
   if (!(Class & fcSubnormal))
     return;
 
-  auto &Sem = getSemantics();
+  auto Sem = getSemantics();
   // PreserveSign: PosSubnormal -> PosZero, NegSubnormal -> NegZero
   // PositiveZero: PosSubnormal -> PosZero, NegSubnormal -> PosZero
   // Dynamic:      PosSubnormal -> PosZero, NegSubnormal -> NegZero/PosZero
@@ -564,13 +564,13 @@ static void splitPosNeg(const APFloat &Lower, const APFloat &Upper,
       PosPart = SameSignRange{Lower, Upper};
     return;
   }
-  auto &Sem = Lower.getSemantics();
+  auto Sem = Lower.getSemantics();
   NegPart = SameSignRange{APFloat::getZero(Sem), abs(Lower)};
   PosPart = SameSignRange{APFloat::getZero(Sem), Upper};
 }
 
 ConstantFPRange ConstantFPRange::mul(const ConstantFPRange &Other) const {
-  auto &Sem = getSemantics();
+  auto Sem = getSemantics();
   bool ResMayBeQNaN = ((MayBeQNaN || MayBeSNaN) && !Other.isEmptySet()) ||
                       ((Other.MayBeQNaN || Other.MayBeSNaN) && !isEmptySet());
   if (isNaNOnly() || Other.isNaNOnly())
@@ -612,7 +612,7 @@ ConstantFPRange ConstantFPRange::mul(const ConstantFPRange &Other) const {
 }
 
 ConstantFPRange ConstantFPRange::div(const ConstantFPRange &Other) const {
-  auto &Sem = getSemantics();
+  auto Sem = getSemantics();
   bool ResMayBeQNaN = ((MayBeQNaN || MayBeSNaN) && !Other.isEmptySet()) ||
                       ((Other.MayBeQNaN || Other.MayBeSNaN) && !isEmptySet());
   if (isNaNOnly() || Other.isNaNOnly())

@@ -44,8 +44,7 @@ enum class PredefinedValues {
   ONE_PLUS_ULP,   // The value just after 1.0
 };
 
-APInt bitcastFloatValue(const fltSemantics &FltSemantics,
-                        PredefinedValues Value);
+APInt bitcastFloatValue(fltSemantics FltSemantics, PredefinedValues Value);
 
 } // namespace exegesis
 } // namespace llvm

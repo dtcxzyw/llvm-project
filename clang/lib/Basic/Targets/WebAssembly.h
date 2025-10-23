@@ -86,7 +86,7 @@ public:
     LargeArrayAlign = 128;
     SigAtomicType = SignedLong;
     LongDoubleWidth = LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
     MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
     HasUnalignedAccess = true;
     if (T.isWALI()) {

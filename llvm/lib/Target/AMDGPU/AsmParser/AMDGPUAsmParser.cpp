@@ -1993,24 +1993,24 @@ public:
 } // end anonymous namespace
 
 // May be called with integer type with equivalent bitwidth.
-static const fltSemantics *getFltSemantics(unsigned Size) {
+static fltSemantics getFltSemantics(unsigned Size) {
   switch (Size) {
   case 4:
-    return &APFloat::IEEEsingle();
+    return APFloat::IEEEsingle();
   case 8:
-    return &APFloat::IEEEdouble();
+    return APFloat::IEEEdouble();
   case 2:
-    return &APFloat::IEEEhalf();
+    return APFloat::IEEEhalf();
   default:
     llvm_unreachable("unsupported fp type");
   }
 }
 
-static const fltSemantics *getFltSemantics(MVT VT) {
+static fltSemantics getFltSemantics(MVT VT) {
   return getFltSemantics(VT.getSizeInBits() / 8);
 }
 
-static const fltSemantics *getOpFltSemantics(uint8_t OperandType) {
+static fltSemantics getOpFltSemantics(uint8_t OperandType) {
   switch (OperandType) {
   // When floating-point immediate is used as operand of type i16, the 32-bit
    // representation of the constant truncated to the 16 LSBs should be used.
@@ -2028,26 +2028,26 @@ static const fltSemantics *getOpFltSemantics(uint8_t OperandType) {
   case AMDGPU::OPERAND_REG_INLINE_C_V2INT16:
   case AMDGPU::OPERAND_KIMM32:
   case AMDGPU::OPERAND_INLINE_SPLIT_BARRIER_INT32:
-    return &APFloat::IEEEsingle();
+    return APFloat::IEEEsingle();
   case AMDGPU::OPERAND_REG_IMM_INT64:
   case AMDGPU::OPERAND_REG_IMM_FP64:
   case AMDGPU::OPERAND_REG_INLINE_C_INT64:
   case AMDGPU::OPERAND_REG_INLINE_C_FP64:
   case AMDGPU::OPERAND_REG_INLINE_AC_FP64:
   case AMDGPU::OPERAND_KIMM64:
-    return &APFloat::IEEEdouble();
+    return APFloat::IEEEdouble();
   case AMDGPU::OPERAND_REG_IMM_FP16:
   case AMDGPU::OPERAND_REG_INLINE_C_FP16:
   case AMDGPU::OPERAND_REG_INLINE_C_V2FP16:
   case AMDGPU::OPERAND_REG_IMM_V2FP16:
   case AMDGPU::OPERAND_REG_IMM_NOINLINE_V2FP16:
   case AMDGPU::OPERAND_KIMM16:
-    return &APFloat::IEEEhalf();
+    return APFloat::IEEEhalf();
   case AMDGPU::OPERAND_REG_IMM_BF16:
   case AMDGPU::OPERAND_REG_INLINE_C_BF16:
   case AMDGPU::OPERAND_REG_INLINE_C_V2BF16:
   case AMDGPU::OPERAND_REG_IMM_V2BF16:
-    return &APFloat::BFloat();
+    return APFloat::BFloat();
   default:
     llvm_unreachable("unsupported fp type");
   }

@@ -229,12 +229,11 @@ llvm::Constant *CodeGenModule::getBuiltinLibFunction(const FunctionDecl *FD,
     // TODO: This mutation should also be applied to other targets other than
     // PPC, after backend supports IEEE 128-bit style libcalls.
     if (getTriple().isPPC64() &&
-        &getTarget().getLongDoubleFormat() == &llvm::APFloat::IEEEquad() &&
+        getTarget().getLongDoubleFormat() == llvm::APFloat::IEEEquad() &&
         F128Builtins.contains(BuiltinID))
       Name = F128Builtins[BuiltinID];
     else if (getTriple().isOSAIX() &&
-             &getTarget().getLongDoubleFormat() ==
-                 &llvm::APFloat::IEEEdouble() &&
+             getTarget().getLongDoubleFormat() == llvm::APFloat::IEEEdouble() &&
              AIXLongDouble64Builtins.contains(BuiltinID))
       Name = AIXLongDouble64Builtins[BuiltinID];
     else
@@ -2621,7 +2620,7 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
   // TODO: This mutation should also be applied to other targets other than PPC,
   // after backend supports IEEE 128-bit style libcalls.
   if (getTarget().getTriple().isPPC64() &&
-      &getTarget().getLongDoubleFormat() == &llvm::APFloat::IEEEquad())
+      getTarget().getLongDoubleFormat() == llvm::APFloat::IEEEquad())
     BuiltinID = mutateLongDoubleBuiltin(BuiltinID);
 
   // If the builtin has been declared explicitly with an assembler label,
@@ -3809,7 +3808,7 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
     // Linux PPC will not be adding additional PPCDoubleDouble support.
     // WIP to switch default to IEEE long double. Will emit libcall for
     // frexpl instead of legalizing this type in the BE.
-    if (&getTarget().getLongDoubleFormat() == &llvm::APFloat::PPCDoubleDouble())
+    if (getTarget().getLongDoubleFormat() == llvm::APFloat::PPCDoubleDouble())
       break;
     [[fallthrough]];
   }

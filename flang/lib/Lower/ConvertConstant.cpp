@@ -28,8 +28,7 @@
 
 /// Convert string, \p s, to an APFloat value. Recognize and handle Inf and
 /// NaN strings as well. \p s is assumed to not contain any spaces.
-static llvm::APFloat consAPFloat(const llvm::fltSemantics &fsem,
-                                 llvm::StringRef s) {
+static llvm::APFloat consAPFloat(llvm::fltSemantics fsem, llvm::StringRef s) {
   assert(!s.contains(' '));
   if (s.compare_insensitive("-inf") == 0)
     return llvm::APFloat::getInf(fsem, /*negative=*/true);

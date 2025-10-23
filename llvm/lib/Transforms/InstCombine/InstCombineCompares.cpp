@@ -8288,7 +8288,7 @@ static Instruction *foldFCmpFpTrunc(FCmpInst &I, const Instruction &FPTrunc,
   if (CValue->isNaN() || CValue->isInfinity())
     return nullptr;
 
-  auto ConvertFltSema = [](const APFloat &Src, const fltSemantics &Sema) {
+  auto ConvertFltSema = [](const APFloat &Src, fltSemantics Sema) {
     bool LosesInfo;
     APFloat Dest = Src;
     Dest.convert(Sema, APFloat::rmNearestTiesToEven, &LosesInfo);
@@ -8304,8 +8304,7 @@ static Instruction *foldFCmpFpTrunc(FCmpInst &I, const Instruction &FPTrunc,
   APFloat NextCValue = NextValue(*CValue, RoundDown);
 
   Type *DestType = FPTrunc.getOperand(0)->getType();
-  const fltSemantics &DestFltSema =
-      DestType->getScalarType()->getFltSemantics();
+  fltSemantics DestFltSema = DestType->getScalarType()->getFltSemantics();
 
   APFloat ExtCValue = ConvertFltSema(*CValue, DestFltSema);
   APFloat ExtNextCValue = ConvertFltSema(NextCValue, DestFltSema);
@@ -8324,8 +8323,7 @@ static Instruction *foldFCmpFpTrunc(FCmpInst &I, const Instruction &FPTrunc,
   APFloat ExtMidValue =
       scalbn(ExtCValue + ExtNextCValue, -1, APFloat::rmNearestTiesToEven);
 
-  const fltSemantics &SrcFltSema =
-      C.getType()->getScalarType()->getFltSemantics();
+  fltSemantics SrcFltSema = C.getType()->getScalarType()->getFltSemantics();
 
   // 'MidValue' might be rounded to 'NextCValue'. Correct it here.
   APFloat MidValue = ConvertFltSema(ExtMidValue, SrcFltSema);
@@ -8882,8 +8880,7 @@ Instruction *InstCombinerImpl::visitFCmpInst(FCmpInst &I) {
 
     const APFloat *C;
     if (match(Op1, m_APFloat(C))) {
-      const fltSemantics &FPSem =
-          X->getType()->getScalarType()->getFltSemantics();
+      fltSemantics FPSem = X->getType()->getScalarType()->getFltSemantics();
       bool Lossy;
       APFloat TruncC = *C;
       TruncC.convert(FPSem, APFloat::rmNearestTiesToEven, &Lossy);

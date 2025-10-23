@@ -189,8 +189,8 @@ public:
   X86TargetInfo(const llvm::Triple &Triple, const TargetOptions &)
       : TargetInfo(Triple) {
     BFloat16Width = BFloat16Align = 16;
-    BFloat16Format = &llvm::APFloat::BFloat();
-    LongDoubleFormat = &llvm::APFloat::x87DoubleExtended();
+    BFloat16Format = llvm::APFloat::BFloat();
+    LongDoubleFormat = llvm::APFloat::x87DoubleExtended();
     AddrSpaceMap = &X86AddrSpaceMap;
     HasStrictFP = true;
     HasUnalignedAccess = true;
@@ -202,7 +202,7 @@ public:
   }
 
   const char *getLongDoubleMangling() const override {
-    return LongDoubleFormat == &llvm::APFloat::IEEEquad() ? "g" : "e";
+    return LongDoubleFormat == llvm::APFloat::IEEEquad() ? "g" : "e";
   }
 
   LangOptions::FPEvalMethodKind getFPEvalMethod() const override {
@@ -610,7 +610,7 @@ public:
                             const TargetOptions &Opts)
       : WindowsX86_32TargetInfo(Triple, Opts) {
     LongDoubleWidth = LongDoubleAlign = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -687,7 +687,7 @@ public:
       : X86_32TargetInfo(Triple, Opts) {
     LongDoubleWidth = 64;
     DefaultAlignForAttributeAligned = 32;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
     resetDataLayout("e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i64:32-"
                     "f64:32-f128:32-n8:16:32-a:0:32-S32");
     WIntType = UnsignedInt;
@@ -863,7 +863,7 @@ public:
     LongWidth = LongAlign = 32;
     DoubleAlign = LongLongAlign = 64;
     LongDoubleWidth = LongDoubleAlign = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
     IntMaxType = SignedLongLong;
     Int64Type = SignedLongLong;
     SizeType = UnsignedLongLong;
@@ -947,7 +947,7 @@ public:
                             const TargetOptions &Opts)
       : WindowsX86_64TargetInfo(Triple, Opts) {
     LongDoubleWidth = LongDoubleAlign = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -972,7 +972,7 @@ public:
     // Mingw64 rounds long double size and alignment up to 16 bytes, but sticks
     // with x86 FP ops. Weird.
     LongDoubleWidth = LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::x87DoubleExtended();
+    LongDoubleFormat = llvm::APFloat::x87DoubleExtended();
     HasFloat128 = true;
   }
 };
@@ -1072,7 +1072,7 @@ public:
       : LinuxTargetInfo<X86_32TargetInfo>(Triple, Opts) {
     SuitableAlign = 32;
     LongDoubleWidth = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
   }
 };
 
@@ -1082,7 +1082,7 @@ class LLVM_LIBRARY_VISIBILITY AndroidX86_64TargetInfo
 public:
   AndroidX86_64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : LinuxTargetInfo<X86_64TargetInfo>(Triple, Opts) {
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
   }
 };
 
@@ -1094,7 +1094,7 @@ public:
       : OHOSTargetInfo<X86_32TargetInfo>(Triple, Opts) {
     SuitableAlign = 32;
     LongDoubleWidth = 64;
-    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleFormat = llvm::APFloat::IEEEdouble();
   }
 };
 
@@ -1104,7 +1104,7 @@ class LLVM_LIBRARY_VISIBILITY OHOSX86_64TargetInfo
 public:
   OHOSX86_64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : OHOSTargetInfo<X86_64TargetInfo>(Triple, Opts) {
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
   }
 };
 } // namespace targets

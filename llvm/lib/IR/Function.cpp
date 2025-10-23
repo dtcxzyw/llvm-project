@@ -800,8 +800,8 @@ void Function::addRangeRetAttr(const ConstantRange &CR) {
   AttributeSets = AttributeSets.addRangeRetAttr(getContext(), CR);
 }
 
-DenormalMode Function::getDenormalMode(const fltSemantics &FPType) const {
-  if (&FPType == &APFloat::IEEEsingle()) {
+DenormalMode Function::getDenormalMode(fltSemantics FPType) const {
+  if (FPType == APFloat::IEEEsingle()) {
     DenormalMode Mode = getDenormalModeF32Raw();
     // If the f32 variant of the attribute isn't specified, try to use the
     // generic one.

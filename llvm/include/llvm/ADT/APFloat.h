@@ -34,7 +34,6 @@
 
 namespace llvm {
 
-class fltSemantics;
 class APSInt;
 class StringRef;
 class APFloat;
@@ -220,6 +219,7 @@ class fltSemantics {
 
 public:
   using ExponentType = int32_t;
+  constexpr fltSemantics() : Storage(0) {}
   constexpr fltSemantics(
       ExponentType maxExponent, ExponentType minExponent,
       unsigned int precision, unsigned int sizeInBits, bool isIEEELikeFP,
@@ -270,6 +270,12 @@ public:
   constexpr bool hasZero() const { return (Storage >> 10) & 0x1; }
   constexpr bool hasSignedRepr() const { return (Storage >> 9) & 0x1; }
   constexpr bool hasSignBitInMSB() const { return (Storage >> 8) & 0x1; }
+  constexpr bool operator==(const fltSemantics &RHS) const {
+    return Storage == RHS.Storage;
+  }
+  constexpr bool operator!=(const fltSemantics &RHS) const {
+    return Storage != RHS.Storage;
+  }
 };
 static_assert(sizeof(fltSemantics) == 8);
 
@@ -395,8 +401,8 @@ public:
     S_MaxSemantics = S_x87DoubleExtended,
   };
 
-  LLVM_ABI static const llvm::fltSemantics &EnumToSemantics(Semantics S);
-  LLVM_ABI static Semantics SemanticsToEnum(const llvm::fltSemantics &Sem);
+  LLVM_ABI static llvm::fltSemantics EnumToSemantics(Semantics S);
+  LLVM_ABI static Semantics SemanticsToEnum(llvm::fltSemantics Sem);
 
 private:
   LLVM_ABI static const fltSemantics semIEEEhalf;
@@ -426,42 +432,37 @@ private:
   friend class APFloat;
 
 public:
-  static const fltSemantics &IEEEhalf() { return semIEEEhalf; }
-  static const fltSemantics &BFloat() { return semBFloat; }
-  static const fltSemantics &IEEEsingle() { return semIEEEsingle; }
-  static const fltSemantics &IEEEdouble() { return semIEEEdouble; }
-  static const fltSemantics &IEEEquad() { return semIEEEquad; }
-  static const fltSemantics &PPCDoubleDouble() { return semPPCDoubleDouble; }
-  static const fltSemantics &PPCDoubleDoubleLegacy() {
+  static fltSemantics IEEEhalf() { return semIEEEhalf; }
+  static fltSemantics BFloat() { return semBFloat; }
+  static fltSemantics IEEEsingle() { return semIEEEsingle; }
+  static fltSemantics IEEEdouble() { return semIEEEdouble; }
+  static fltSemantics IEEEquad() { return semIEEEquad; }
+  static fltSemantics PPCDoubleDouble() { return semPPCDoubleDouble; }
+  static fltSemantics PPCDoubleDoubleLegacy() {
     return semPPCDoubleDoubleLegacy;
   }
-  static const fltSemantics &Float8E5M2() { return semFloat8E5M2; }
-  static const fltSemantics &Float8E5M2FNUZ() { return semFloat8E5M2FNUZ; }
-  static const fltSemantics &Float8E4M3() { return semFloat8E4M3; }
-  static const fltSemantics &Float8E4M3FN() { return semFloat8E4M3FN; }
-  static const fltSemantics &Float8E4M3FNUZ() { return semFloat8E4M3FNUZ; }
-  static const fltSemantics &Float8E4M3B11FNUZ() {
-    return semFloat8E4M3B11FNUZ;
-  }
-  static const fltSemantics &Float8E3M4() { return semFloat8E3M4; }
-  static const fltSemantics &FloatTF32() { return semFloatTF32; }
-  static const fltSemantics &Float8E8M0FNU() { return semFloat8E8M0FNU; }
-  static const fltSemantics &Float6E3M2FN() { return semFloat6E3M2FN; }
-  static const fltSemantics &Float6E2M3FN() { return semFloat6E2M3FN; }
-  static const fltSemantics &Float4E2M1FN() { return semFloat4E2M1FN; }
-  static const fltSemantics &x87DoubleExtended() {
-    return semX87DoubleExtended;
-  }
+  static fltSemantics Float8E5M2() { return semFloat8E5M2; }
+  static fltSemantics Float8E5M2FNUZ() { return semFloat8E5M2FNUZ; }
+  static fltSemantics Float8E4M3() { return semFloat8E4M3; }
+  static fltSemantics Float8E4M3FN() { return semFloat8E4M3FN; }
+  static fltSemantics Float8E4M3FNUZ() { return semFloat8E4M3FNUZ; }
+  static fltSemantics Float8E4M3B11FNUZ() { return semFloat8E4M3B11FNUZ; }
+  static fltSemantics Float8E3M4() { return semFloat8E3M4; }
+  static fltSemantics FloatTF32() { return semFloatTF32; }
+  static fltSemantics Float8E8M0FNU() { return semFloat8E8M0FNU; }
+  static fltSemantics Float6E3M2FN() { return semFloat6E3M2FN; }
+  static fltSemantics Float6E2M3FN() { return semFloat6E2M3FN; }
+  static fltSemantics Float4E2M1FN() { return semFloat4E2M1FN; }
+  static fltSemantics x87DoubleExtended() { return semX87DoubleExtended; }
 
   /// A Pseudo fltsemantic used to construct APFloats that cannot conflict with
   /// anything real.
-  static const fltSemantics &Bogus() { return semBogus; }
+  static fltSemantics Bogus() { return semBogus; }
 
   // Returns true if any number described by this semantics can be precisely
   // represented by the specified semantics. Does not take into account
   // the value of fltNonfiniteBehavior, hasZero, hasSignedRepr.
-  LLVM_ABI static bool isRepresentableBy(const fltSemantics &A,
-                                         const fltSemantics &B);
+  LLVM_ABI static bool isRepresentableBy(fltSemantics A, fltSemantics B);
 
   /// @}
 
@@ -521,20 +522,19 @@ public:
     IEK_Inf = INT_MAX
   };
 
-  static unsigned int semanticsPrecision(const fltSemantics &Sem) {
+  static unsigned int semanticsPrecision(fltSemantics Sem) {
     return Sem.getPrecision();
   }
-  static ExponentType semanticsMinExponent(const fltSemantics &Sem) {
+  static ExponentType semanticsMinExponent(fltSemantics Sem) {
     return Sem.getMinExponent();
   }
-  static ExponentType semanticsMaxExponent(const fltSemantics &Sem) {
+  static ExponentType semanticsMaxExponent(fltSemantics Sem) {
     return Sem.getMaxExponent();
   }
-  static unsigned int semanticsSizeInBits(const fltSemantics &Sem) {
+  static unsigned int semanticsSizeInBits(fltSemantics Sem) {
     return Sem.getSizeInBits();
   }
-  static unsigned int semanticsIntSizeInBits(const fltSemantics &Sem,
-                                             bool IsSigned) {
+  static unsigned int semanticsIntSizeInBits(fltSemantics Sem, bool IsSigned) {
     // The max FP value is pow(2, MaxExponent) * (1 + MaxFraction), so we need
     // at least one more bit than the MaxExponent to hold the max FP value.
     unsigned int MinBitWidth = semanticsMaxExponent(Sem) + 1;
@@ -543,30 +543,27 @@ public:
       ++MinBitWidth;
     return MinBitWidth;
   }
-  static bool semanticsHasZero(const fltSemantics &Sem) {
-    return Sem.hasZero();
-  }
-  static bool semanticsHasSignedRepr(const fltSemantics &Sem) {
+  static bool semanticsHasZero(fltSemantics Sem) { return Sem.hasZero(); }
+  static bool semanticsHasSignedRepr(fltSemantics Sem) {
     return Sem.hasSignedRepr();
   }
-  static bool semanticsHasInf(const fltSemantics &Sem) {
+  static bool semanticsHasInf(fltSemantics Sem) {
     return Sem.getNonFiniteBehavior() == fltNonfiniteBehavior::IEEE754;
   }
-  static bool semanticsHasNaN(const fltSemantics &Sem) {
+  static bool semanticsHasNaN(fltSemantics Sem) {
     return Sem.getNonFiniteBehavior() != fltNonfiniteBehavior::FiniteOnly;
   }
-  static bool isIEEELikeFP(const fltSemantics &Sem) {
+  static bool isIEEELikeFP(fltSemantics Sem) {
     // Keep in sync with Type::isIEEELikeFPTy
     return Sem.isIEEELike();
   }
-  static bool hasSignBitInMSB(const fltSemantics &Sem) {
+  static bool hasSignBitInMSB(fltSemantics Sem) {
     return Sem.hasSignBitInMSB();
   }
 
   // Returns true if any number described by \p Src can be precisely represented
   // by a normal (not subnormal) value in \p Dst.
-  static bool isRepresentableAsNormalIn(const fltSemantics &Src,
-                                        const fltSemantics &Dst) {
+  static bool isRepresentableAsNormalIn(fltSemantics Src, fltSemantics Dst) {
     // Exponent range must be larger.
     if (Src.getMaxExponent() >= Dst.getMaxExponent() ||
         Src.getMinExponent() <= Dst.getMinExponent())
@@ -582,7 +579,7 @@ public:
 
   /// Returns the size of the floating point number (in bits) in the given
   /// semantics.
-  static unsigned getSizeInBits(const fltSemantics &Sem) {
+  static unsigned getSizeInBits(fltSemantics Sem) {
     return Sem.getSizeInBits();
   }
 };
@@ -625,10 +622,10 @@ public:
   /// \name Constructors
   /// @{
 
-  LLVM_ABI IEEEFloat(const fltSemantics &); // Default construct to +0.0
-  LLVM_ABI IEEEFloat(const fltSemantics &, integerPart);
-  LLVM_ABI IEEEFloat(const fltSemantics &, uninitializedTag);
-  LLVM_ABI IEEEFloat(const fltSemantics &, const APInt &);
+  LLVM_ABI IEEEFloat(fltSemantics); // Default construct to +0.0
+  LLVM_ABI IEEEFloat(fltSemantics, integerPart);
+  LLVM_ABI IEEEFloat(fltSemantics, uninitializedTag);
+  LLVM_ABI IEEEFloat(fltSemantics, const APInt &);
   LLVM_ABI explicit IEEEFloat(double d);
   LLVM_ABI explicit IEEEFloat(float f);
   LLVM_ABI IEEEFloat(const IEEEFloat &);
@@ -674,7 +671,7 @@ public:
   /// \name Conversions
   /// @{
 
-  LLVM_ABI opStatus convert(const fltSemantics &, roundingMode, bool *);
+  LLVM_ABI opStatus convert(fltSemantics, roundingMode, bool *);
   LLVM_ABI opStatus convertToInteger(MutableArrayRef<integerPart>, unsigned int,
                                      bool, roundingMode, bool *) const;
   LLVM_ABI opStatus convertFromAPInt(const APInt &, bool, roundingMode);
@@ -749,7 +746,7 @@ public:
   /// @{
 
   fltCategory getCategory() const { return category; }
-  const fltSemantics &getSemantics() const { return *semantics; }
+  fltSemantics getSemantics() const { return semantics; }
   bool isNonZero() const { return category != fltCategory::fcZero; }
   bool isFiniteNonZero() const { return isFinite() && !isZero(); }
   bool isPosZero() const { return isZero() && !isNegative(); }
@@ -869,7 +866,7 @@ private:
   lostFraction multiplySignificand(const IEEEFloat&);
   lostFraction divideSignificand(const IEEEFloat &);
   void incrementSignificand();
-  void initialize(const fltSemantics *);
+  void initialize(fltSemantics);
   void shiftSignificandLeft(unsigned int);
   lostFraction shiftSignificandRight(unsigned int);
   unsigned int significandLSB() const;
@@ -941,7 +938,7 @@ private:
   APInt convertFloat6E3M2FNAPFloatToAPInt() const;
   APInt convertFloat6E2M3FNAPFloatToAPInt() const;
   APInt convertFloat4E2M1FNAPFloatToAPInt() const;
-  void initFromAPInt(const fltSemantics *Sem, const APInt &api);
+  void initFromAPInt(fltSemantics Sem, const APInt &api);
   template <const fltSemantics &S> void initFromIEEEAPInt(const APInt &api);
   void initFromHalfAPInt(const APInt &api);
   void initFromBFloatAPInt(const APInt &api);
@@ -969,7 +966,7 @@ private:
 
   /// Note: this must be the first data member.
   /// The semantics that this value obeys.
-  const fltSemantics *semantics;
+  fltSemantics semantics;
 
   /// A binary fraction with an explicit integer bit.
   ///
@@ -1005,7 +1002,7 @@ LLVM_ABI IEEEFloat frexp(const IEEEFloat &Val, int &Exp, roundingMode RM);
 // corresponding underlying semantics are IEEEdouble.
 class DoubleAPFloat final {
   // Note: this must be the first data member.
-  const fltSemantics *Semantics;
+  fltSemantics Semantics;
   APFloat *Floats;
 
   opStatus addImpl(const APFloat &a, const APFloat &aa, const APFloat &c,
@@ -1028,12 +1025,11 @@ class DoubleAPFloat final {
   opStatus handleOverflow(roundingMode RM);
 
 public:
-  LLVM_ABI DoubleAPFloat(const fltSemantics &S);
-  LLVM_ABI DoubleAPFloat(const fltSemantics &S, uninitializedTag);
-  LLVM_ABI DoubleAPFloat(const fltSemantics &S, integerPart);
-  LLVM_ABI DoubleAPFloat(const fltSemantics &S, const APInt &I);
-  LLVM_ABI DoubleAPFloat(const fltSemantics &S, APFloat &&First,
-                         APFloat &&Second);
+  LLVM_ABI DoubleAPFloat(fltSemantics S);
+  LLVM_ABI DoubleAPFloat(fltSemantics S, uninitializedTag);
+  LLVM_ABI DoubleAPFloat(fltSemantics S, integerPart);
+  LLVM_ABI DoubleAPFloat(fltSemantics S, const APInt &I);
+  LLVM_ABI DoubleAPFloat(fltSemantics S, APFloat &&First, APFloat &&Second);
   LLVM_ABI DoubleAPFloat(const DoubleAPFloat &RHS);
   LLVM_ABI DoubleAPFloat(DoubleAPFloat &&RHS);
   ~DoubleAPFloat();
@@ -1122,18 +1118,17 @@ class APFloat : public APFloatBase {
   static_assert(std::is_standard_layout<IEEEFloat>::value);
 
   union Storage {
-    const fltSemantics *semantics;
+    fltSemantics semantics;
     IEEEFloat IEEE;
     DoubleAPFloat Double;
 
-    LLVM_ABI explicit Storage(IEEEFloat F, const fltSemantics &S);
-    explicit Storage(DoubleAPFloat F, const fltSemantics &S)
-        : Double(std::move(F)) {
-      assert(&S == &PPCDoubleDouble());
+    LLVM_ABI explicit Storage(IEEEFloat F, fltSemantics S);
+    explicit Storage(DoubleAPFloat F, fltSemantics S) : Double(std::move(F)) {
+      assert(S == PPCDoubleDouble());
     }
 
     template <typename... ArgTypes>
-    Storage(const fltSemantics &Semantics, ArgTypes &&... Args) {
+    Storage(fltSemantics Semantics, ArgTypes &&...Args) {
       if (usesLayout<IEEEFloat>(Semantics)) {
         new (&IEEE) IEEEFloat(Semantics, std::forward<ArgTypes>(Args)...);
         return;
@@ -1152,27 +1147,27 @@ class APFloat : public APFloatBase {
     LLVM_ABI Storage &operator=(Storage &&RHS);
   } U;
 
-  template <typename T> static bool usesLayout(const fltSemantics &Semantics) {
+  template <typename T> static bool usesLayout(fltSemantics Semantics) {
     static_assert(std::is_same<T, IEEEFloat>::value ||
                   std::is_same<T, DoubleAPFloat>::value);
     if (std::is_same<T, DoubleAPFloat>::value) {
-      return &Semantics == &PPCDoubleDouble();
+      return Semantics == PPCDoubleDouble();
     }
-    return &Semantics != &PPCDoubleDouble();
+    return Semantics != PPCDoubleDouble();
   }
 
   IEEEFloat &getIEEE() {
-    if (usesLayout<IEEEFloat>(*U.semantics))
+    if (usesLayout<IEEEFloat>(U.semantics))
       return U.IEEE;
-    if (usesLayout<DoubleAPFloat>(*U.semantics))
+    if (usesLayout<DoubleAPFloat>(U.semantics))
       return U.Double.getFirst().U.IEEE;
     llvm_unreachable("Unexpected semantics");
   }
 
   const IEEEFloat &getIEEE() const {
-    if (usesLayout<IEEEFloat>(*U.semantics))
+    if (usesLayout<IEEEFloat>(U.semantics))
       return U.IEEE;
-    if (usesLayout<DoubleAPFloat>(*U.semantics))
+    if (usesLayout<DoubleAPFloat>(U.semantics))
       return U.Double.getFirst().U.IEEE;
     llvm_unreachable("Unexpected semantics");
   }
@@ -1197,14 +1192,13 @@ class APFloat : public APFloatBase {
     APFLOAT_DISPATCH_ON_SEMANTICS(makeSmallestNormalized(Neg));
   }
 
-  explicit APFloat(IEEEFloat F, const fltSemantics &S) : U(std::move(F), S) {}
-  explicit APFloat(DoubleAPFloat F, const fltSemantics &S)
-      : U(std::move(F), S) {}
+  explicit APFloat(IEEEFloat F, fltSemantics S) : U(std::move(F), S) {}
+  explicit APFloat(DoubleAPFloat F, fltSemantics S) : U(std::move(F), S) {}
 
   // Compares the absolute value of this APFloat with another.  Both operands
   // must be finite non-zero.
   cmpResult compareAbsoluteValue(const APFloat &RHS) const {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only compare APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.compareAbsoluteValue(RHS.U.IEEE);
@@ -1214,16 +1208,16 @@ class APFloat : public APFloatBase {
   }
 
 public:
-  APFloat(const fltSemantics &Semantics) : U(Semantics) {}
-  LLVM_ABI APFloat(const fltSemantics &Semantics, StringRef S);
-  APFloat(const fltSemantics &Semantics, integerPart I) : U(Semantics, I) {}
+  APFloat(fltSemantics Semantics) : U(Semantics) {}
+  LLVM_ABI APFloat(fltSemantics Semantics, StringRef S);
+  APFloat(fltSemantics Semantics, integerPart I) : U(Semantics, I) {}
   template <typename T,
             typename = std::enable_if_t<std::is_floating_point<T>::value>>
-  APFloat(const fltSemantics &Semantics, T V) = delete;
+  APFloat(fltSemantics Semantics, T V) = delete;
   // TODO: Remove this constructor. This isn't faster than the first one.
-  APFloat(const fltSemantics &Semantics, uninitializedTag)
+  APFloat(fltSemantics Semantics, uninitializedTag)
       : U(Semantics, uninitialized) {}
-  APFloat(const fltSemantics &Semantics, const APInt &I) : U(Semantics, I) {}
+  APFloat(fltSemantics Semantics, const APInt &I) : U(Semantics, I) {}
   explicit APFloat(double d) : U(IEEEFloat(d), IEEEdouble()) {}
   explicit APFloat(float f) : U(IEEEFloat(f), IEEEsingle()) {}
   APFloat(const APFloat &RHS) = default;
@@ -1236,7 +1230,7 @@ public:
   /// Factory for Positive and Negative Zero.
   ///
   /// \param Negative True iff the number should be negative.
-  static APFloat getZero(const fltSemantics &Sem, bool Negative = false) {
+  static APFloat getZero(fltSemantics Sem, bool Negative = false) {
     APFloat Val(Sem, uninitialized);
     Val.makeZero(Negative);
     return Val;
@@ -1245,7 +1239,7 @@ public:
   /// Factory for Positive and Negative One.
   ///
   /// \param Negative True iff the number should be negative.
-  static APFloat getOne(const fltSemantics &Sem, bool Negative = false) {
+  static APFloat getOne(fltSemantics Sem, bool Negative = false) {
     APFloat Val(Sem, 1U);
     if (Negative)
       Val.changeSign();
@@ -1255,7 +1249,7 @@ public:
   /// Factory for Positive and Negative Infinity.
   ///
   /// \param Negative True iff the number should be negative.
-  static APFloat getInf(const fltSemantics &Sem, bool Negative = false) {
+  static APFloat getInf(fltSemantics Sem, bool Negative = false) {
     APFloat Val(Sem, uninitialized);
     Val.makeInf(Negative);
     return Val;
@@ -1266,7 +1260,7 @@ public:
   /// \param Negative - True iff the NaN generated should be negative.
   /// \param payload - The unspecified fill bits for creating the NaN, 0 by
   /// default.  The value is truncated as necessary.
-  static APFloat getNaN(const fltSemantics &Sem, bool Negative = false,
+  static APFloat getNaN(fltSemantics Sem, bool Negative = false,
                         uint64_t payload = 0) {
     if (payload) {
       APInt intPayload(64, payload);
@@ -1277,7 +1271,7 @@ public:
   }
 
   /// Factory for QNaN values.
-  static APFloat getQNaN(const fltSemantics &Sem, bool Negative = false,
+  static APFloat getQNaN(fltSemantics Sem, bool Negative = false,
                          const APInt *payload = nullptr) {
     APFloat Val(Sem, uninitialized);
     Val.makeNaN(false, Negative, payload);
@@ -1285,7 +1279,7 @@ public:
   }
 
   /// Factory for SNaN values.
-  static APFloat getSNaN(const fltSemantics &Sem, bool Negative = false,
+  static APFloat getSNaN(fltSemantics Sem, bool Negative = false,
                          const APInt *payload = nullptr) {
     APFloat Val(Sem, uninitialized);
     Val.makeNaN(true, Negative, payload);
@@ -1295,7 +1289,7 @@ public:
   /// Returns the largest finite number in the given semantics.
   ///
   /// \param Negative - True iff the number should be negative
-  static APFloat getLargest(const fltSemantics &Sem, bool Negative = false) {
+  static APFloat getLargest(fltSemantics Sem, bool Negative = false) {
     APFloat Val(Sem, uninitialized);
     Val.makeLargest(Negative);
     return Val;
@@ -1305,7 +1299,7 @@ public:
   /// Might be denormalized, which implies a relative loss of precision.
   ///
   /// \param Negative - True iff the number should be negative
-  static APFloat getSmallest(const fltSemantics &Sem, bool Negative = false) {
+  static APFloat getSmallest(fltSemantics Sem, bool Negative = false) {
     APFloat Val(Sem, uninitialized);
     Val.makeSmallest(Negative);
     return Val;
@@ -1315,7 +1309,7 @@ public:
   /// semantics.
   ///
   /// \param Negative - True iff the number should be negative
-  static APFloat getSmallestNormalized(const fltSemantics &Sem,
+  static APFloat getSmallestNormalized(fltSemantics Sem,
                                        bool Negative = false) {
     APFloat Val(Sem, uninitialized);
     Val.makeSmallestNormalized(Negative);
@@ -1325,13 +1319,13 @@ public:
   /// Returns a float which is bitcasted from an all one value int.
   ///
   /// \param Semantics - type float semantics
-  LLVM_ABI static APFloat getAllOnesValue(const fltSemantics &Semantics);
+  LLVM_ABI static APFloat getAllOnesValue(fltSemantics Semantics);
 
   /// Returns true if the given semantics has actual significand.
   ///
   /// \param Sem - type float semantics
-  static bool hasSignificand(const fltSemantics &Sem) {
-    return &Sem != &Float8E8M0FNU();
+  static bool hasSignificand(fltSemantics Sem) {
+    return Sem != Float8E8M0FNU();
   }
 
   /// Used to insert APFloat objects, or objects that contain APFloat objects,
@@ -1339,7 +1333,7 @@ public:
   LLVM_ABI void Profile(FoldingSetNodeID &NID) const;
 
   opStatus add(const APFloat &RHS, roundingMode RM) {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only call on two APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.add(RHS.U.IEEE, RM);
@@ -1348,7 +1342,7 @@ public:
     llvm_unreachable("Unexpected semantics");
   }
   opStatus subtract(const APFloat &RHS, roundingMode RM) {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only call on two APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.subtract(RHS.U.IEEE, RM);
@@ -1357,7 +1351,7 @@ public:
     llvm_unreachable("Unexpected semantics");
   }
   opStatus multiply(const APFloat &RHS, roundingMode RM) {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only call on two APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.multiply(RHS.U.IEEE, RM);
@@ -1366,7 +1360,7 @@ public:
     llvm_unreachable("Unexpected semantics");
   }
   opStatus divide(const APFloat &RHS, roundingMode RM) {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only call on two APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.divide(RHS.U.IEEE, RM);
@@ -1375,7 +1369,7 @@ public:
     llvm_unreachable("Unexpected semantics");
   }
   opStatus remainder(const APFloat &RHS) {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only call on two APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.remainder(RHS.U.IEEE);
@@ -1384,7 +1378,7 @@ public:
     llvm_unreachable("Unexpected semantics");
   }
   opStatus mod(const APFloat &RHS) {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only call on two APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.mod(RHS.U.IEEE);
@@ -1394,9 +1388,9 @@ public:
   }
   opStatus fusedMultiplyAdd(const APFloat &Multiplicand, const APFloat &Addend,
                             roundingMode RM) {
-    assert(&getSemantics() == &Multiplicand.getSemantics() &&
+    assert(getSemantics() == Multiplicand.getSemantics() &&
            "Should only call on APFloats with the same semantics");
-    assert(&getSemantics() == &Addend.getSemantics() &&
+    assert(getSemantics() == Addend.getSemantics() &&
            "Should only call on APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.fusedMultiplyAdd(Multiplicand.U.IEEE, Addend.U.IEEE, RM);
@@ -1479,7 +1473,7 @@ public:
     return Result;
   }
 
-  LLVM_ABI opStatus convert(const fltSemantics &ToSemantics, roundingMode RM,
+  LLVM_ABI opStatus convert(fltSemantics ToSemantics, roundingMode RM,
                             bool *losesInfo);
   // Convert a floating point number to an integer according to the
   // rounding mode.  We provide deterministic values in case of an invalid
@@ -1562,7 +1556,7 @@ public:
   // IEEE comparison with another floating point number (NaNs compare unordered,
   // 0==-0).
   cmpResult compare(const APFloat &RHS) const {
-    assert(&getSemantics() == &RHS.getSemantics() &&
+    assert(getSemantics() == RHS.getSemantics() &&
            "Should only compare APFloats with the same semantics");
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.compare(RHS.U.IEEE);
@@ -1572,7 +1566,7 @@ public:
   }
 
   bool bitwiseIsEqual(const APFloat &RHS) const {
-    if (&getSemantics() != &RHS.getSemantics())
+    if (getSemantics() != RHS.getSemantics())
       return false;
     if (usesLayout<IEEEFloat>(getSemantics()))
       return U.IEEE.bitwiseIsEqual(RHS.U.IEEE);
@@ -1614,7 +1608,7 @@ public:
   bool isFinite() const { return !isNaN() && !isInfinity(); }
 
   fltCategory getCategory() const { return getIEEE().getCategory(); }
-  const fltSemantics &getSemantics() const { return *U.semantics; }
+  fltSemantics getSemantics() const { return U.semantics; }
   bool isNonZero() const { return !isZero(); }
   bool isFiniteNonZero() const { return isFinite() && !isZero(); }
   bool isPosZero() const { return isZero() && !isNegative(); }

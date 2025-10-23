@@ -694,7 +694,7 @@ bool LLVM::LLVMTargetExtType::supportsMemOps() const {
 // LLVMPPCFP128Type
 //===----------------------------------------------------------------------===//
 
-const llvm::fltSemantics &LLVMPPCFP128Type::getFloatSemantics() const {
+llvm::fltSemantics LLVMPPCFP128Type::getFloatSemantics() const {
   return APFloat::PPCDoubleDouble();
 }
 

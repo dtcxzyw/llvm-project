@@ -1293,13 +1293,13 @@ static bool unsupportedTypeConversion(const Sema &S, QualType LHSType,
   QualType LHSElem = LHSComplex ? LHSComplex->getElementType() : LHSType;
   QualType RHSElem = RHSComplex ? RHSComplex->getElementType() : RHSType;
 
-  const llvm::fltSemantics &LHSSem = S.Context.getFloatTypeSemantics(LHSElem);
-  const llvm::fltSemantics &RHSSem = S.Context.getFloatTypeSemantics(RHSElem);
+  llvm::fltSemantics LHSSem = S.Context.getFloatTypeSemantics(LHSElem);
+  llvm::fltSemantics RHSSem = S.Context.getFloatTypeSemantics(RHSElem);
 
-  if ((&LHSSem != &llvm::APFloat::PPCDoubleDouble() ||
-       &RHSSem != &llvm::APFloat::IEEEquad()) &&
-      (&LHSSem != &llvm::APFloat::IEEEquad() ||
-       &RHSSem != &llvm::APFloat::PPCDoubleDouble()))
+  if ((LHSSem != llvm::APFloat::PPCDoubleDouble() ||
+       RHSSem != llvm::APFloat::IEEEquad()) &&
+      (LHSSem != llvm::APFloat::IEEEquad() ||
+       RHSSem != llvm::APFloat::PPCDoubleDouble()))
     return false;
 
   return true;
@@ -3643,7 +3643,7 @@ ExprResult Sema::ActOnIntegerConstant(SourceLocation Loc, int64_t Val) {
 
 static Expr *BuildFloatingLiteral(Sema &S, NumericLiteralParser &Literal,
                                   QualType Ty, SourceLocation Loc) {
-  const llvm::fltSemantics &Format = S.Context.getFloatTypeSemantics(Ty);
+  llvm::fltSemantics Format = S.Context.getFloatTypeSemantics(Ty);
 
   using llvm::APFloat;
   APFloat Val(Format);
@@ -10734,9 +10734,9 @@ static void DetectPrecisionLossInComplexDivision(Sema &S, QualType DivisorTy,
 
   ASTContext &Ctx = S.getASTContext();
   QualType HigherElementType = Ctx.GetHigherPrecisionFPType(ElementType);
-  const llvm::fltSemantics &ElementTypeSemantics =
+  llvm::fltSemantics ElementTypeSemantics =
       Ctx.getFloatTypeSemantics(ElementType);
-  const llvm::fltSemantics &HigherElementTypeSemantics =
+  llvm::fltSemantics HigherElementTypeSemantics =
       Ctx.getFloatTypeSemantics(HigherElementType);
 
   if ((llvm::APFloat::semanticsMaxExponent(ElementTypeSemantics) * 2 + 1 >

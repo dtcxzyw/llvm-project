@@ -1517,15 +1517,15 @@ static void writeOptimizationInfo(raw_ostream &Out, const User *U) {
 }
 
 static void writeAPFloatInternal(raw_ostream &Out, const APFloat &APF) {
-  if (&APF.getSemantics() == &APFloat::IEEEsingle() ||
-      &APF.getSemantics() == &APFloat::IEEEdouble()) {
+  if (APF.getSemantics() == APFloat::IEEEsingle() ||
+      APF.getSemantics() == APFloat::IEEEdouble()) {
     // We would like to output the FP constant value in exponential notation,
     // but we cannot do this if doing so will lose precision.  Check here to
     // make sure that we only output it in exponential format if we can parse
     // the value back and get the same value.
     //
     bool ignored;
-    bool isDouble = &APF.getSemantics() == &APFloat::IEEEdouble();
+    bool isDouble = APF.getSemantics() == APFloat::IEEEdouble();
     bool isInf = APF.isInfinity();
     bool isNaN = APF.isNaN();
 
@@ -1579,29 +1579,29 @@ static void writeAPFloatInternal(raw_ostream &Out, const APFloat &APF) {
   // fixed number of hex digits.
   Out << "0x";
   APInt API = APF.bitcastToAPInt();
-  if (&APF.getSemantics() == &APFloat::x87DoubleExtended()) {
+  if (APF.getSemantics() == APFloat::x87DoubleExtended()) {
     Out << 'K';
     Out << format_hex_no_prefix(API.getHiBits(16).getZExtValue(), 4,
                                 /*Upper=*/true);
     Out << format_hex_no_prefix(API.getLoBits(64).getZExtValue(), 16,
                                 /*Upper=*/true);
-  } else if (&APF.getSemantics() == &APFloat::IEEEquad()) {
+  } else if (APF.getSemantics() == APFloat::IEEEquad()) {
     Out << 'L';
     Out << format_hex_no_prefix(API.getLoBits(64).getZExtValue(), 16,
                                 /*Upper=*/true);
     Out << format_hex_no_prefix(API.getHiBits(64).getZExtValue(), 16,
                                 /*Upper=*/true);
-  } else if (&APF.getSemantics() == &APFloat::PPCDoubleDouble()) {
+  } else if (APF.getSemantics() == APFloat::PPCDoubleDouble()) {
     Out << 'M';
     Out << format_hex_no_prefix(API.getLoBits(64).getZExtValue(), 16,
                                 /*Upper=*/true);
     Out << format_hex_no_prefix(API.getHiBits(64).getZExtValue(), 16,
                                 /*Upper=*/true);
-  } else if (&APF.getSemantics() == &APFloat::IEEEhalf()) {
+  } else if (APF.getSemantics() == APFloat::IEEEhalf()) {
     Out << 'H';
     Out << format_hex_no_prefix(API.getZExtValue(), 4,
                                 /*Upper=*/true);
-  } else if (&APF.getSemantics() == &APFloat::BFloat()) {
+  } else if (APF.getSemantics() == APFloat::BFloat()) {
     Out << 'R';
     Out << format_hex_no_prefix(API.getZExtValue(), 4,
                                 /*Upper=*/true);

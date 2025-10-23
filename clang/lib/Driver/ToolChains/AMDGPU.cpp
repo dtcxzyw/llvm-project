@@ -797,16 +797,16 @@ bool AMDGPUToolChain::getDefaultDenormsAreZeroForTarget(
 
 llvm::DenormalMode AMDGPUToolChain::getDefaultDenormalModeForType(
     const llvm::opt::ArgList &DriverArgs, const JobAction &JA,
-    const llvm::fltSemantics *FPType) const {
+    llvm::fltSemantics FPType) const {
   // Denormals should always be enabled for f16 and f64.
-  if (!FPType || FPType != &llvm::APFloat::IEEEsingle())
+  if (FPType != llvm::APFloat::IEEEsingle())
     return llvm::DenormalMode::getIEEE();
 
   if (JA.getOffloadingDeviceKind() == Action::OFK_HIP ||
       JA.getOffloadingDeviceKind() == Action::OFK_Cuda) {
     auto Arch = getProcessorFromTargetID(getTriple(), JA.getOffloadingArch());
     auto Kind = llvm::AMDGPU::parseArchAMDGCN(Arch);
-    if (FPType && FPType == &llvm::APFloat::IEEEsingle() &&
+    if (FPType == llvm::APFloat::IEEEsingle() &&
         DriverArgs.hasFlag(options::OPT_fgpu_flush_denormals_to_zero,
                            options::OPT_fno_gpu_flush_denormals_to_zero,
                            getDefaultDenormsAreZeroForTarget(Kind)))

@@ -142,7 +142,7 @@ public:
     return T(Mem, BitWidth);
   }
 
-  Floating allocFloat(const llvm::fltSemantics &Sem) {
+  Floating allocFloat(llvm::fltSemantics Sem) {
     if (Floating::singleWord(Sem))
       return Floating(llvm::APFloatBase::SemanticsToEnum(Sem));
 

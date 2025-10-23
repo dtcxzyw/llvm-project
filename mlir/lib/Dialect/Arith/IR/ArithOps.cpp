@@ -1439,7 +1439,7 @@ static bool checkWidthChangeCast(TypeRange inputs, TypeRange outputs) {
 /// Attempts to convert `sourceValue` to an APFloat value with
 /// `targetSemantics` and `roundingMode`, without any information loss.
 static FailureOr<APFloat> convertFloatValue(
-    APFloat sourceValue, const llvm::fltSemantics &targetSemantics,
+    APFloat sourceValue, llvm::fltSemantics targetSemantics,
     llvm::RoundingMode roundingMode = llvm::RoundingMode::NearestTiesToEven) {
   bool losesInfo = false;
   auto status = sourceValue.convert(targetSemantics, roundingMode, &losesInfo);
@@ -1532,10 +1532,10 @@ OpFoldResult arith::ExtFOp::fold(FoldAdaptor adaptor) {
   }
 
   auto resElemType = cast<FloatType>(getElementTypeOrSelf(getType()));
-  const llvm::fltSemantics &targetSemantics = resElemType.getFloatSemantics();
+  llvm::fltSemantics targetSemantics = resElemType.getFloatSemantics();
   return constFoldCastOp<FloatAttr, FloatAttr>(
       adaptor.getOperands(), getType(),
-      [&targetSemantics](const APFloat &a, bool &castStatus) {
+      [targetSemantics](const APFloat &a, bool &castStatus) {
         FailureOr<APFloat> result = convertFloatValue(a, targetSemantics);
         if (failed(result)) {
           castStatus = false;
@@ -1647,10 +1647,10 @@ OpFoldResult arith::TruncFOp::fold(FoldAdaptor adaptor) {
     }
   }
 
-  const llvm::fltSemantics &targetSemantics = resElemType.getFloatSemantics();
+  llvm::fltSemantics targetSemantics = resElemType.getFloatSemantics();
   return constFoldCastOp<FloatAttr, FloatAttr>(
       adaptor.getOperands(), getType(),
-      [this, &targetSemantics](const APFloat &a, bool &castStatus) {
+      [this, targetSemantics](const APFloat &a, bool &castStatus) {
         RoundingMode roundingMode =
             getRoundingmode().value_or(RoundingMode::to_nearest_even);
         llvm::RoundingMode llvmRoundingMode =
@@ -2668,7 +2668,7 @@ TypedAttr mlir::arith::getIdentityValueAttr(AtomicRMWKind kind, Type resultType,
                                             bool useOnlyFiniteValue) {
   switch (kind) {
   case AtomicRMWKind::maximumf: {
-    const llvm::fltSemantics &semantic =
+    llvm::fltSemantics semantic =
         llvm::cast<FloatType>(resultType).getFloatSemantics();
     APFloat identity = useOnlyFiniteValue
                            ? APFloat::getLargest(semantic, /*Negative=*/true)
@@ -2676,7 +2676,7 @@ TypedAttr mlir::arith::getIdentityValueAttr(AtomicRMWKind kind, Type resultType,
     return builder.getFloatAttr(resultType, identity);
   }
   case AtomicRMWKind::maxnumf: {
-    const llvm::fltSemantics &semantic =
+    llvm::fltSemantics semantic =
         llvm::cast<FloatType>(resultType).getFloatSemantics();
     APFloat identity = APFloat::getNaN(semantic, /*Negative=*/true);
     return builder.getFloatAttr(resultType, identity);
@@ -2696,7 +2696,7 @@ TypedAttr mlir::arith::getIdentityValueAttr(AtomicRMWKind kind, Type resultType,
         resultType, APInt::getSignedMinValue(
                         llvm::cast<IntegerType>(resultType).getWidth()));
   case AtomicRMWKind::minimumf: {
-    const llvm::fltSemantics &semantic =
+    llvm::fltSemantics semantic =
         llvm::cast<FloatType>(resultType).getFloatSemantics();
     APFloat identity = useOnlyFiniteValue
                            ? APFloat::getLargest(semantic, /*Negative=*/false)
@@ -2705,7 +2705,7 @@ TypedAttr mlir::arith::getIdentityValueAttr(AtomicRMWKind kind, Type resultType,
     return builder.getFloatAttr(resultType, identity);
   }
   case AtomicRMWKind::minnumf: {
-    const llvm::fltSemantics &semantic =
+    llvm::fltSemantics semantic =
         llvm::cast<FloatType>(resultType).getFloatSemantics();
     APFloat identity = APFloat::getNaN(semantic, /*Negative=*/false);
     return builder.getFloatAttr(resultType, identity);

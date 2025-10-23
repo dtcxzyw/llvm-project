@@ -737,9 +737,9 @@ CharUnits PPC64_SVR4_ABIInfo::getParamTypeAlignment(QualType Ty) const {
   if (const ComplexType *CTy = Ty->getAs<ComplexType>())
     Ty = CTy->getElementType();
 
-  auto FloatUsesVector = [this](QualType Ty){
-    return Ty->isRealFloatingType() && &getContext().getFloatTypeSemantics(
-                                           Ty) == &llvm::APFloat::IEEEquad();
+  auto FloatUsesVector = [this](QualType Ty) {
+    return Ty->isRealFloatingType() &&
+           getContext().getFloatTypeSemantics(Ty) == llvm::APFloat::IEEEquad();
   };
 
   // Only vector types of size 16 bytes need alignment (larger types are
@@ -1015,14 +1015,14 @@ void PPC64_SVR4_TargetCodeGenInfo::emitTargetMetadata(
     const llvm::MapVector<GlobalDecl, StringRef> &MangledDeclNames) const {
   if (CGM.getTypes().isLongDoubleReferenced()) {
     llvm::LLVMContext &Ctx = CGM.getLLVMContext();
-    const auto *flt = &CGM.getTarget().getLongDoubleFormat();
-    if (flt == &llvm::APFloat::PPCDoubleDouble())
+    const auto flt = CGM.getTarget().getLongDoubleFormat();
+    if (flt == llvm::APFloat::PPCDoubleDouble())
       CGM.getModule().addModuleFlag(llvm::Module::Error, "float-abi",
                                     llvm::MDString::get(Ctx, "doubledouble"));
-    else if (flt == &llvm::APFloat::IEEEquad())
+    else if (flt == llvm::APFloat::IEEEquad())
       CGM.getModule().addModuleFlag(llvm::Module::Error, "float-abi",
                                     llvm::MDString::get(Ctx, "ieeequad"));
-    else if (flt == &llvm::APFloat::IEEEdouble())
+    else if (flt == llvm::APFloat::IEEEdouble())
       CGM.getModule().addModuleFlag(llvm::Module::Error, "float-abi",
                                     llvm::MDString::get(Ctx, "ieeedouble"));
   }

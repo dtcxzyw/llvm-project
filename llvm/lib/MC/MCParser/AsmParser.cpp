@@ -265,7 +265,7 @@ public:
 
   /// Parse a floating point expression using the float \p Semantics
   /// and set \p Res to the value.
-  bool parseRealValue(const fltSemantics &Semantics, APInt &Res);
+  bool parseRealValue(fltSemantics Semantics, APInt &Res);
 
   /// Parse an identifier or string (as a quoted identifier)
   /// and set \p Res to the identifier contents.
@@ -557,7 +557,7 @@ private:
                            unsigned Size);       // ".byte", ".long", ...
   bool parseDirectiveOctaValue(StringRef IDVal); // ".octa", ...
   bool parseDirectiveRealValue(StringRef IDVal,
-                               const fltSemantics &); // ".single", ...
+                               fltSemantics); // ".single", ...
   bool parseDirectiveFill(); // ".fill"
   bool parseDirectiveZero(); // ".zero"
   // ".set", ".equ", ".equiv", ".lto_set_conditional"
@@ -627,7 +627,7 @@ private:
 
   // ".dcb"
   bool parseDirectiveDCB(StringRef IDVal, unsigned Size);
-  bool parseDirectiveRealDCB(StringRef IDVal, const fltSemantics &);
+  bool parseDirectiveRealDCB(StringRef IDVal, fltSemantics);
   // ".ds"
   bool parseDirectiveDS(StringRef IDVal, unsigned Size);
 
@@ -3175,7 +3175,7 @@ bool AsmParser::parseDirectiveOctaValue(StringRef IDVal) {
   return parseMany(parseOp);
 }
 
-bool AsmParser::parseRealValue(const fltSemantics &Semantics, APInt &Res) {
+bool AsmParser::parseRealValue(fltSemantics Semantics, APInt &Res) {
   // We don't truly support arithmetic on floating point expressions, so we
   // have to manually parse unary prefixes.
   bool IsNeg = false;
@@ -3220,7 +3220,7 @@ bool AsmParser::parseRealValue(const fltSemantics &Semantics, APInt &Res) {
 /// parseDirectiveRealValue
 ///  ::= (.single | .double) [ expression (, expression)* ]
 bool AsmParser::parseDirectiveRealValue(StringRef IDVal,
-                                        const fltSemantics &Semantics) {
+                                        fltSemantics Semantics) {
   auto parseOp = [&]() -> bool {
     APInt AsInt;
     if (checkForValidSection() || parseRealValue(Semantics, AsInt))
@@ -4808,7 +4808,7 @@ bool AsmParser::parseDirectiveDCB(StringRef IDVal, unsigned Size) {
 
 /// parseDirectiveRealDCB
 /// ::= .dcb.{d, s} expression, expression
-bool AsmParser::parseDirectiveRealDCB(StringRef IDVal, const fltSemantics &Semantics) {
+bool AsmParser::parseDirectiveRealDCB(StringRef IDVal, fltSemantics Semantics) {
   SMLoc NumValuesLoc = Lexer.getLoc();
   int64_t NumValues;
   if (checkForValidSection() || parseAbsoluteExpression(NumValues))

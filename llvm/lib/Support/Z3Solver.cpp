@@ -233,7 +233,7 @@ public:
 }; // end class Z3Model
 
 /// Get the corresponding IEEE floating-point type for a given bitwidth.
-static const llvm::fltSemantics &getFloatSemantics(unsigned BitWidth) {
+static llvm::fltSemantics getFloatSemantics(unsigned BitWidth) {
   switch (BitWidth) {
   default:
     llvm_unreachable("Unsupported floating-point semantics!");
@@ -250,8 +250,7 @@ static const llvm::fltSemantics &getFloatSemantics(unsigned BitWidth) {
 }
 
 // Determine whether two float semantics are equivalent
-static bool areEquivalent(const llvm::fltSemantics &LHS,
-                          const llvm::fltSemantics &RHS) {
+static bool areEquivalent(llvm::fltSemantics LHS, llvm::fltSemantics RHS) {
   return (llvm::APFloat::semanticsPrecision(LHS) ==
           llvm::APFloat::semanticsPrecision(RHS)) &&
          (llvm::APFloat::semanticsMinExponent(LHS) ==
@@ -800,8 +799,7 @@ public:
     assert(Sort->isFloatSort() && "Unsupported sort to floating-point!");
 
     llvm::APSInt Int(Sort->getFloatSortSize(), true);
-    const llvm::fltSemantics &Semantics =
-        getFloatSemantics(Sort->getFloatSortSize());
+    llvm::fltSemantics Semantics = getFloatSemantics(Sort->getFloatSortSize());
     SMTSortRef BVSort = getBitvectorSort(Sort->getFloatSortSize());
     if (!toAPSInt(BVSort, AST, Int, true)) {
       return false;

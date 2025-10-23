@@ -266,8 +266,8 @@ public:
 
     // Non-IEEE 754 floating-point types are not modeled
     if ((Ty->isSpecificBuiltinType(BuiltinType::LongDouble) &&
-         (&TI.getLongDoubleFormat() == &llvm::APFloat::x87DoubleExtended() ||
-          &TI.getLongDoubleFormat() == &llvm::APFloat::PPCDoubleDouble())))
+         (TI.getLongDoubleFormat() == llvm::APFloat::x87DoubleExtended() ||
+          TI.getLongDoubleFormat() == llvm::APFloat::PPCDoubleDouble())))
       return false;
 
     if (Ty->isRealFloatingType())

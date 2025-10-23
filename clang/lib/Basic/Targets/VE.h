@@ -29,7 +29,7 @@ public:
     NoAsmVariants = true;
     LongDoubleWidth = 128;
     LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
     DoubleAlign = LongLongAlign = 64;
     SuitableAlign = 64;
     LongWidth = LongAlign = PointerWidth = PointerAlign = 64;

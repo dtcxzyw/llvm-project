@@ -2638,7 +2638,7 @@ public:
 
   /// Return the APFloat 'semantics' for the specified scalar floating
   /// point type.
-  const llvm::fltSemantics &getFloatTypeSemantics(QualType T) const;
+  llvm::fltSemantics getFloatTypeSemantics(QualType T) const;
 
   /// Get the size and alignment of the specified complete type in bits.
   TypeInfo getTypeInfo(const Type *T) const;

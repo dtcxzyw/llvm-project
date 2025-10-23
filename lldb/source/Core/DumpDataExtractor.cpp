@@ -317,9 +317,9 @@ static void printMemoryTags(const DataExtractor &DE, Stream *s,
   s->PutCString(")");
 }
 
-static const llvm::fltSemantics &GetFloatSemantics(const TargetSP &target_sp,
-                                                   size_t byte_size,
-                                                   lldb::Format format) {
+static llvm::fltSemantics GetFloatSemantics(const TargetSP &target_sp,
+                                            size_t byte_size,
+                                            lldb::Format format) {
   if (target_sp) {
     auto type_system_or_err =
       target_sp->GetScratchTypeSystemForLanguage(eLanguageTypeC);
@@ -673,7 +673,7 @@ lldb::offset_t lldb_private::DumpDataExtractor(
       // Show full precision when printing float values
       const unsigned format_precision = 0;
 
-      const llvm::fltSemantics &semantics =
+      llvm::fltSemantics semantics =
           GetFloatSemantics(target_sp, item_byte_size, item_format);
 
       // Recalculate the byte size in case of a difference. This is possible

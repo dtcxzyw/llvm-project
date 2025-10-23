@@ -3379,7 +3379,7 @@ LogicalResult LLVM::ConstantOp::verify() {
   //     attribute. This is to support builtin MLIR float types without LLVM
   //     equivalents, see comments in getLLVMConstant for more details.
   auto verifyFloatSemantics =
-      [this](const llvm::fltSemantics &attributeFloatSemantics,
+      [this](llvm::fltSemantics attributeFloatSemantics,
              Type constantElementType) -> LogicalResult {
     if (auto floatType = dyn_cast<FloatType>(constantElementType)) {
       if (&floatType.getFloatSemantics() != &attributeFloatSemantics) {

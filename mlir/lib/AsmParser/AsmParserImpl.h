@@ -287,7 +287,7 @@ public:
   /// this implementation parses the string as double precision and only
   /// afterwards converts the value to the requested semantic, precision may be
   /// lost.
-  ParseResult parseFloat(const llvm::fltSemantics &semantics,
+  ParseResult parseFloat(llvm::fltSemantics semantics,
                          APFloat &result) override {
     bool isNegative = parser.consumeIf(Token::minus);
     Token curTok = parser.getToken();

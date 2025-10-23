@@ -350,7 +350,7 @@ bool Compiler<Emitter>::VisitCastExpr(const CastExpr *CE) {
       return false;
     if (!this->visit(SubExpr))
       return false;
-    const auto *TargetSemantics = &Ctx.getFloatSemantics(CE->getType());
+    const auto TargetSemantics = Ctx.getFloatSemantics(CE->getType());
     return this->emitCastFP(TargetSemantics, getRoundingMode(CE), CE);
   }
 
@@ -359,7 +359,7 @@ bool Compiler<Emitter>::VisitCastExpr(const CastExpr *CE) {
       return false;
     if (!this->visit(SubExpr))
       return false;
-    const auto *TargetSemantics = &Ctx.getFloatSemantics(CE->getType());
+    const auto TargetSemantics = Ctx.getFloatSemantics(CE->getType());
     return this->emitCastIntegralFloating(
         classifyPrim(SubExpr), TargetSemantics, getFPOptions(CE), CE);
   }
@@ -748,7 +748,7 @@ bool Compiler<Emitter>::VisitCastExpr(const CastExpr *CE) {
   case CK_FixedPointToFloating: {
     if (!this->visit(SubExpr))
       return false;
-    const auto *TargetSemantics = &Ctx.getFloatSemantics(CE->getType());
+    const auto TargetSemantics = Ctx.getFloatSemantics(CE->getType());
     return this->emitCastFixedPointFloating(TargetSemantics, CE);
   }
   case CK_FixedPointToIntegral: {
@@ -1958,7 +1958,7 @@ bool Compiler<Emitter>::visitInitList(ArrayRef<const Expr *> Inits,
           if (TargetT == PT_Float) {
             if (!this->emitConst(IL->getValue(), classifyPrim(IL), Init))
               return false;
-            const auto *Sem = &Ctx.getFloatSemantics(CAT->getElementType());
+            const auto Sem = Ctx.getFloatSemantics(CAT->getElementType());
             if (!this->emitCastIntegralFloating(classifyPrim(IL), Sem,
                                                 getFPOptions(E), E))
               return false;
@@ -3975,7 +3975,7 @@ bool Compiler<Emitter>::VisitConvertVectorExpr(const ConvertVectorExpr *E) {
       if (!this->emitPrimCast(SrcElemT, ElemT, ElemType, E))
         return false;
     } else if (ElemType->isFloatingType() && SrcType != ElemType) {
-      const auto *TargetSemantics = &Ctx.getFloatSemantics(ElemType);
+      const auto TargetSemantics = Ctx.getFloatSemantics(ElemType);
       if (!this->emitCastFP(TargetSemantics, getRoundingMode(E), E))
         return false;
     }
@@ -6519,7 +6519,7 @@ bool Compiler<Emitter>::VisitUnaryOperator(const UnaryOperator *E) {
     }
 
     if (T == PT_Float) {
-      const auto &TargetSemantics = Ctx.getFloatSemantics(E->getType());
+      const auto TargetSemantics = Ctx.getFloatSemantics(E->getType());
       if (!this->emitLoadFloat(E))
         return false;
       APFloat F(TargetSemantics, 1);
@@ -6564,7 +6564,7 @@ bool Compiler<Emitter>::VisitUnaryOperator(const UnaryOperator *E) {
     }
 
     if (T == PT_Float) {
-      const auto &TargetSemantics = Ctx.getFloatSemantics(E->getType());
+      const auto TargetSemantics = Ctx.getFloatSemantics(E->getType());
       if (!this->emitLoadFloat(E))
         return false;
       APFloat F(TargetSemantics, 1);
@@ -7071,7 +7071,7 @@ bool Compiler<Emitter>::emitPrimCast(PrimType FromT, PrimType ToT,
   if (FromT == PT_Float) {
     // Floating to floating.
     if (ToT == PT_Float) {
-      const llvm::fltSemantics *ToSem = &Ctx.getFloatSemantics(ToQT);
+      llvm::fltSemantics ToSem = Ctx.getFloatSemantics(ToQT);
       return this->emitCastFP(ToSem, getRoundingMode(E), E);
     }
 
@@ -7099,7 +7099,7 @@ bool Compiler<Emitter>::emitPrimCast(PrimType FromT, PrimType ToT,
 
     if (ToT == PT_Float) {
       // Integral to floating.
-      const llvm::fltSemantics *ToSem = &Ctx.getFloatSemantics(ToQT);
+      llvm::fltSemantics ToSem = Ctx.getFloatSemantics(ToQT);
       return this->emitCastIntegralFloating(FromT, ToSem, getFPOptions(E), E);
     }
   }
@@ -7412,9 +7412,9 @@ bool Compiler<Emitter>::emitBuiltinBitCast(const CastExpr *E) {
   }
   assert(ToT);
 
-  const llvm::fltSemantics *TargetSemantics = nullptr;
+  llvm::fltSemantics TargetSemantics = {};
   if (ToT == PT_Float)
-    TargetSemantics = &Ctx.getFloatSemantics(ToType);
+    TargetSemantics = Ctx.getFloatSemantics(ToType);
 
   // Conversion to a primitive type. FromType can be another
   // primitive type, or a record/array.

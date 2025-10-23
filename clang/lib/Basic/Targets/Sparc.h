@@ -214,7 +214,7 @@ public:
     LongDoubleWidth = 128;
     LongDoubleAlign = 128;
     SuitableAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    LongDoubleFormat = llvm::APFloat::IEEEquad();
     MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
   }
 

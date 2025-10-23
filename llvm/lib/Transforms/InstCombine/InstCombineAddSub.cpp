@@ -102,12 +102,12 @@ namespace {
 
     // If the coefficient is represented by an integer, promote it to a
     // floating point.
-    void convertToFpType(const fltSemantics &Sem);
+    void convertToFpType(fltSemantics Sem);
 
     // Construct an APFloat from a signed integer.
     // TODO: We should get rid of this function when APFloat can be constructed
     //       from an *SIGNED* integer.
-    APFloat createAPFloatFromInt(const fltSemantics &Sem, int Val);
+    APFloat createAPFloatFromInt(fltSemantics Sem, int Val);
 
     bool IsFp = false;
 
@@ -239,7 +239,7 @@ void FAddendCoef::set(const APFloat& C) {
   IsFp = BufHasFpVal = true;
 }
 
-void FAddendCoef::convertToFpType(const fltSemantics &Sem) {
+void FAddendCoef::convertToFpType(fltSemantics Sem) {
   if (!isInt())
     return;
 
@@ -253,7 +253,7 @@ void FAddendCoef::convertToFpType(const fltSemantics &Sem) {
   IsFp = BufHasFpVal = true;
 }
 
-APFloat FAddendCoef::createAPFloatFromInt(const fltSemantics &Sem, int Val) {
+APFloat FAddendCoef::createAPFloatFromInt(fltSemantics Sem, int Val) {
   if (Val >= 0)
     return APFloat(Sem, Val);
 
@@ -307,8 +307,8 @@ void FAddendCoef::operator*=(const FAddendCoef &That) {
     return;
   }
 
-  const fltSemantics &Semantic =
-    isInt() ? That.getFpVal().getSemantics() : getFpVal().getSemantics();
+  fltSemantics Semantic =
+      isInt() ? That.getFpVal().getSemantics() : getFpVal().getSemantics();
 
   if (isInt())
     convertToFpType(Semantic);

@@ -3337,7 +3337,7 @@ lowerVectorFTRUNC_FCEIL_FFLOOR_FROUND(SDValue Op, SelectionDAG &DAG,
   // Determine the largest integer that can be represented exactly. This and
   // values larger than it don't have any fractional bits so don't need to
   // be converted.
-  const fltSemantics &FltSem = ContainerVT.getFltSemantics();
+  fltSemantics FltSem = ContainerVT.getFltSemantics();
   unsigned Precision = APFloat::semanticsPrecision(FltSem);
   APFloat MaxVal = APFloat(FltSem);
   MaxVal.convertFromAPInt(APInt::getOneBitSet(Precision, Precision - 1),
@@ -3445,7 +3445,7 @@ lowerVectorStrictFTRUNC_FCEIL_FFLOOR_FROUND(SDValue Op, SelectionDAG &DAG,
   // Determine the largest integer that can be represented exactly. This and
   // values larger than it don't have any fractional bits so don't need to
   // be converted.
-  const fltSemantics &FltSem = ContainerVT.getFltSemantics();
+  fltSemantics FltSem = ContainerVT.getFltSemantics();
   unsigned Precision = APFloat::semanticsPrecision(FltSem);
   APFloat MaxVal = APFloat(FltSem);
   MaxVal.convertFromAPInt(APInt::getOneBitSet(Precision, Precision - 1),
@@ -3525,7 +3525,7 @@ lowerFTRUNC_FCEIL_FFLOOR_FROUND(SDValue Op, SelectionDAG &DAG,
   // Create an integer the size of the mantissa with the MSB set. This and all
   // values larger than it don't have any fractional bits so don't need to be
   // converted.
-  const fltSemantics &FltSem = VT.getFltSemantics();
+  fltSemantics FltSem = VT.getFltSemantics();
   unsigned Precision = APFloat::semanticsPrecision(FltSem);
   APFloat MaxVal = APFloat(FltSem);
   MaxVal.convertFromAPInt(APInt::getOneBitSet(Precision, Precision - 1),

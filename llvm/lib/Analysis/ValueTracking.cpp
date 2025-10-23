@@ -4983,8 +4983,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
       // If the input denormal mode could be PreserveSign, a negative
       // subnormal input could produce a negative zero output.
       const Function *F = II->getFunction();
-      const fltSemantics &FltSem =
-          II->getType()->getScalarType()->getFltSemantics();
+      fltSemantics FltSem = II->getType()->getScalarType()->getFltSemantics();
 
       if (Q.IIQ.hasNoSignedZeros(II) ||
           (F &&
@@ -5133,8 +5132,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
 
       // If the parent function flushes denormals, the canonical output cannot
       // be a denormal.
-      const fltSemantics &FPType =
-          II->getType()->getScalarType()->getFltSemantics();
+      fltSemantics FPType = II->getType()->getScalarType()->getFltSemantics();
       DenormalMode DenormMode = F->getDenormalMode(FPType);
       if (DenormMode == DenormalMode::getIEEE()) {
         if (KnownSrc.isKnownNever(fcPosZero))
@@ -5267,8 +5265,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
       if (!F)
         break;
 
-      const fltSemantics &FltSem =
-          II->getType()->getScalarType()->getFltSemantics();
+      fltSemantics FltSem = II->getType()->getScalarType()->getFltSemantics();
       DenormalMode Mode = F->getDenormalMode(FltSem);
 
       if (KnownSrc.isKnownNeverLogicalZero(Mode))
@@ -5331,8 +5328,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
       if ((KnownSrc.KnownFPClasses & ExpInfoMask) == fcNone)
         break;
 
-      const fltSemantics &Flt =
-          II->getType()->getScalarType()->getFltSemantics();
+      fltSemantics Flt = II->getType()->getScalarType()->getFltSemantics();
       unsigned Precision = APFloat::semanticsPrecision(Flt);
       const Value *ExpArg = II->getArgOperand(1);
       ConstantRange ExpRange = computeConstantRange(
@@ -5344,8 +5340,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
 
       const Function *F = II->getFunction();
       const APInt *ConstVal = ExpRange.getSingleElement();
-      const fltSemantics &FltSem =
-          II->getType()->getScalarType()->getFltSemantics();
+      fltSemantics FltSem = II->getType()->getScalarType()->getFltSemantics();
       if (ConstVal && ConstVal->isZero()) {
         // ldexp(x, 0) -> x, so propagate everything.
         Known.propagateCanonicalizingSrc(KnownSrc, F->getDenormalMode(FltSem));
@@ -5442,8 +5437,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
         if (!F)
           break;
 
-        const fltSemantics &FltSem =
-            Op->getType()->getScalarType()->getFltSemantics();
+        fltSemantics FltSem = Op->getType()->getScalarType()->getFltSemantics();
         DenormalMode Mode = F->getDenormalMode(FltSem);
 
         // (fadd x, 0.0) is guaranteed to return +0.0, not -0.0.
@@ -5456,8 +5450,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
         if (!F)
           break;
 
-        const fltSemantics &FltSem =
-            Op->getType()->getScalarType()->getFltSemantics();
+        fltSemantics FltSem = Op->getType()->getScalarType()->getFltSemantics();
         DenormalMode Mode = F->getDenormalMode(FltSem);
 
         // Only fsub -0, +0 can return -0
@@ -5511,7 +5504,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
       break;
 
     Type *OpTy = Op->getType()->getScalarType();
-    const fltSemantics &FltSem = OpTy->getFltSemantics();
+    fltSemantics FltSem = OpTy->getFltSemantics();
     DenormalMode Mode = F->getDenormalMode(FltSem);
 
     if ((KnownRHS.isKnownNeverInfinity() ||
@@ -5564,8 +5557,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
     }
 
     const Function *F = cast<Instruction>(Op)->getFunction();
-    const fltSemantics &FltSem =
-        Op->getType()->getScalarType()->getFltSemantics();
+    fltSemantics FltSem = Op->getType()->getScalarType()->getFltSemantics();
 
     if (Op->getOpcode() == Instruction::FDiv) {
       // Only 0/0, Inf/Inf produce NaN.
@@ -5611,9 +5603,8 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
     computeKnownFPClass(Op->getOperand(0), DemandedElts, InterestedClasses,
                         Known, Q, Depth + 1);
 
-    const fltSemantics &DstTy =
-        Op->getType()->getScalarType()->getFltSemantics();
-    const fltSemantics &SrcTy =
+    fltSemantics DstTy = Op->getType()->getScalarType()->getFltSemantics();
+    fltSemantics SrcTy =
         Op->getOperand(0)->getType()->getScalarType()->getFltSemantics();
 
     // All subnormal inputs should be in the normal range in the result type.
@@ -5766,7 +5757,7 @@ void computeKnownFPClass(const Value *V, const APInt &DemandedElts,
                               InterestedClasses, KnownSrc, Q, Depth + 1);
 
           const Function *F = cast<Instruction>(Op)->getFunction();
-          const fltSemantics &FltSem =
+          fltSemantics FltSem =
               Op->getType()->getScalarType()->getFltSemantics();
 
           if (KnownSrc.isKnownNever(fcNegative))

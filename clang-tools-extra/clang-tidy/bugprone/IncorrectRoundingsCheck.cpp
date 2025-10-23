@@ -14,7 +14,7 @@ using namespace clang::ast_matchers;
 
 namespace clang::tidy::bugprone {
 
-static llvm::APFloat getHalf(const llvm::fltSemantics &Semantics) {
+static llvm::APFloat getHalf(llvm::fltSemantics Semantics) {
   return llvm::APFloat(Semantics, 1U) / llvm::APFloat(Semantics, 2U);
 }
 

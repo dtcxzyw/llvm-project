@@ -104,7 +104,7 @@ bool Type::containsNonLocalTargetExtType() const {
   return containsNonLocalTargetExtType(Visited);
 }
 
-const fltSemantics &Type::getFltSemantics() const {
+fltSemantics Type::getFltSemantics() const {
   switch (getTypeID()) {
   case HalfTyID: return APFloat::IEEEhalf();
   case BFloatTyID: return APFloat::BFloat();
@@ -123,22 +123,22 @@ bool Type::isScalableTargetExtTy() const {
   return false;
 }
 
-Type *Type::getFloatingPointTy(LLVMContext &C, const fltSemantics &S) {
+Type *Type::getFloatingPointTy(LLVMContext &C, fltSemantics S) {
   Type *Ty;
-  if (&S == &APFloat::IEEEhalf())
+  if (S == APFloat::IEEEhalf())
     Ty = Type::getHalfTy(C);
-  else if (&S == &APFloat::BFloat())
+  else if (S == APFloat::BFloat())
     Ty = Type::getBFloatTy(C);
-  else if (&S == &APFloat::IEEEsingle())
+  else if (S == APFloat::IEEEsingle())
     Ty = Type::getFloatTy(C);
-  else if (&S == &APFloat::IEEEdouble())
+  else if (S == APFloat::IEEEdouble())
     Ty = Type::getDoubleTy(C);
-  else if (&S == &APFloat::x87DoubleExtended())
+  else if (S == APFloat::x87DoubleExtended())
     Ty = Type::getX86_FP80Ty(C);
-  else if (&S == &APFloat::IEEEquad())
+  else if (S == APFloat::IEEEquad())
     Ty = Type::getFP128Ty(C);
   else {
-    assert(&S == &APFloat::PPCDoubleDouble() && "Unknown FP format");
+    assert(S == APFloat::PPCDoubleDouble() && "Unknown FP format");
     Ty = Type::getPPC_FP128Ty(C);
   }
   return Ty;

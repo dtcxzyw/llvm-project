@@ -92,7 +92,7 @@ public:
   mlir::MLIRContext *getContext() const { return context; }
 
   /// Get the float semantics of !fir.real<kind>
-  const llvm::fltSemantics &getFloatSemantics(KindTy kind) const;
+  llvm::fltSemantics getFloatSemantics(KindTy kind) const;
 
   /// Get the default kind map as a string.
   static constexpr const char *getDefaultMap() { return ""; }

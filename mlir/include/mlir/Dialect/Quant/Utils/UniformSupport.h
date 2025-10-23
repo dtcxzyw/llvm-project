@@ -96,7 +96,7 @@ public:
     // since it runs for each single float parameter value.
 
     // Specialize f32->u8/i8 case to optimize performance.
-    if (&expressedValue.getSemantics() == &APFloat::IEEEsingle() &&
+    if (expressedValue.getSemantics() == APFloat::IEEEsingle() &&
         storageBitWidth == 8 &&
         roundMode == llvm::APFloatBase::rmNearestTiesToAway) {
       return quantizeF32ToInt8(expressedValue);
@@ -129,7 +129,7 @@ private:
   // An optimized implementation to quantize f32 to i8/u8 with C++ native
   // arithmetic.
   virtual APInt quantizeF32ToInt8(APFloat expressedValue) const {
-    assert(&expressedValue.getSemantics() == &APFloat::IEEEsingle());
+    assert(expressedValue.getSemantics() == APFloat::IEEEsingle());
     assert(storageBitWidth == 8);
     assert(roundMode == llvm::APFloatBase::rmNearestTiesToAway);
 

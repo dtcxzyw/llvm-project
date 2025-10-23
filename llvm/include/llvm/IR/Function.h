@@ -709,7 +709,7 @@ public:
 
   /// Returns the denormal handling type for the default rounding mode of the
   /// function.
-  DenormalMode getDenormalMode(const fltSemantics &FPType) const;
+  DenormalMode getDenormalMode(fltSemantics FPType) const;
 
   /// Return the representational value of "denormal-fp-math". Code interested
   /// in the semantics of the function should use getDenormalMode instead.

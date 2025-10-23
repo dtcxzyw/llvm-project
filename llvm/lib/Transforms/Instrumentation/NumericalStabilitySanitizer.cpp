@@ -453,7 +453,7 @@ public:
 
 private:
   // Extends a constant application value to its shadow counterpart.
-  APFloat extendConstantFP(APFloat CV, const fltSemantics &To) const {
+  APFloat extendConstantFP(APFloat CV, fltSemantics To) const {
     bool LosesInfo = false;
     CV.convert(To, APFloatBase::rmTowardZero, &LosesInfo);
     return CV;

@@ -291,9 +291,9 @@ public:
     ASTContext &Ctx = CGF.getContext();
     const QualType HigherElementType =
         Ctx.GetHigherPrecisionFPType(ElementType);
-    const llvm::fltSemantics &ElementTypeSemantics =
+    llvm::fltSemantics ElementTypeSemantics =
         Ctx.getFloatTypeSemantics(ElementType);
-    const llvm::fltSemantics &HigherElementTypeSemantics =
+    llvm::fltSemantics HigherElementTypeSemantics =
         Ctx.getFloatTypeSemantics(HigherElementType);
     // Check that the promoted type can handle the intermediate values without
     // overflowing. This can be interpreted as:

@@ -102,8 +102,8 @@ define void @foo(i32 %v0) {
   EXPECT_TRUE(CHK(getPPC_FP128Ty, isMultiUnitFPType));
   EXPECT_FALSE(CHK(getFloatTy, isMultiUnitFPType));
   // Check getFltSemantics().
-  EXPECT_EQ(&sandboxir::Type::getFloatTy(Ctx)->getFltSemantics(),
-            &llvm::Type::getFloatTy(C)->getFltSemantics());
+  EXPECT_EQ(sandboxir::Type::getFloatTy(Ctx)->getFltSemantics(),
+            llvm::Type::getFloatTy(C)->getFltSemantics());
   // Check isX86_AMXTy().
   EXPECT_TRUE(CHK(getX86_AMXTy, isX86_AMXTy));
   // Check isTargetExtTy().

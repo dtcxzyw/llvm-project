@@ -846,7 +846,7 @@ GenericValue ExecutionEngine::getConstantValue(const Constant *C) {
       case Type::X86_FP80TyID:
       case Type::PPC_FP128TyID:
       case Type::FP128TyID: {
-        const fltSemantics &Sem = CE->getOperand(0)->getType()->getFltSemantics();
+        fltSemantics Sem = CE->getOperand(0)->getType()->getFltSemantics();
         APFloat apfLHS = APFloat(Sem, LHS.IntVal);
         switch (CE->getOpcode()) {
           default: llvm_unreachable("Invalid long double opcode");

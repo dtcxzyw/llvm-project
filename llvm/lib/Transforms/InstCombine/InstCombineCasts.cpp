@@ -384,7 +384,7 @@ static bool canEvaluateTruncated(Value *V, Type *Ty, InstCombinerImpl &IC,
     // directly to that type. Otherwise, we may create poison via overflow
     // that did not exist in the original code.
     Type *InputTy = I->getOperand(0)->getType()->getScalarType();
-    const fltSemantics &Semantics = InputTy->getFltSemantics();
+    fltSemantics Semantics = InputTy->getFltSemantics();
     uint32_t MinBitWidth =
       APFloatBase::semanticsIntSizeInBits(Semantics,
           I->getOpcode() == Instruction::FPToSI);
@@ -1643,7 +1643,7 @@ Instruction *InstCombinerImpl::visitSExt(SExtInst &Sext) {
 
 /// Return a Constant* for the specified floating-point constant if it fits
 /// in the specified FP type without changing its value.
-static bool fitsInFPType(APFloat F, const fltSemantics &Sem) {
+static bool fitsInFPType(APFloat F, fltSemantics Sem) {
   bool losesInfo;
   (void)F.convert(Sem, APFloat::rmNearestTiesToEven, &losesInfo);
   return !losesInfo;
@@ -1660,7 +1660,7 @@ static Type *shrinkFPConstant(LLVMContext &Ctx, const APFloat &F,
   // See if the value can be truncated to float and then reextended.
   if (fitsInFPType(F, APFloat::IEEEsingle()))
     return Type::getFloatTy(Ctx);
-  if (&F.getSemantics() == &APFloat::IEEEdouble())
+  if (F.getSemantics() == APFloat::IEEEdouble())
     return nullptr; // Won't shrink.
   // See if the value can be truncated to double and then reextended.
   if (fitsInFPType(F, APFloat::IEEEdouble()))

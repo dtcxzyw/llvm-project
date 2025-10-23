@@ -676,7 +676,7 @@ public:
     ((ComplexAPSInt *)(char *)&Data)->Imag = std::move(I);
   }
   void setComplexFloat(APFloat R, APFloat I) {
-    assert(&R.getSemantics() == &I.getSemantics() &&
+    assert(R.getSemantics() == I.getSemantics() &&
            "Invalid complex float (type mismatch).");
     assert(isComplexFloat() && "Invalid accessor");
     ((ComplexAPFloat *)(char *)&Data)->Real = std::move(R);

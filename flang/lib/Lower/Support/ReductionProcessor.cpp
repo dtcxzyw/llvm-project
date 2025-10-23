@@ -211,7 +211,7 @@ ReductionProcessor::getReductionInitValue(mlir::Location loc, mlir::Type type,
   switch (redId) {
   case ReductionIdentifier::MAX: {
     if (auto ty = mlir::dyn_cast<mlir::FloatType>(type)) {
-      const llvm::fltSemantics &sem = ty.getFloatSemantics();
+      llvm::fltSemantics sem = ty.getFloatSemantics();
       return builder.createRealConstant(
           loc, type, llvm::APFloat::getLargest(sem, /*Negative=*/true));
     }
@@ -221,7 +221,7 @@ ReductionProcessor::getReductionInitValue(mlir::Location loc, mlir::Type type,
   }
   case ReductionIdentifier::MIN: {
     if (auto ty = mlir::dyn_cast<mlir::FloatType>(type)) {
-      const llvm::fltSemantics &sem = ty.getFloatSemantics();
+      llvm::fltSemantics sem = ty.getFloatSemantics();
       return builder.createRealConstant(
           loc, type, llvm::APFloat::getLargest(sem, /*Negative=*/false));
     }

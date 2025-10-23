@@ -381,9 +381,8 @@ static bool interp__builtin_nan(InterpState &S, CodePtr OpPC,
   else if (StringRef(Str).getAsInteger(0, Fill))
     return false;
 
-  const llvm::fltSemantics &TargetSemantics =
-      S.getASTContext().getFloatTypeSemantics(
-          Call->getDirectCallee()->getReturnType());
+  llvm::fltSemantics TargetSemantics = S.getASTContext().getFloatTypeSemantics(
+      Call->getDirectCallee()->getReturnType());
 
   Floating Result = S.allocFloat(TargetSemantics);
   if (S.getASTContext().getTargetInfo().isNan2008()) {
@@ -414,9 +413,8 @@ static bool interp__builtin_nan(InterpState &S, CodePtr OpPC,
 static bool interp__builtin_inf(InterpState &S, CodePtr OpPC,
                                 const InterpFrame *Frame,
                                 const CallExpr *Call) {
-  const llvm::fltSemantics &TargetSemantics =
-      S.getASTContext().getFloatTypeSemantics(
-          Call->getDirectCallee()->getReturnType());
+  llvm::fltSemantics TargetSemantics = S.getASTContext().getFloatTypeSemantics(
+      Call->getDirectCallee()->getReturnType());
 
   Floating Result = S.allocFloat(TargetSemantics);
   Result.copy(APFloat::getInf(TargetSemantics));

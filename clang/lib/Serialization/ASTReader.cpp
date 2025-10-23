@@ -10165,7 +10165,7 @@ llvm::BitVector ASTReader::ReadBitVector(const RecordData &Record,
 }
 
 /// Read a floating-point value
-llvm::APFloat ASTRecordReader::readAPFloat(const llvm::fltSemantics &Sem) {
+llvm::APFloat ASTRecordReader::readAPFloat(llvm::fltSemantics Sem) {
   return llvm::APFloat(Sem, readAPInt());
 }
 

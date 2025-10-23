@@ -2664,7 +2664,7 @@ SDValue AMDGPUTargetLowering::getIsLtSmallestNormal(SelectionDAG &DAG,
                                                     SDNodeFlags Flags) const {
   SDLoc SL(Src);
   EVT VT = Src.getValueType();
-  const fltSemantics &Semantics = VT.getFltSemantics();
+  fltSemantics Semantics = VT.getFltSemantics();
   SDValue SmallestNormal =
       DAG.getConstantFP(APFloat::getSmallestNormalized(Semantics), SL, VT);
 
@@ -2681,7 +2681,7 @@ SDValue AMDGPUTargetLowering::getIsFinite(SelectionDAG &DAG, SDValue Src,
                                           SDNodeFlags Flags) const {
   SDLoc SL(Src);
   EVT VT = Src.getValueType();
-  const fltSemantics &Semantics = VT.getFltSemantics();
+  fltSemantics Semantics = VT.getFltSemantics();
   SDValue Inf = DAG.getConstantFP(APFloat::getInf(Semantics), SL, VT);
 
   SDValue Fabs = DAG.getNode(ISD::FABS, SL, VT, Src, Flags);
@@ -2700,7 +2700,7 @@ AMDGPUTargetLowering::getScaledLogInput(SelectionDAG &DAG, const SDLoc SL,
     return {};
 
   MVT VT = MVT::f32;
-  const fltSemantics &Semantics = APFloat::IEEEsingle();
+  fltSemantics Semantics = APFloat::IEEEsingle();
   SDValue SmallestNormal =
       DAG.getConstantFP(APFloat::getSmallestNormalized(Semantics), SL, VT);
 

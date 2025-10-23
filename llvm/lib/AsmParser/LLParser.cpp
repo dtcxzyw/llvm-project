@@ -6511,7 +6511,7 @@ bool LLParser::convertValIDToValue(Type *Ty, ValID &ID, Value *&V,
 
     // The lexer has no type info, so builds all half, bfloat, float, and double
     // FP constants as double.  Fix this here.  Long double does not need this.
-    if (&ID.APFloatVal.getSemantics() == &APFloat::IEEEdouble()) {
+    if (ID.APFloatVal.getSemantics() == APFloat::IEEEdouble()) {
       // Check for signaling before potentially converting and losing that info.
       bool IsSNAN = ID.APFloatVal.isSignaling();
       bool Ignored;

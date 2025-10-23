@@ -2165,10 +2165,10 @@ void Sema::checkTypeSupport(QualType Ty, SourceLocation Loc, ValueDecl *D) {
     // semantics.
     bool LongDoubleMismatched = false;
     if (Ty->isRealFloatingType() && Context.getTypeSize(Ty) == 128) {
-      const llvm::fltSemantics &Sem = Context.getFloatTypeSemantics(Ty);
-      if ((&Sem != &llvm::APFloat::PPCDoubleDouble() &&
+      llvm::fltSemantics Sem = Context.getFloatTypeSemantics(Ty);
+      if ((Sem != llvm::APFloat::PPCDoubleDouble() &&
            !Context.getTargetInfo().hasFloat128Type()) ||
-          (&Sem == &llvm::APFloat::PPCDoubleDouble() &&
+          (Sem == llvm::APFloat::PPCDoubleDouble() &&
            !Context.getTargetInfo().hasIbm128Type()))
         LongDoubleMismatched = true;
     }

@@ -53,7 +53,7 @@ class [[nodiscard]] ConstantFPRange {
   void makeFull();
 
   /// Initialize a full or empty set for the specified semantics.
-  LLVM_ABI explicit ConstantFPRange(const fltSemantics &Sem, bool IsFullSet);
+  LLVM_ABI explicit ConstantFPRange(fltSemantics Sem, bool IsFullSet);
 
 public:
   /// Initialize a range to hold the single specified value.
@@ -66,20 +66,20 @@ public:
                            bool MayBeSNaN);
 
   /// Create empty constant range with the given semantics.
-  static ConstantFPRange getEmpty(const fltSemantics &Sem) {
+  static ConstantFPRange getEmpty(fltSemantics Sem) {
     return ConstantFPRange(Sem, /*IsFullSet=*/false);
   }
 
   /// Create full constant range with the given semantics.
-  static ConstantFPRange getFull(const fltSemantics &Sem) {
+  static ConstantFPRange getFull(fltSemantics Sem) {
     return ConstantFPRange(Sem, /*IsFullSet=*/true);
   }
 
   /// Helper for (-inf, inf) to represent all finite values.
-  LLVM_ABI static ConstantFPRange getFinite(const fltSemantics &Sem);
+  LLVM_ABI static ConstantFPRange getFinite(fltSemantics Sem);
 
   /// Helper for [-inf, inf] to represent all non-NaN values.
-  LLVM_ABI static ConstantFPRange getNonNaN(const fltSemantics &Sem);
+  LLVM_ABI static ConstantFPRange getNonNaN(fltSemantics Sem);
 
   /// Create a range which doesn't contain NaNs.
   static ConstantFPRange getNonNaN(APFloat LowerVal, APFloat UpperVal) {
@@ -94,8 +94,8 @@ public:
   }
 
   /// Create a range which only contains NaNs.
-  LLVM_ABI static ConstantFPRange getNaNOnly(const fltSemantics &Sem,
-                                             bool MayBeQNaN, bool MayBeSNaN);
+  LLVM_ABI static ConstantFPRange getNaNOnly(fltSemantics Sem, bool MayBeQNaN,
+                                             bool MayBeSNaN);
 
   /// Produce the smallest range such that all values that may satisfy the given
   /// predicate with any value contained within Other is contained in the
@@ -147,7 +147,7 @@ public:
   LLVM_ABI bool isNaNOnly() const;
 
   /// Get the semantics of this ConstantFPRange.
-  const fltSemantics &getSemantics() const { return Lower.getSemantics(); }
+  fltSemantics getSemantics() const { return Lower.getSemantics(); }
 
   /// Return true if this set contains all of the elements possible
   /// for this data-type.
@@ -220,7 +220,7 @@ public:
   /// Return a new range in the specified format with the specified rounding
   /// mode.
   LLVM_ABI ConstantFPRange
-  cast(const fltSemantics &DstSem,
+  cast(fltSemantics DstSem,
        APFloat::roundingMode RM = APFloat::rmNearestTiesToEven) const;
 
   /// Return a new range representing the possible values resulting

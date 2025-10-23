@@ -4758,8 +4758,8 @@ CompilerType TypeSystemClang::CreateGenericFunctionPrototype() {
 }
 // Exploring the type
 
-const llvm::fltSemantics &
-TypeSystemClang::GetFloatTypeSemantics(size_t byte_size, lldb::Format format) {
+llvm::fltSemantics TypeSystemClang::GetFloatTypeSemantics(size_t byte_size,
+                                                          lldb::Format format) {
   clang::ASTContext &ast = getASTContext();
   const size_t bit_size = byte_size * 8;
   if (bit_size == ast.getTypeSize(ast.FloatTy))

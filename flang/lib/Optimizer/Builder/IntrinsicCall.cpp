@@ -2767,7 +2767,7 @@ mlir::Value IntrinsicLibrary::genAcosd(mlir::Type resultType,
       mlir::FunctionType::get(context, {resultType}, {args[0].getType()});
   mlir::Value result =
       getRuntimeCallGenerator("acos", ftype)(builder, loc, {args[0]});
-  const llvm::fltSemantics &fltSem =
+  llvm::fltSemantics fltSem =
       llvm::cast<mlir::FloatType>(resultType).getFloatSemantics();
   llvm::APFloat pi = llvm::APFloat(fltSem, llvm::numbers::pis);
   mlir::Value factor = builder.createRealConstant(
@@ -2936,7 +2936,7 @@ mlir::Value IntrinsicLibrary::genAsind(mlir::Type resultType,
       mlir::FunctionType::get(context, {resultType}, {args[0].getType()});
   mlir::Value result =
       getRuntimeCallGenerator("asin", ftype)(builder, loc, {args[0]});
-  const llvm::fltSemantics &fltSem =
+  llvm::fltSemantics fltSem =
       llvm::cast<mlir::FloatType>(resultType).getFloatSemantics();
   llvm::APFloat pi = llvm::APFloat(fltSem, llvm::numbers::pis);
   mlir::Value factor = builder.createRealConstant(
@@ -2977,7 +2977,7 @@ mlir::Value IntrinsicLibrary::genAtand(mlir::Type resultType,
         mlir::FunctionType::get(context, {resultType}, {args[0].getType()});
     atan = getRuntimeCallGenerator("atan", ftype)(builder, loc, args);
   }
-  const llvm::fltSemantics &fltSem =
+  llvm::fltSemantics fltSem =
       llvm::cast<mlir::FloatType>(resultType).getFloatSemantics();
   llvm::APFloat pi = llvm::APFloat(fltSem, llvm::numbers::pis);
   mlir::Value factor = builder.createRealConstant(
@@ -3876,7 +3876,7 @@ mlir::Value IntrinsicLibrary::genCosd(mlir::Type resultType,
   mlir::MLIRContext *context = builder.getContext();
   mlir::FunctionType ftype =
       mlir::FunctionType::get(context, {resultType}, {args[0].getType()});
-  const llvm::fltSemantics &fltSem =
+  llvm::fltSemantics fltSem =
       llvm::cast<mlir::FloatType>(resultType).getFloatSemantics();
   llvm::APFloat pi = llvm::APFloat(fltSem, llvm::numbers::pis);
   mlir::Value factor = builder.createRealConstant(
@@ -8417,7 +8417,7 @@ mlir::Value IntrinsicLibrary::genSind(mlir::Type resultType,
   mlir::MLIRContext *context = builder.getContext();
   mlir::FunctionType ftype =
       mlir::FunctionType::get(context, {resultType}, {args[0].getType()});
-  const llvm::fltSemantics &fltSem =
+  llvm::fltSemantics fltSem =
       llvm::cast<mlir::FloatType>(resultType).getFloatSemantics();
   llvm::APFloat pi = llvm::APFloat(fltSem, llvm::numbers::pis);
   mlir::Value factor = builder.createRealConstant(
@@ -8515,7 +8515,7 @@ mlir::Value IntrinsicLibrary::genTand(mlir::Type resultType,
   mlir::MLIRContext *context = builder.getContext();
   mlir::FunctionType ftype =
       mlir::FunctionType::get(context, {resultType}, {args[0].getType()});
-  const llvm::fltSemantics &fltSem =
+  llvm::fltSemantics fltSem =
       llvm::cast<mlir::FloatType>(resultType).getFloatSemantics();
   llvm::APFloat pi = llvm::APFloat(fltSem, llvm::numbers::pis);
   mlir::Value factor = builder.createRealConstant(

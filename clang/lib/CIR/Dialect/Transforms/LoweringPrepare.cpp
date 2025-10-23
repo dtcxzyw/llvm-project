@@ -427,8 +427,7 @@ static mlir::Type higherPrecisionElementTypeForComplexArithmetic(
     return type;
   };
 
-  auto getFloatTypeSemantics =
-      [&cc](mlir::Type type) -> const llvm::fltSemantics & {
+  auto getFloatTypeSemantics = [&cc](mlir::Type type) -> llvm::fltSemantics {
     const clang::TargetInfo &info = cc.getTargetInfo();
     if (mlir::isa<cir::FP16Type>(type))
       return info.getHalfFormat();
@@ -458,9 +457,8 @@ static mlir::Type higherPrecisionElementTypeForComplexArithmetic(
   };
 
   const mlir::Type higherElementType = getHigherPrecisionFPType(elementType);
-  const llvm::fltSemantics &elementTypeSemantics =
-      getFloatTypeSemantics(elementType);
-  const llvm::fltSemantics &higherElementTypeSemantics =
+  llvm::fltSemantics elementTypeSemantics = getFloatTypeSemantics(elementType);
+  llvm::fltSemantics higherElementTypeSemantics =
       getFloatTypeSemantics(higherElementType);
 
   // Check that the promoted type can handle the intermediate values without

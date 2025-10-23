@@ -59,7 +59,7 @@ public:
 
 class APFloatStorage : private APNumericStorage {
 public:
-  llvm::APFloat getValue(const llvm::fltSemantics &Semantics) const {
+  llvm::APFloat getValue(llvm::fltSemantics Semantics) const {
     return llvm::APFloat(Semantics, getIntValue());
   }
   void setValue(const ASTContext &C, const llvm::APFloat &Val) {

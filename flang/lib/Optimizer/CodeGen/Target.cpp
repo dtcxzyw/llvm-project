@@ -38,19 +38,19 @@ llvm::StringRef Attributes::getIntExtensionAttrName() const {
 } // namespace fir::details
 
 // Reduce a REAL/float type to the floating point semantics.
-static const llvm::fltSemantics &floatToSemantics(const KindMapping &kindMap,
-                                                  mlir::Type type) {
+static llvm::fltSemantics floatToSemantics(const KindMapping &kindMap,
+                                           mlir::Type type) {
   assert(isa_real(type));
   return mlir::cast<mlir::FloatType>(type).getFloatSemantics();
 }
 
-static void typeTodo(const llvm::fltSemantics *sem, mlir::Location loc,
+static void typeTodo(llvm::fltSemantics sem, mlir::Location loc,
                      const std::string &context) {
-  if (sem == &llvm::APFloat::IEEEhalf()) {
+  if (sem == llvm::APFloat::IEEEhalf()) {
     TODO(loc, "COMPLEX(KIND=2): for " + context + " type");
-  } else if (sem == &llvm::APFloat::BFloat()) {
+  } else if (sem == llvm::APFloat::BFloat()) {
     TODO(loc, "COMPLEX(KIND=3): " + context + " type");
-  } else if (sem == &llvm::APFloat::x87DoubleExtended()) {
+  } else if (sem == llvm::APFloat::x87DoubleExtended()) {
     TODO(loc, "COMPLEX(KIND=10): " + context + " type");
   } else {
     TODO(loc, "complex for this precision for " + context + " type");
@@ -175,11 +175,11 @@ struct TargetI386 : public GenericTarget<TargetI386> {
     assert(fir::isa_real(eleTy));
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // i64   pack both floats in a 64-bit GPR
       marshal.emplace_back(mlir::IntegerType::get(eleTy.getContext(), 64),
                            AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { t, t }   struct of 2 eleTy, sret, align 4
       auto structTy = mlir::TupleType::get(eleTy.getContext(),
@@ -220,25 +220,25 @@ struct TargetI386Win : public GenericTarget<TargetI386Win> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // i64   pack both floats in a 64-bit GPR
       marshal.emplace_back(mlir::IntegerType::get(eleTy.getContext(), 64),
                            AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { double, double }   struct of 2 double, sret, align 8
       marshal.emplace_back(
           fir::ReferenceType::get(mlir::TupleType::get(
               eleTy.getContext(), mlir::TypeRange{eleTy, eleTy})),
           AT{/*align=*/8, /*byval=*/false, /*sret=*/true});
-    } else if (sem == &llvm::APFloat::IEEEquad()) {
+    } else if (sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { fp128, fp128 }   struct of 2 fp128, sret, align 16
       marshal.emplace_back(
           fir::ReferenceType::get(mlir::TupleType::get(
               eleTy.getContext(), mlir::TypeRange{eleTy, eleTy})),
           AT{/*align=*/16, /*byval=*/false, /*sret=*/true});
-    } else if (sem == &llvm::APFloat::x87DoubleExtended()) {
+    } else if (sem == llvm::APFloat::x87DoubleExtended()) {
       // Use a type that will be translated into LLVM as:
       // { x86_fp80, x86_fp80 }   struct of 2 x86_fp80, sret, align 4
       marshal.emplace_back(
@@ -267,10 +267,10 @@ struct TargetX86_64 : public GenericTarget<TargetX86_64> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // <2 x t>   vector of 2 eleTy
       marshal.emplace_back(fir::VectorType::get(2, eleTy), AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // FIXME: In case of SSE register exhaustion, the ABI here may be
       // incorrect since LLVM may pass the real via register and the imaginary
       // part via the stack while the ABI it should be all in register or all
@@ -278,14 +278,14 @@ struct TargetX86_64 : public GenericTarget<TargetX86_64> {
       // two distinct double arguments
       marshal.emplace_back(eleTy, AT{});
       marshal.emplace_back(eleTy, AT{});
-    } else if (sem == &llvm::APFloat::x87DoubleExtended()) {
+    } else if (sem == llvm::APFloat::x87DoubleExtended()) {
       // Use a type that will be translated into LLVM as:
       // { x86_fp80, x86_fp80 }  struct of 2 fp128, byval, align 16
       marshal.emplace_back(
           fir::ReferenceType::get(mlir::TupleType::get(
               eleTy.getContext(), mlir::TypeRange{eleTy, eleTy})),
           AT{/*align=*/16, /*byval=*/true});
-    } else if (sem == &llvm::APFloat::IEEEquad()) {
+    } else if (sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { fp128, fp128 }   struct of 2 fp128, byval, align 16
       marshal.emplace_back(
@@ -302,21 +302,21 @@ struct TargetX86_64 : public GenericTarget<TargetX86_64> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // <2 x t>   vector of 2 eleTy
       marshal.emplace_back(fir::VectorType::get(2, eleTy), AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { double, double }   struct of 2 double
       marshal.emplace_back(mlir::TupleType::get(eleTy.getContext(),
                                                 mlir::TypeRange{eleTy, eleTy}),
                            AT{});
-    } else if (sem == &llvm::APFloat::x87DoubleExtended()) {
+    } else if (sem == llvm::APFloat::x87DoubleExtended()) {
       // { x86_fp80, x86_fp80 }
       marshal.emplace_back(mlir::TupleType::get(eleTy.getContext(),
                                                 mlir::TypeRange{eleTy, eleTy}),
                            AT{});
-    } else if (sem == &llvm::APFloat::IEEEquad()) {
+    } else if (sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { fp128, fp128 }   struct of 2 fp128, sret, align 16
       marshal.emplace_back(
@@ -361,10 +361,10 @@ struct TargetX86_64 : public GenericTarget<TargetX86_64> {
         })
         .template Case<mlir::FloatType>([&](mlir::Type floatTy) {
           const auto *sem = &floatToSemantics(kindMap, floatTy);
-          if (sem == &llvm::APFloat::x87DoubleExtended()) {
+          if (sem == llvm::APFloat::x87DoubleExtended()) {
             Lo = ArgClass::X87;
             Hi = ArgClass::X87Up;
-          } else if (sem == &llvm::APFloat::IEEEquad()) {
+          } else if (sem == llvm::APFloat::IEEEquad()) {
             Lo = ArgClass::SSE;
             Hi = ArgClass::SSEUp;
           } else {
@@ -373,7 +373,7 @@ struct TargetX86_64 : public GenericTarget<TargetX86_64> {
         })
         .template Case<mlir::ComplexType>([&](mlir::ComplexType cmplx) {
           const auto *sem = &floatToSemantics(kindMap, cmplx.getElementType());
-          if (sem == &llvm::APFloat::x87DoubleExtended()) {
+          if (sem == llvm::APFloat::x87DoubleExtended()) {
             current = ArgClass::ComplexX87;
           } else {
             fir::SequenceType::Shape shape{2};
@@ -406,8 +406,8 @@ struct TargetX86_64 : public GenericTarget<TargetX86_64> {
                           : nullptr;
           // Not expecting to hit this todo in standard code (it would
           // require some vector type extension).
-          if (!(sem == &llvm::APFloat::IEEEsingle() && vecTy.getLen() <= 2) &&
-              !(sem == &llvm::APFloat::IEEEhalf() && vecTy.getLen() <= 4))
+          if (!(sem == llvm::APFloat::IEEEsingle() && vecTy.getLen() <= 2) &&
+              !(sem == llvm::APFloat::IEEEhalf() && vecTy.getLen() <= 4))
             TODO(loc, "passing vector argument to C by value");
           current = SSE;
         })
@@ -727,19 +727,19 @@ struct TargetX86_64Win : public GenericTarget<TargetX86_64Win> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // i64   pack both floats in a 64-bit GPR
       marshal.emplace_back(mlir::IntegerType::get(eleTy.getContext(), 64),
                            AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { double, double }   struct of 2 double, byval, align 8
       marshal.emplace_back(
           fir::ReferenceType::get(mlir::TupleType::get(
               eleTy.getContext(), mlir::TypeRange{eleTy, eleTy})),
           AT{/*align=*/8, /*byval=*/true});
-    } else if (sem == &llvm::APFloat::IEEEquad() ||
-               sem == &llvm::APFloat::x87DoubleExtended()) {
+    } else if (sem == llvm::APFloat::IEEEquad() ||
+               sem == llvm::APFloat::x87DoubleExtended()) {
       // Use a type that will be translated into LLVM as:
       // { t, t }   struct of 2 eleTy, byval, align 16
       marshal.emplace_back(
@@ -756,19 +756,19 @@ struct TargetX86_64Win : public GenericTarget<TargetX86_64Win> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // i64   pack both floats in a 64-bit GPR
       marshal.emplace_back(mlir::IntegerType::get(eleTy.getContext(), 64),
                            AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { double, double }   struct of 2 double, sret, align 8
       marshal.emplace_back(
           fir::ReferenceType::get(mlir::TupleType::get(
               eleTy.getContext(), mlir::TypeRange{eleTy, eleTy})),
           AT{/*align=*/8, /*byval=*/false, /*sret=*/true});
-    } else if (sem == &llvm::APFloat::IEEEquad() ||
-               sem == &llvm::APFloat::x87DoubleExtended()) {
+    } else if (sem == llvm::APFloat::IEEEquad() ||
+               sem == llvm::APFloat::x87DoubleExtended()) {
       // Use a type that will be translated into LLVM as:
       // { t, t }   struct of 2 eleTy, sret, align 16
       marshal.emplace_back(
@@ -799,9 +799,9 @@ struct TargetAArch64 : public GenericTarget<TargetAArch64> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble() ||
-        sem == &llvm::APFloat::IEEEquad()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble() ||
+        sem == llvm::APFloat::IEEEquad()) {
       // [2 x t]   array of 2 eleTy
       marshal.emplace_back(fir::SequenceType::get({2}, eleTy), AT{});
     } else {
@@ -842,9 +842,9 @@ struct TargetAArch64 : public GenericTarget<TargetAArch64> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble() ||
-        sem == &llvm::APFloat::IEEEquad()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble() ||
+        sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { t, t }   struct of 2 eleTy
       marshal.emplace_back(mlir::TupleType::get(eleTy.getContext(),
@@ -1354,12 +1354,12 @@ struct TargetSparcV9 : public GenericTarget<TargetSparcV9> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble()) {
       // two distinct float, double arguments
       marshal.emplace_back(eleTy, AT{});
       marshal.emplace_back(eleTy, AT{});
-    } else if (sem == &llvm::APFloat::IEEEquad()) {
+    } else if (sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { fp128, fp128 }   struct of 2 fp128, byval, align 16
       marshal.emplace_back(
@@ -1399,8 +1399,8 @@ struct TargetRISCV64 : public GenericTarget<TargetRISCV64> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble()) {
       // Two distinct element type arguments (re, im)
       marshal.emplace_back(eleTy, AT{});
       marshal.emplace_back(eleTy, AT{});
@@ -1414,8 +1414,8 @@ struct TargetRISCV64 : public GenericTarget<TargetRISCV64> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { t, t }   struct of 2 eleTy, byVal
       marshal.emplace_back(mlir::TupleType::get(eleTy.getContext(),
@@ -1444,10 +1444,10 @@ struct TargetAMDGPU : public GenericTarget<TargetAMDGPU> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // Lower COMPLEX(KIND=4) as an array of two element values.
       marshal.emplace_back(fir::SequenceType::get({2}, eleTy), AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Pass COMPLEX(KIND=8) as two separate arguments.
       marshal.emplace_back(eleTy, AT{});
       marshal.emplace_back(eleTy, AT{});
@@ -1461,10 +1461,10 @@ struct TargetAMDGPU : public GenericTarget<TargetAMDGPU> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle()) {
+    if (sem == llvm::APFloat::IEEEsingle()) {
       // Return COMPLEX(KIND=4) as an array of two elements.
       marshal.emplace_back(fir::SequenceType::get({2}, eleTy), AT{});
-    } else if (sem == &llvm::APFloat::IEEEdouble()) {
+    } else if (sem == llvm::APFloat::IEEEdouble()) {
       // Return COMPLEX(KIND=8) via an aggregate with two fields.
       marshal.emplace_back(mlir::TupleType::get(eleTy.getContext(),
                                                 mlir::TypeRange{eleTy, eleTy}),
@@ -1521,12 +1521,12 @@ struct TargetLoongArch64 : public GenericTarget<TargetLoongArch64> {
   complexArgumentType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble()) {
       // Two distinct element type arguments (re, im)
       marshal.emplace_back(eleTy, AT{});
       marshal.emplace_back(eleTy, AT{});
-    } else if (sem == &llvm::APFloat::IEEEquad()) {
+    } else if (sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { fp128, fp128 }   struct of 2 fp128, byval
       marshal.emplace_back(
@@ -1543,14 +1543,14 @@ struct TargetLoongArch64 : public GenericTarget<TargetLoongArch64> {
   complexReturnType(mlir::Location loc, mlir::Type eleTy) const override {
     CodeGenSpecifics::Marshalling marshal;
     const auto *sem = &floatToSemantics(kindMap, eleTy);
-    if (sem == &llvm::APFloat::IEEEsingle() ||
-        sem == &llvm::APFloat::IEEEdouble()) {
+    if (sem == llvm::APFloat::IEEEsingle() ||
+        sem == llvm::APFloat::IEEEdouble()) {
       // Use a type that will be translated into LLVM as:
       // { t, t }   struct of 2 eleTy, byVal
       marshal.emplace_back(mlir::TupleType::get(eleTy.getContext(),
                                                 mlir::TypeRange{eleTy, eleTy}),
                            AT{/*alignment=*/0, /*byval=*/true});
-    } else if (sem == &llvm::APFloat::IEEEquad()) {
+    } else if (sem == llvm::APFloat::IEEEquad()) {
       // Use a type that will be translated into LLVM as:
       // { fp128, fp128 }   struct of 2 fp128, sret, align 16
       marshal.emplace_back(
@@ -1604,9 +1604,9 @@ struct TargetLoongArch64 : public GenericTarget<TargetLoongArch64> {
         })
         .template Case<mlir::ComplexType>([&](mlir::ComplexType cmplx) {
           const auto *sem = &floatToSemantics(kindMap, cmplx.getElementType());
-          if (sem == &llvm::APFloat::IEEEsingle() ||
-              sem == &llvm::APFloat::IEEEdouble() ||
-              sem == &llvm::APFloat::IEEEquad())
+          if (sem == llvm::APFloat::IEEEsingle() ||
+              sem == llvm::APFloat::IEEEdouble() ||
+              sem == llvm::APFloat::IEEEquad())
             std::fill_n(std::back_inserter(flatTypes), 2,
                         cmplx.getElementType());
           else

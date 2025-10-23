@@ -5535,7 +5535,7 @@ void Verifier::visitInstruction(Instruction &I) {
     if (ConstantFP *CFP0 =
             mdconst::dyn_extract_or_null<ConstantFP>(MD->getOperand(0))) {
       const APFloat &Accuracy = CFP0->getValueAPF();
-      Check(&Accuracy.getSemantics() == &APFloat::IEEEsingle(),
+      Check(Accuracy.getSemantics() == APFloat::IEEEsingle(),
             "fpmath accuracy must have float type", &I);
       Check(Accuracy.isFiniteNonZero() && !Accuracy.isNegative(),
             "fpmath accuracy not a positive number!", &I);

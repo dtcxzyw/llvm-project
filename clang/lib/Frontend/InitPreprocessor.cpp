@@ -94,25 +94,25 @@ static void AddImplicitIncludePCH(MacroBuilder &Builder, Preprocessor &PP,
 /// PickFP - This is used to pick a value based on the FP semantics of the
 /// specified FP model.
 template <typename T>
-static T PickFP(const llvm::fltSemantics *Sem, T IEEEHalfVal, T IEEESingleVal,
+static T PickFP(llvm::fltSemantics Sem, T IEEEHalfVal, T IEEESingleVal,
                 T IEEEDoubleVal, T X87DoubleExtendedVal, T PPCDoubleDoubleVal,
                 T IEEEQuadVal) {
-  if (Sem == (const llvm::fltSemantics*)&llvm::APFloat::IEEEhalf())
+  if (Sem == llvm::APFloat::IEEEhalf())
     return IEEEHalfVal;
-  if (Sem == (const llvm::fltSemantics*)&llvm::APFloat::IEEEsingle())
+  if (Sem == llvm::APFloat::IEEEsingle())
     return IEEESingleVal;
-  if (Sem == (const llvm::fltSemantics*)&llvm::APFloat::IEEEdouble())
+  if (Sem == llvm::APFloat::IEEEdouble())
     return IEEEDoubleVal;
-  if (Sem == (const llvm::fltSemantics*)&llvm::APFloat::x87DoubleExtended())
+  if (Sem == llvm::APFloat::x87DoubleExtended())
     return X87DoubleExtendedVal;
-  if (Sem == (const llvm::fltSemantics*)&llvm::APFloat::PPCDoubleDouble())
+  if (Sem == llvm::APFloat::PPCDoubleDouble())
     return PPCDoubleDoubleVal;
-  assert(Sem == (const llvm::fltSemantics*)&llvm::APFloat::IEEEquad());
+  assert(Sem == llvm::APFloat::IEEEquad());
   return IEEEQuadVal;
 }
 
 static void DefineFloatMacros(MacroBuilder &Builder, StringRef Prefix,
-                              const llvm::fltSemantics *Sem, StringRef Ext) {
+                              llvm::fltSemantics Sem, StringRef Ext) {
   const char *DenormMin, *NormMax, *Epsilon, *Max, *Min;
   NormMax = PickFP(Sem, "6.5504e+4", "3.40282347e+38",
                    "1.7976931348623157e+308", "1.18973149535723176502e+4932",
@@ -165,7 +165,6 @@ static void DefineFloatMacros(MacroBuilder &Builder, StringRef Prefix,
   Builder.defineMacro(DefPrefix + "MIN_EXP__", "("+Twine(MinExp)+")");
   Builder.defineMacro(DefPrefix + "MIN__", Twine(Min)+Ext);
 }
-
 
 /// DefineTypeSize - Emit a macro to the predefines buffer that declares a macro
 /// named MacroName with the max value for a type with width 'TypeWidth' a
@@ -1218,10 +1217,10 @@ static void InitializePredefinedMacros(const TargetInfo &TI,
   }
 
   if (TI.hasFloat16Type())
-    DefineFloatMacros(Builder, "FLT16", &TI.getHalfFormat(), "F16");
-  DefineFloatMacros(Builder, "FLT", &TI.getFloatFormat(), "F");
-  DefineFloatMacros(Builder, "DBL", &TI.getDoubleFormat(), "");
-  DefineFloatMacros(Builder, "LDBL", &TI.getLongDoubleFormat(), "L");
+    DefineFloatMacros(Builder, "FLT16", TI.getHalfFormat(), "F16");
+  DefineFloatMacros(Builder, "FLT", TI.getFloatFormat(), "F");
+  DefineFloatMacros(Builder, "DBL", TI.getDoubleFormat(), "");
+  DefineFloatMacros(Builder, "LDBL", TI.getLongDoubleFormat(), "L");
 
   // Define a __POINTER_WIDTH__ macro for stdint.h.
   Builder.defineMacro("__POINTER_WIDTH__",

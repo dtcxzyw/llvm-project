@@ -153,7 +153,7 @@ bool ConversionChecker::isLossOfPrecision(const ImplicitCastExpr *Cast,
   unsigned RepresentsUntilExp;
 
   if (isFloat) {
-    const llvm::fltSemantics &Sema = AC.getFloatTypeSemantics(DestType);
+    llvm::fltSemantics Sema = AC.getFloatTypeSemantics(DestType);
     RepresentsUntilExp = llvm::APFloat::semanticsPrecision(Sema);
   } else {
     RepresentsUntilExp = AC.getIntWidth(DestType);

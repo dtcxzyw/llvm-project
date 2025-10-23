@@ -1667,7 +1667,7 @@ mlir::Attribute ConstantEmitter::tryEmitPrivate(const APValue &value,
   }
   case APValue::Float: {
     const llvm::APFloat &init = value.getFloat();
-    if (&init.getSemantics() == &llvm::APFloat::IEEEhalf() &&
+    if (init.getSemantics() == llvm::APFloat::IEEEhalf() &&
         !cgm.getASTContext().getLangOpts().NativeHalfType &&
         cgm.getASTContext().getTargetInfo().useFP16ConversionIntrinsics()) {
       cgm.errorNYI("ConstExprEmitter::tryEmitPrivate half");

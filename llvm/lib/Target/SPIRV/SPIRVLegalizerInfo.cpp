@@ -422,7 +422,7 @@ bool SPIRVLegalizerInfo::legalizeIsFPClass(
       /*EmitIR*/ true);
 
   unsigned BitSize = SrcTy.getScalarSizeInBits();
-  const fltSemantics &Semantics = getFltSemanticForLLT(SrcTy.getScalarType());
+  fltSemantics Semantics = getFltSemanticForLLT(SrcTy.getScalarType());
 
   LLT IntTy = LLT::scalar(BitSize);
   Type *LLVMIntTy = IntegerType::get(MIRBuilder.getContext(), BitSize);

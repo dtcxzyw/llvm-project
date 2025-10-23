@@ -3763,7 +3763,7 @@ static APFloat ConstantFoldAMDGCNCubeIntrinsic(Intrinsic::ID IntrinsicID,
                                                const APFloat &S1,
                                                const APFloat &S2) {
   unsigned ID;
-  const fltSemantics &Sem = S0.getSemantics();
+  fltSemantics Sem = S0.getSemantics();
   APFloat MA(Sem), SC(Sem), TC(Sem);
   if (abs(S2) >= abs(S0) && abs(S2) >= abs(S1)) {
     if (S2.isNegative() && S2.isNonZero() && !S2.isNaN()) {

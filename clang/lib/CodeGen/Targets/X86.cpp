@@ -42,8 +42,8 @@ static bool isX86VectorTypeForVectorCall(ASTContext &Context, QualType Ty) {
   if (const BuiltinType *BT = Ty->getAs<BuiltinType>()) {
     if (BT->isFloatingPoint() && BT->getKind() != BuiltinType::Half) {
       if (BT->getKind() == BuiltinType::LongDouble) {
-        if (&Context.getTargetInfo().getLongDoubleFormat() ==
-            &llvm::APFloat::x87DoubleExtended())
+        if (Context.getTargetInfo().getLongDoubleFormat() ==
+            llvm::APFloat::x87DoubleExtended())
           return false;
       }
       return true;
@@ -1816,14 +1816,14 @@ void X86_64ABIInfo::classify(QualType Ty, uint64_t OffsetBase, Class &Lo,
       Lo = SSE;
       Hi = SSEUp;
     } else if (k == BuiltinType::LongDouble) {
-      const llvm::fltSemantics *LDF = &getTarget().getLongDoubleFormat();
-      if (LDF == &llvm::APFloat::IEEEquad()) {
+      llvm::fltSemantics LDF = getTarget().getLongDoubleFormat();
+      if (LDF == llvm::APFloat::IEEEquad()) {
         Lo = SSE;
         Hi = SSEUp;
-      } else if (LDF == &llvm::APFloat::x87DoubleExtended()) {
+      } else if (LDF == llvm::APFloat::x87DoubleExtended()) {
         Lo = X87;
         Hi = X87Up;
-      } else if (LDF == &llvm::APFloat::IEEEdouble()) {
+      } else if (LDF == llvm::APFloat::IEEEdouble()) {
         Current = SSE;
       } else
         llvm_unreachable("unexpected long double representation!");
@@ -1950,12 +1950,12 @@ void X86_64ABIInfo::classify(QualType Ty, uint64_t OffsetBase, Class &Lo,
     } else if (ET == getContext().DoubleTy) {
       Lo = Hi = SSE;
     } else if (ET == getContext().LongDoubleTy) {
-      const llvm::fltSemantics *LDF = &getTarget().getLongDoubleFormat();
-      if (LDF == &llvm::APFloat::IEEEquad())
+      llvm::fltSemantics LDF = getTarget().getLongDoubleFormat();
+      if (LDF == llvm::APFloat::IEEEquad())
         Current = Memory;
-      else if (LDF == &llvm::APFloat::x87DoubleExtended())
+      else if (LDF == llvm::APFloat::x87DoubleExtended())
         Current = ComplexX87;
-      else if (LDF == &llvm::APFloat::IEEEdouble())
+      else if (LDF == llvm::APFloat::IEEEdouble())
         Lo = Hi = SSE;
       else
         llvm_unreachable("unexpected long double representation!");
@@ -3378,8 +3378,8 @@ ABIArgInfo WinX86_64ABIInfo::classify(QualType Ty, unsigned &FreeSSERegs,
       // Mingw64 GCC uses the old 80 bit extended precision floating point
       // unit. It passes them indirectly through memory.
       if (IsMingw64) {
-        const llvm::fltSemantics *LDF = &getTarget().getLongDoubleFormat();
-        if (LDF == &llvm::APFloat::x87DoubleExtended())
+        llvm::fltSemantics LDF = getTarget().getLongDoubleFormat();
+        if (LDF == llvm::APFloat::x87DoubleExtended())
           return ABIArgInfo::getIndirect(
               Align, /*AddrSpace=*/getDataLayout().getAllocaAddrSpace(),
               /*ByVal=*/false);

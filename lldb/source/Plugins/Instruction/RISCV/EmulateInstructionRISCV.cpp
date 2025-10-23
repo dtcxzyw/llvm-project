@@ -1329,8 +1329,7 @@ public:
         [](uint64_t a, uint64_t b) { return std::max(a, b); });
   }
   template <typename T>
-  bool F_Load(T inst, const fltSemantics &(*semantics)(),
-              unsigned int numBits) {
+  bool F_Load(T inst, fltSemantics (*semantics)(), unsigned int numBits) {
     return transformOptional(inst.rs1.Read(m_emu),
                              [&](auto &&rs1) {
                                uint64_t addr = rs1 + uint64_t(inst.imm);

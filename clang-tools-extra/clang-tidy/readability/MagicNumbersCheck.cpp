@@ -209,12 +209,12 @@ bool MagicNumbersCheck::isIgnoredValue(const FloatingLiteral *Literal) const {
   if (FloatValue.isZero())
     return true;
 
-  if (&FloatValue.getSemantics() == &llvm::APFloat::IEEEsingle()) {
+  if (FloatValue.getSemantics() == llvm::APFloat::IEEEsingle()) {
     const float Value = FloatValue.convertToFloat();
     return llvm::binary_search(IgnoredFloatingPointValues, Value);
   }
 
-  if (&FloatValue.getSemantics() == &llvm::APFloat::IEEEdouble()) {
+  if (FloatValue.getSemantics() == llvm::APFloat::IEEEdouble()) {
     const double Value = FloatValue.convertToDouble();
     return llvm::binary_search(IgnoredDoublePointValues, Value);
   }

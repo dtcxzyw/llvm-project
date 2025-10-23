@@ -5987,7 +5987,7 @@ static SDValue isSaturatingMinMax(SDValue N0, SDValue N1, SDValue N2,
       EVT FPVT = N0.getOperand(0).getValueType().getScalarType();
       if (FPVT.isSimple()) {
         Type *InputTy = FPVT.getTypeForEVT(*DAG.getContext());
-        const fltSemantics &Semantics = InputTy->getFltSemantics();
+        fltSemantics Semantics = InputTy->getFltSemantics();
         uint32_t MinBitWidth =
           APFloatBase::semanticsIntSizeInBits(Semantics, /*isSigned*/ true);
         if (IntVT.getSizeInBits() >= MinBitWidth) {
@@ -19032,7 +19032,7 @@ static SDValue FoldIntToFPToInt(SDNode *N, const SDLoc &DL, SelectionDAG &DAG) {
   unsigned InputSize = (int)SrcVT.getScalarSizeInBits() - IsInputSigned;
   unsigned OutputSize = (int)VT.getScalarSizeInBits();
   unsigned ActualSize = std::min(InputSize, OutputSize);
-  const fltSemantics &Sem = N0.getValueType().getFltSemantics();
+  fltSemantics Sem = N0.getValueType().getFltSemantics();
 
   // We can only fold away the float conversion if the input range can be
   // represented exactly in the float range.

@@ -181,9 +181,9 @@ static constexpr std::pair<uint8_t, uint8_t> LoadFP32ImmArr[] = {
 };
 
 int RISCVLoadFPImm::getLoadFPImm(APFloat FPImm) {
-  assert((&FPImm.getSemantics() == &APFloat::IEEEsingle() ||
-          &FPImm.getSemantics() == &APFloat::IEEEdouble() ||
-          &FPImm.getSemantics() == &APFloat::IEEEhalf()) &&
+  assert((FPImm.getSemantics() == APFloat::IEEEsingle() ||
+          FPImm.getSemantics() == APFloat::IEEEdouble() ||
+          FPImm.getSemantics() == APFloat::IEEEhalf()) &&
          "Unexpected semantics");
 
   // Handle the minimum normalized value which is different for each type.

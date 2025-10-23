@@ -7468,7 +7468,7 @@ SDValue TargetLowering::getSqrtInputTest(SDValue Op, SelectionDAG &DAG,
   // Testing it with denormal inputs to avoid wrong estimate.
   //
   // Test = fabs(X) < SmallestNormal
-  const fltSemantics &FltSem = VT.getFltSemantics();
+  fltSemantics FltSem = VT.getFltSemantics();
   APFloat SmallestNorm = APFloat::getSmallestNormalized(FltSem);
   SDValue NormC = DAG.getConstantFP(SmallestNorm, DL, VT);
   SDValue Fabs = DAG.getNode(ISD::FABS, DL, VT, Op);
@@ -8504,7 +8504,7 @@ bool TargetLowering::expandFP_TO_UINT(SDNode *Node, SDValue &Result,
   // If the maximum float value is smaller then the signed integer range,
   // the destination signmask can't be represented by the float, so we can
   // just use FP_TO_SINT directly.
-  const fltSemantics &APFSem = SrcVT.getFltSemantics();
+  fltSemantics APFSem = SrcVT.getFltSemantics();
   APFloat APF(APFSem, APInt::getZero(SrcVT.getScalarSizeInBits()));
   APInt SignMask = APInt::getSignMask(DstVT.getScalarSizeInBits());
   if (APFloat::opOverflow &
@@ -8878,7 +8878,7 @@ SDValue TargetLowering::expandFMINIMUMNUM_FMAXIMUMNUM(SDNode *Node,
 /// fcmp to 0, and a false value if it's an unordered fcmp to 0. Returns
 /// std::nullopt if it cannot be performed as a compare with 0.
 static std::optional<bool> isFCmpEqualZero(FPClassTest Test,
-                                           const fltSemantics &Semantics,
+                                           fltSemantics Semantics,
                                            const MachineFunction &MF) {
   FPClassTest OrderedMask = Test & ~fcNan;
   FPClassTest NanTest = Test & fcNan;
@@ -8923,7 +8923,7 @@ SDValue TargetLowering::expandIS_FPCLASS(EVT ResultVT, SDValue Op,
   // Floating-point type properties.
   EVT ScalarFloatVT = OperandVT.getScalarType();
   const Type *FloatTy = ScalarFloatVT.getTypeForEVT(*DAG.getContext());
-  const llvm::fltSemantics &Semantics = FloatTy->getFltSemantics();
+  llvm::fltSemantics Semantics = FloatTy->getFltSemantics();
   bool IsF80 = (ScalarFloatVT == MVT::f80);
 
   // Some checks can be implemented using float comparisons, if floating point
@@ -11693,7 +11693,7 @@ SDValue TargetLowering::expandFP_TO_INT_SAT(SDNode *Node,
     SrcVT = Src.getValueType();
   }
 
-  const fltSemantics &Sem = SrcVT.getFltSemantics();
+  fltSemantics Sem = SrcVT.getFltSemantics();
   APFloat MinFloat(Sem);
   APFloat MaxFloat(Sem);
 

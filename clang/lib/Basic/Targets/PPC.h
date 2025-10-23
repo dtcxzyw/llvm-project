@@ -81,7 +81,7 @@ public:
       : TargetInfo(Triple) {
     SuitableAlign = 128;
     LongDoubleWidth = LongDoubleAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::PPCDoubleDouble();
+    LongDoubleFormat = llvm::APFloat::PPCDoubleDouble();
     HasStrictFP = true;
     HasIbm128 = true;
     HasUnalignedAccess = true;
@@ -349,9 +349,8 @@ public:
   const char *getLongDoubleMangling() const override {
     if (LongDoubleWidth == 64)
       return "e";
-    return LongDoubleFormat == &llvm::APFloat::PPCDoubleDouble()
-               ? "g"
-               : "u9__ieee128";
+    return LongDoubleFormat == llvm::APFloat::PPCDoubleDouble() ? "g"
+                                                                : "u9__ieee128";
   }
   const char *getFloat128Mangling() const override { return "u9__ieee128"; }
   const char *getIbm128Mangling() const override { return "g"; }
@@ -410,7 +409,7 @@ public:
       IntPtrType = SignedLong;
       LongDoubleWidth = 64;
       LongDoubleAlign = DoubleAlign = 32;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
       break;
     default:
       break;
@@ -419,7 +418,7 @@ public:
     if (Triple.isOSFreeBSD() || Triple.isOSNetBSD() || Triple.isOSOpenBSD() ||
         Triple.isMusl()) {
       LongDoubleWidth = LongDoubleAlign = 64;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
     }
 
     // PPC32 supports atomics up to 4 bytes.
@@ -452,7 +451,7 @@ public:
       DataLayout = "E-m:a-Fi64-i64:64-i128:128-n32:64";
       LongDoubleWidth = 64;
       LongDoubleAlign = DoubleAlign = 32;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
     } else if ((Triple.getArch() == llvm::Triple::ppc64le)) {
       DataLayout = "e-m:e-Fn32-i64:64-i128:128-n32:64";
       ABI = "elfv2";
@@ -470,7 +469,7 @@ public:
 
     if (Triple.isOSFreeBSD() || Triple.isOSOpenBSD() || Triple.isMusl()) {
       LongDoubleWidth = LongDoubleAlign = 64;
-      LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+      LongDoubleFormat = llvm::APFloat::IEEEdouble();
     }
 
     if (Triple.isOSAIX() || Triple.isOSLinux())

@@ -1061,7 +1061,7 @@ public:
   }
 
   FailureOr<APFloat>
-  readAPFloatWithKnownSemantics(const llvm::fltSemantics &semantics) override {
+  readAPFloatWithKnownSemantics(llvm::fltSemantics semantics) override {
     FailureOr<APInt> intVal =
         readAPIntWithKnownWidth(APFloat::getSizeInBits(semantics));
     if (failed(intVal))

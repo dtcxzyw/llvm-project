@@ -2036,12 +2036,12 @@ static bool IsFloatingPointConversion(Sema &S, QualType FromType,
 
   // Conversions between IEEE-quad and IBM-extended semantics are not
   // permitted.
-  const llvm::fltSemantics &FromSem = S.Context.getFloatTypeSemantics(FromType);
-  const llvm::fltSemantics &ToSem = S.Context.getFloatTypeSemantics(ToType);
-  if ((&FromSem == &llvm::APFloat::PPCDoubleDouble() &&
-       &ToSem == &llvm::APFloat::IEEEquad()) ||
-      (&FromSem == &llvm::APFloat::IEEEquad() &&
-       &ToSem == &llvm::APFloat::PPCDoubleDouble()))
+  llvm::fltSemantics FromSem = S.Context.getFloatTypeSemantics(FromType);
+  llvm::fltSemantics ToSem = S.Context.getFloatTypeSemantics(ToType);
+  if ((FromSem == llvm::APFloat::PPCDoubleDouble() &&
+       ToSem == llvm::APFloat::IEEEquad()) ||
+      (FromSem == llvm::APFloat::IEEEquad() &&
+       ToSem == llvm::APFloat::PPCDoubleDouble()))
     return false;
   return true;
 }

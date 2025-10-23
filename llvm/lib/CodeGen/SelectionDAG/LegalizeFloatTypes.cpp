@@ -1653,7 +1653,7 @@ void DAGTypeLegalizer::ExpandFloatRes_ConstantFP(SDNode *N, SDValue &Lo,
          "Do not know how to expand this float constant!");
   APInt C = cast<ConstantFPSDNode>(N)->getValueAPF().bitcastToAPInt();
   SDLoc dl(N);
-  const fltSemantics &Sem = NVT.getFltSemantics();
+  fltSemantics Sem = NVT.getFltSemantics();
   Lo = DAG.getConstantFP(APFloat(Sem, C.extractBits(64, 64)), dl, NVT);
   Hi = DAG.getConstantFP(APFloat(Sem, C.extractBits(64, 0)), dl, NVT);
 }

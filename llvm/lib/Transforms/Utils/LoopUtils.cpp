@@ -1376,7 +1376,7 @@ Value *llvm::getReductionIdentity(Intrinsic::ID RdxID, Type *Ty,
   case Intrinsic::vector_reduce_fminimum: {
     bool PropagatesNaN = RdxID == Intrinsic::vector_reduce_fminimum ||
                          RdxID == Intrinsic::vector_reduce_fmaximum;
-    const fltSemantics &Semantics = Ty->getFltSemantics();
+    fltSemantics Semantics = Ty->getFltSemantics();
     return (!Flags.noNaNs() && !PropagatesNaN)
                ? ConstantFP::getQNaN(Ty, Negative)
            : !Flags.noInfs()

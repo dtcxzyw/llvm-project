@@ -134,7 +134,7 @@ matchSelectReduction(Block &block, ArrayRef<Predicate> lessThanPredicates,
 }
 
 /// Returns the float semantics for the given float type.
-static const llvm::fltSemantics &fltSemanticsForType(FloatType type) {
+static llvm::fltSemantics fltSemanticsForType(FloatType type) {
   if (type.isF16())
     return llvm::APFloat::IEEEhalf();
   if (type.isF32())
