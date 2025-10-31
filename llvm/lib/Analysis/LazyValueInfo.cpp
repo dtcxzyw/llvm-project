@@ -23,6 +23,7 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/AssemblyAnnotationWriter.h"
 #include "llvm/IR/CFG.h"
+#include "llvm/IR/ConstantFPRange.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
@@ -79,6 +80,9 @@ static bool hasSingleValue(const ValueLatticeElement &Val) {
   if (Val.isConstantRange() &&
       Val.getConstantRange().isSingleElement())
     // Integer constants are single element ranges
+    return true;
+  if (Val.isConstantFPRange() && Val.getConstantFPRange().isSingleElement())
+    // Floating point constants are single element ranges
     return true;
   if (Val.isConstant())
     // Non integer constants
@@ -408,18 +412,26 @@ class LazyValueInfoImpl {
                                                            BasicBlock *BB);
   std::optional<ConstantRange> getRangeFor(Value *V, Instruction *CxtI,
                                            BasicBlock *BB);
+  std::optional<ConstantFPRange> getFPRangeFor(Value *V, Instruction *CxtI,
+                                               BasicBlock *BB);
   std::optional<ValueLatticeElement> solveBlockValueBinaryOpImpl(
       Instruction *I, BasicBlock *BB,
       std::function<ConstantRange(const ConstantRange &, const ConstantRange &)>
           OpFn);
   std::optional<ValueLatticeElement>
   solveBlockValueBinaryOp(BinaryOperator *BBI, BasicBlock *BB);
+  std::optional<ValueLatticeElement>
+  solveBlockValueFPBinaryOp(BinaryOperator *BBI, BasicBlock *BB);
   std::optional<ValueLatticeElement> solveBlockValueCast(CastInst *CI,
                                                          BasicBlock *BB);
+  std::optional<ValueLatticeElement> solveBlockValueFPCast(CastInst *CI,
+                                                           BasicBlock *BB);
   std::optional<ValueLatticeElement>
   solveBlockValueOverflowIntrinsic(WithOverflowInst *WO, BasicBlock *BB);
   std::optional<ValueLatticeElement> solveBlockValueIntrinsic(IntrinsicInst *II,
                                                               BasicBlock *BB);
+  std::optional<ValueLatticeElement>
+  solveBlockValueFPIntrinsic(IntrinsicInst *II, BasicBlock *BB);
   std::optional<ValueLatticeElement>
   solveBlockValueInsertElement(InsertElementInst *IEI, BasicBlock *BB);
   std::optional<ValueLatticeElement>
@@ -442,6 +454,9 @@ class LazyValueInfoImpl {
 
   std::optional<ValueLatticeElement>
   getValueFromICmpCondition(Value *Val, ICmpInst *ICI, bool isTrueDest,
+                            bool UseBlockValue);
+  std::optional<ValueLatticeElement>
+  getValueFromFCmpCondition(Value *Val, FCmpInst *FCI, bool IsTrueDest,
                             bool UseBlockValue);
   ValueLatticeElement getValueFromTrunc(Value *Val, TruncInst *Trunc,
                                         bool IsTrueDest);
@@ -662,6 +677,26 @@ LazyValueInfoImpl::solveBlockValueImpl(Value *Val, BasicBlock *BB) {
 
     if (auto *II = dyn_cast<IntrinsicInst>(BBI))
       return solveBlockValueIntrinsic(II, BB);
+  }
+
+  if (BBI->getType()->isFPOrFPVectorTy()) {
+    if (BBI->getOpcode() == Instruction::FNeg) {
+      std::optional<ConstantFPRange> OpRes =
+          getFPRangeFor(BBI->getOperand(0), BBI, BB);
+      if (!OpRes)
+        // More work to do before applying this transfer rule.
+        return std::nullopt;
+      return ValueLatticeElement::getFPRange(OpRes->negate());
+    }
+
+    if (auto *CI = dyn_cast<CastInst>(BBI))
+      return solveBlockValueFPCast(CI, BB);
+
+    if (BinaryOperator *BO = dyn_cast<BinaryOperator>(BBI))
+      return solveBlockValueFPBinaryOp(BO, BB);
+
+    if (auto *II = dyn_cast<IntrinsicInst>(BBI))
+      return solveBlockValueFPIntrinsic(II, BB);
   }
 
   LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
@@ -959,6 +994,14 @@ LazyValueInfoImpl::getRangeFor(Value *V, Instruction *CxtI, BasicBlock *BB) {
   return OptVal->asConstantRange(V->getType());
 }
 
+std::optional<ConstantFPRange>
+LazyValueInfoImpl::getFPRangeFor(Value *V, Instruction *CxtI, BasicBlock *BB) {
+  std::optional<ValueLatticeElement> OptVal = getBlockValue(V, BB, CxtI);
+  if (!OptVal)
+    return std::nullopt;
+  return OptVal->asConstantFPRange(V->getType());
+}
+
 std::optional<ValueLatticeElement>
 LazyValueInfoImpl::solveBlockValueCast(CastInst *CI, BasicBlock *BB) {
   // Filter out casts we don't know how to reason about before attempting to
@@ -997,6 +1040,47 @@ LazyValueInfoImpl::solveBlockValueCast(CastInst *CI, BasicBlock *BB) {
     Res = LHSRange.castOp(CI->getOpcode(), ResultBitWidth);
 
   return ValueLatticeElement::getRange(Res);
+}
+
+static void postProcessFPRange(ConstantFPRange &R,
+                               DenormalMode::DenormalModeKind Mode,
+                               FastMathFlags FMF) {
+  if (FMF.noNaNs())
+    R = R.getWithoutNaN();
+  if (FMF.noInfs())
+    R = R.getWithoutInf();
+  R.flushDenormals(Mode);
+}
+
+std::optional<ValueLatticeElement>
+LazyValueInfoImpl::solveBlockValueFPCast(CastInst *CI, BasicBlock *BB) {
+  // Filter out casts we don't know how to reason about before attempting to
+  // recurse on our operand.  This can cut a long search short if we know we're
+  // not going to be able to get any useful information anways.
+  switch (CI->getOpcode()) {
+  case Instruction::FPExt:
+  case Instruction::FPTrunc:
+    break;
+  default:
+    // Unhandled instructions are overdefined.
+    LLVM_DEBUG(dbgs() << " compute BB '" << BB->getName()
+                      << "' - overdefined (unknown cast).\n");
+    return ValueLatticeElement::getOverdefined();
+  }
+
+  std::optional<ConstantFPRange> OpRes =
+      getFPRangeFor(CI->getOperand(0), CI, BB);
+  if (!OpRes)
+    // More work to do before applying this transfer rule.
+    return std::nullopt;
+  ConstantFPRange &Op = *OpRes;
+  FastMathFlags FMF = CI->getFastMathFlags();
+  auto &Sem = CI->getDestTy()->getScalarType()->getFltSemantics();
+  auto DenormalMode = BB->getParent()->getDenormalMode(Sem);
+  postProcessFPRange(Op, DenormalMode.Input, FMF);
+  ConstantFPRange Res = Op.cast(Sem);
+  postProcessFPRange(Res, DenormalMode.Output, FMF);
+  return ValueLatticeElement::getFPRange(std::move(Res));
 }
 
 std::optional<ValueLatticeElement>
@@ -1158,6 +1242,46 @@ LazyValueInfoImpl::solveBlockValueBinaryOp(BinaryOperator *BO, BasicBlock *BB) {
 }
 
 std::optional<ValueLatticeElement>
+LazyValueInfoImpl::solveBlockValueFPBinaryOp(BinaryOperator *BO,
+                                             BasicBlock *BB) {
+  FastMathFlags FMF = BO->getFastMathFlags();
+  Function *F = BB->getParent();
+  auto LHSRes = getFPRangeFor(BO->getOperand(0), BO, BB);
+  if (!LHSRes)
+    return std::nullopt;
+  auto RHSRes = getFPRangeFor(BO->getOperand(1), BO, BB);
+  if (!RHSRes)
+    return std::nullopt;
+  auto &LHSRange = *LHSRes;
+  auto &RHSRange = *RHSRes;
+  auto &Sem = LHSRange.getSemantics();
+  auto DenormalMode = F->getDenormalMode(Sem);
+  postProcessFPRange(LHSRange, DenormalMode.Input, FMF);
+  postProcessFPRange(RHSRange, DenormalMode.Output, FMF);
+  ConstantFPRange Res = ConstantFPRange::getFull(Sem);
+  switch (BO->getOpcode()) {
+  case Instruction::FAdd:
+    Res = LHSRange.add(RHSRange);
+    break;
+  case Instruction::FSub:
+    Res = LHSRange.sub(RHSRange);
+    break;
+  case Instruction::FMul:
+    Res = LHSRange.mul(RHSRange);
+    break;
+  case Instruction::FDiv:
+    Res = LHSRange.div(RHSRange);
+    break;
+  case Instruction::FRem:
+    break;
+  default:
+    llvm_unreachable("Unknown FP binary operator.");
+  }
+  postProcessFPRange(Res, DenormalMode.Output, FMF);
+  return ValueLatticeElement::getFPRange(Res);
+}
+
+std::optional<ValueLatticeElement>
 LazyValueInfoImpl::solveBlockValueOverflowIntrinsic(WithOverflowInst *WO,
                                                     BasicBlock *BB) {
   return solveBlockValueBinaryOpImpl(
@@ -1186,6 +1310,42 @@ LazyValueInfoImpl::solveBlockValueIntrinsic(IntrinsicInst *II, BasicBlock *BB) {
   return ValueLatticeElement::getRange(
              ConstantRange::intrinsic(II->getIntrinsicID(), OpRanges))
       .intersect(MetadataVal);
+}
+
+std::optional<ValueLatticeElement>
+LazyValueInfoImpl::solveBlockValueFPIntrinsic(IntrinsicInst *II,
+                                              BasicBlock *BB) {
+  Intrinsic::ID IID = II->getIntrinsicID();
+  switch (IID) {
+  case Intrinsic::fabs:
+  case Intrinsic::copysign:
+    break;
+  default:
+    return ValueLatticeElement::getOverdefined();
+  }
+  SmallVector<ConstantFPRange, 2> OpRanges;
+  for (Value *Op : II->args()) {
+    std::optional<ConstantFPRange> Range = getFPRangeFor(Op, II, BB);
+    if (!Range)
+      return std::nullopt;
+    OpRanges.push_back(*Range);
+  }
+  switch (IID) {
+  case Intrinsic::fabs:
+    return ValueLatticeElement::getFPRange(OpRanges[0].abs());
+  case Intrinsic::copysign: {
+    ConstantFPRange Mag = OpRanges[0].abs();
+    std::optional<bool> Sign = OpRanges[1].getSignBit();
+    if (Sign.has_value()) {
+      if (*Sign)
+        return ValueLatticeElement::getFPRange(Mag.negate());
+      return ValueLatticeElement::getFPRange(Mag);
+    }
+    return ValueLatticeElement::getFPRange(Mag.negate().unionWith(Mag));
+  }
+  default:
+    llvm_unreachable("Unsupported FP intrinsic.");
+  }
 }
 
 std::optional<ValueLatticeElement>
@@ -1433,6 +1593,22 @@ std::optional<ValueLatticeElement> LazyValueInfoImpl::getValueFromICmpCondition(
   return ValueLatticeElement::getOverdefined();
 }
 
+std::optional<ValueLatticeElement> LazyValueInfoImpl::getValueFromFCmpCondition(
+    Value *Val, FCmpInst *FCI, bool IsTrueDest, bool UseBlockValue) {
+  Value *LHS = FCI->getOperand(0);
+  Value *RHS = FCI->getOperand(1);
+
+  // Get the predicate that must hold along the considered edge.
+  CmpInst::Predicate EdgePred =
+      IsTrueDest ? FCI->getPredicate() : FCI->getInversePredicate();
+  const APFloat *RHSC;
+  if (LHS == Val && match(RHS, m_APFloat(RHSC))) {
+    if (auto CR = ConstantFPRange::makeExactFCmpRegion(EdgePred, *RHSC))
+      return ValueLatticeElement::getFPRange(*CR);
+  }
+  return ValueLatticeElement::getOverdefined();
+}
+
 ValueLatticeElement LazyValueInfoImpl::getValueFromTrunc(Value *Val,
                                                          TruncInst *Trunc,
                                                          bool IsTrueDest) {
@@ -1482,6 +1658,9 @@ LazyValueInfoImpl::getValueFromCondition(Value *Val, Value *Cond,
                                          unsigned Depth) {
   if (ICmpInst *ICI = dyn_cast<ICmpInst>(Cond))
     return getValueFromICmpCondition(Val, ICI, IsTrueDest, UseBlockValue);
+
+  if (FCmpInst *FCI = dyn_cast<FCmpInst>(Cond))
+    return getValueFromFCmpCondition(Val, FCI, IsTrueDest, UseBlockValue);
 
   if (auto *Trunc = dyn_cast<TruncInst>(Cond))
     return getValueFromTrunc(Val, Trunc, IsTrueDest);
@@ -1971,6 +2150,11 @@ Constant *LazyValueInfo::getConstant(Value *V, Instruction *CxtI) {
     if (const APInt *SingleVal = CR.getSingleElement())
       return ConstantInt::get(V->getType(), *SingleVal);
   }
+  if (Result.isConstantFPRange()) {
+    const ConstantFPRange &CR = Result.getConstantFPRange();
+    if (const APFloat *SingleVal = CR.getSingleElement())
+      return ConstantFP::get(V->getType(), *SingleVal);
+  }
   return nullptr;
 }
 
@@ -2006,6 +2190,11 @@ Constant *LazyValueInfo::getConstantOnEdge(Value *V, BasicBlock *FromBB,
     if (const APInt *SingleVal = CR.getSingleElement())
       return ConstantInt::get(V->getType(), *SingleVal);
   }
+  if (Result.isConstantFPRange()) {
+    const ConstantFPRange &CR = Result.getConstantFPRange();
+    if (const APFloat *SingleVal = CR.getSingleElement())
+      return ConstantFP::get(V->getType(), *SingleVal);
+  }
   return nullptr;
 }
 
@@ -2034,6 +2223,15 @@ static Constant *getPredicateResult(CmpInst::Predicate Pred, Constant *C,
     if (CR.icmp(Pred, RHS))
       return ConstantInt::getTrue(ResTy);
     if (CR.icmp(CmpInst::getInversePredicate(Pred), RHS))
+      return ConstantInt::getFalse(ResTy);
+    return nullptr;
+  }
+  if (Val.isConstantFPRange()) {
+    const ConstantFPRange &CR = Val.getConstantFPRange();
+    ConstantFPRange RHS = C->toConstantFPRange();
+    if (CR.fcmp(Pred, RHS))
+      return ConstantInt::getTrue(ResTy);
+    if (CR.fcmp(CmpInst::getInversePredicate(Pred), RHS))
       return ConstantInt::getFalse(ResTy);
     return nullptr;
   }
