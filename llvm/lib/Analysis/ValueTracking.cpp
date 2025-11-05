@@ -9320,6 +9320,17 @@ isImpliedCondICmps(CmpPredicate LPred, const Value *L0, const Value *L1,
   // case, invert the predicate to make it so.
   if (!LHSIsTrue)
     LPred = ICmpInst::getInverseCmpPredicate(LPred);
+  Value *A, *B;
+  if (match(L0, m_PtrToIntSameSize(DL, m_Value(A))) &&
+      match(L1, m_PtrToIntSameSize(DL, m_Value(B)))) {
+    L0 = A;
+    L1 = B;
+  }
+  if (match(R0, m_PtrToIntSameSize(DL, m_Value(A))) &&
+      match(R1, m_PtrToIntSameSize(DL, m_Value(B)))) {
+    R0 = A;
+    R1 = B;
+  }
 
   // We can have non-canonical operands, so try to normalize any common operand
   // to L0/R0.
@@ -9395,7 +9406,6 @@ isImpliedCondICmps(CmpPredicate LPred, const Value *L0, const Value *L1,
   // a - b == NonZero -> a != b
   // ptrtoint(a) - ptrtoint(b) == NonZero -> a != b
   const APInt *L1C;
-  Value *A, *B;
   if (LPred == ICmpInst::ICMP_EQ && ICmpInst::isEquality(RPred) &&
       match(L1, m_APInt(L1C)) && !L1C->isZero() &&
       match(L0, m_Sub(m_Value(A), m_Value(B))) &&
@@ -9416,6 +9426,29 @@ isImpliedCondICmps(CmpPredicate LPred, const Value *L0, const Value *L1,
 
   if (auto P = CmpPredicate::getMatching(LPred, RPred))
     return isImpliedCondOperands(*P, L0, L1, R0, R1);
+
+  // icmp pred (shr/div exact X, Z), (shr/div exact Y, Z) -> icmp pred X, Y
+  if (auto *ExactL0 = dyn_cast<PossiblyExactOperator>(L0))
+    if (auto *ExactL1 = dyn_cast<PossiblyExactOperator>(L1))
+      if (ExactL0->isExact() && ExactL1->isExact() &&
+          ExactL0->getOpcode() == ExactL1->getOpcode() &&
+          ExactL0->getOperand(1) == ExactL1->getOperand(1))
+        return isImpliedCondICmps(LPred, ExactL0->getOperand(0),
+                                  ExactL1->getOperand(0), RPred, R0, R1, DL,
+                                  /*LHSIsTrue=*/true);
+
+  if (!ICmpInst::isLE(LPred) && !ICmpInst::isGE(LPred)) {
+    auto *O1 = dyn_cast<Operator>(L0);
+    auto *O2 = dyn_cast<Operator>(L1);
+    if (O1 && O2 && O1->getOpcode() == O2->getOpcode()) {
+      if (auto Values = getInvertibleOperands(O1, O2)) {
+        bool IsEqual = LPred == ICmpInst::ICMP_EQ;
+        return isImpliedCondICmps(
+            IsEqual ? ICmpInst::ICMP_EQ : ICmpInst::ICMP_NE, Values->first,
+            Values->second, RPred, R0, R1, DL, /*LHSIsTrue=*/true);
+      }
+    }
+  }
 
   return std::nullopt;
 }
@@ -10293,6 +10326,27 @@ void llvm::findValuesAffectedByCondition(
 
       if (HasRHSC && match(A, m_Intrinsic<Intrinsic::ctpop>(m_Value(X))))
         AddAffected(X);
+
+      auto MatchPtrDiffWithSameBase = [&](Value *A, Value *B) {
+        Value *SubA, *SubB, *Base;
+        if (match(A, m_Sub(m_Value(SubA), m_Value(Base))) &&
+            match(B, m_Sub(m_Value(SubB), m_Specific(Base)))) {
+          AddAffected(SubA);
+          AddAffected(SubB);
+        }
+      };
+      // With https://reviews.llvm.org/D149918, only icmp with one-use shrs will
+      // be simplified. Handle ptrdiffs with strides greater than one.
+      if (auto *ExactA = dyn_cast<PossiblyExactOperator>(A)) {
+        if (auto *ExactB = dyn_cast<PossiblyExactOperator>(B))
+          if (ExactA->isExact() && ExactB->isExact() &&
+              ExactA->getOpcode() == ExactB->getOpcode() &&
+              ExactA->getOperand(1) == ExactB->getOperand(1))
+            MatchPtrDiffWithSameBase(ExactA->getOperand(0),
+                                     ExactB->getOperand(0));
+      } else {
+        MatchPtrDiffWithSameBase(A, B);
+      }
     } else if (match(V, m_FCmp(Pred, m_Value(A), m_Value(B)))) {
       AddCmpOperands(A, B);
 
