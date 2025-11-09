@@ -112,9 +112,9 @@ static cl::opt<bool> GVNEnableLoadInLoopPRE("enable-load-in-loop-pre",
 static cl::opt<bool>
 GVNEnableSplitBackedgeInLoadPRE("enable-split-backedge-in-load-pre",
                                 cl::init(false));
-static cl::opt<bool> GVNEnableMemDep("enable-gvn-memdep", cl::init(true));
+static cl::opt<bool> GVNEnableMemDep("enable-gvn-memdep", cl::init(false));
 static cl::opt<bool> GVNEnableMemorySSA("enable-gvn-memoryssa",
-                                        cl::init(false));
+                                        cl::init(true));
 
 static cl::opt<uint32_t> MaxNumDeps(
     "gvn-max-num-deps", cl::Hidden, cl::init(100),
