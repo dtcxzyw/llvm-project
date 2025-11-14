@@ -2517,7 +2517,11 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
                Instruction->getFunction() != CxtFunc ||
                !isValidAssumeForContext(Instruction, Q.CxtI, Q.DT);
       };
+      unsigned NumUsesExplored = 0;
       for (auto *User : V->users()) {
+        if (NumUsesExplored >= DomConditionsMaxUses)
+          break;
+        NumUsesExplored++;
         if (auto *PtrOp = getLoadStorePointerOperand(User)) {
           if (V != PtrOp || InvalidUser(cast<Instruction>(User))) {
             continue;
