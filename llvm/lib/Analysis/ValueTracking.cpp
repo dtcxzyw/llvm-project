@@ -68,9 +68,11 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
+#include "llvm/Support/Alignment.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Compiler.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/KnownBits.h"
 #include "llvm/Support/KnownFPClass.h"
@@ -2507,6 +2509,24 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
   if (isa<PointerType>(V->getType())) {
     Align Alignment = V->getPointerAlignment(Q.DL);
     Known.Zero.setLowBits(Log2(Alignment));
+    if (Q.CxtI) {
+      const Function *CxtFunc = Q.CxtI->getFunction();
+      auto InvalidUser = [&Known, &CxtFunc, &Q](const auto *Instruction) {
+        return Known.countMinTrailingZeros() >=
+                   Log2(getLoadStoreAlignment(Instruction)) ||
+               Instruction->getFunction() != CxtFunc ||
+               !isValidAssumeForContext(Instruction, Q.CxtI, Q.DT);
+      };
+      for (auto *User : V->users()) {
+        if (auto *PtrOp = getLoadStorePointerOperand(User)) {
+          if (V != PtrOp || InvalidUser(cast<Instruction>(User))) {
+            continue;
+          }
+          Known.Zero.setLowBits(
+              Log2(getLoadStoreAlignment(cast<Instruction>(User))));
+        }
+      }
+    }
   }
 
   // computeKnownBitsFromContext strictly refines Known.
