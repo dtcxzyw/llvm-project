@@ -2509,12 +2509,10 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
   if (isa<PointerType>(V->getType())) {
     Align Alignment = V->getPointerAlignment(Q.DL);
     Known.Zero.setLowBits(Log2(Alignment));
-    if (Q.CxtI) {
-      const Function *CxtFunc = Q.CxtI->getFunction();
-      auto InvalidUser = [&Known, &CxtFunc, &Q](const auto *Instruction) {
+    if (Q.CxtI && isa<Instruction, Argument>(V)) {
+      auto InvalidUser = [&Known, &Q](const auto *Instruction) {
         return Known.countMinTrailingZeros() >=
                    Log2(getLoadStoreAlignment(Instruction)) ||
-               Instruction->getFunction() != CxtFunc ||
                !isValidAssumeForContext(Instruction, Q.CxtI, Q.DT);
       };
       unsigned NumUsesExplored = 0;
