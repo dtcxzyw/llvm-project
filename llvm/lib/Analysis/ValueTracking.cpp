@@ -2517,7 +2517,7 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
       };
       unsigned NumUsesExplored = 0;
       for (auto *User : V->users()) {
-        if (NumUsesExplored >= DomConditionsMaxUses)
+        if (NumUsesExplored >= 4)
           break;
         NumUsesExplored++;
         if (auto *PtrOp = getLoadStorePointerOperand(User)) {
