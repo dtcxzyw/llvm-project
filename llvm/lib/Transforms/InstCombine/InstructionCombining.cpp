@@ -5369,6 +5369,16 @@ static bool SoleWriteToDeadLocal(Instruction *I, TargetLibraryInfo &TLI) {
 /// block.
 bool InstCombinerImpl::tryToSinkInstruction(Instruction *I,
                                             BasicBlock *DestBlock) {
+  // Do not sink convergent call instructions.
+  if (auto *CI = dyn_cast<CallInst>(I)) {
+    if (CI->isConvergent())
+      return false;
+  }
+
+  // Do not sink into catchswitch blocks.
+  if (isa<CatchSwitchInst>(DestBlock->getTerminator()))
+    return false;
+
   BasicBlock *SrcBlock = I->getParent();
 
   // Unless we can prove that the memory write isn't visibile except on the
@@ -5600,22 +5610,13 @@ bool InstCombinerImpl::run() {
         return std::nullopt;
 
       // Cannot move control-flow-involving, volatile loads, vaarg, etc.
-      if (isa<PHINode>(I) || I->isEHPad() || I->mayThrow() ||
-          !I->willReturn() || I->isTerminator())
-        return std::nullopt;
-
       // Do not sink static or dynamic alloca instructions. Static allocas must
       // remain in the entry block, and dynamic allocas must not be sunk in
       // between a stacksave / stackrestore pair, which would incorrectly
       // shorten its lifetime.
-      if (isa<AllocaInst>(I))
+      if (isa<PHINode, AllocaInst>(I) || I->isEHPad() || I->mayThrow() ||
+          !I->willReturn() || I->isTerminator())
         return std::nullopt;
-
-      // Do not sink convergent call instructions.
-      if (auto *CI = dyn_cast<CallInst>(I)) {
-        if (CI->isConvergent())
-          return std::nullopt;
-      }
 
       BasicBlock *BB = I->getParent();
       BasicBlock *UserParent = nullptr;
@@ -5656,9 +5657,6 @@ bool InstCombinerImpl::run() {
             return std::nullopt;
 
           auto *Term = UserParent->getTerminator();
-          // Do not sink into catchswitch blocks.
-          if (isa<CatchSwitchInst>(Term))
-            return std::nullopt;
           // See if the user is one of our successors that has only one
           // predecessor, so that we don't have to split the critical edge.
           // Another option where we can sink is a block that ends with a
