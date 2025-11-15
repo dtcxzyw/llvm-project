@@ -2509,24 +2509,17 @@ void computeKnownBits(const Value *V, const APInt &DemandedElts,
   if (isa<PointerType>(V->getType())) {
     Align Alignment = V->getPointerAlignment(Q.DL);
     Known.Zero.setLowBits(Log2(Alignment));
-    if (Q.CxtI && isa<Instruction, Argument>(V)) {
+    if (Q.CxtI && isa<Instruction, Argument>(V) && V->hasOneUse()) {
       auto InvalidUser = [&Known, &Q](const auto *Instruction) {
         return Known.countMinTrailingZeros() >=
                    Log2(getLoadStoreAlignment(Instruction)) ||
                !isValidAssumeForContext(Instruction, Q.CxtI, Q.DT);
       };
-      unsigned NumUsesExplored = 0;
-      for (auto *User : V->users()) {
-        if (NumUsesExplored >= 4)
-          break;
-        NumUsesExplored++;
-        if (auto *PtrOp = getLoadStorePointerOperand(User)) {
-          if (V != PtrOp || InvalidUser(cast<Instruction>(User))) {
-            continue;
-          }
+      auto *User = V->user_back();
+      if (auto *PtrOp = getLoadStorePointerOperand(User)) {
+        if (V == PtrOp && !InvalidUser(cast<Instruction>(User)))
           Known.Zero.setLowBits(
               Log2(getLoadStoreAlignment(cast<Instruction>(User))));
-        }
       }
     }
   }
