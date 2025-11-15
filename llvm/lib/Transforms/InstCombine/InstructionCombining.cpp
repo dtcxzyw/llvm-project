@@ -5369,6 +5369,9 @@ static bool SoleWriteToDeadLocal(Instruction *I, TargetLibraryInfo &TLI) {
 /// block.
 bool InstCombinerImpl::tryToSinkInstruction(Instruction *I,
                                             BasicBlock *DestBlock) {
+  if (I->mayThrow() || !I->willReturn())
+    return false;
+
   // Do not sink convergent call instructions.
   if (auto *CI = dyn_cast<CallInst>(I)) {
     if (CI->isConvergent())
@@ -5614,8 +5617,7 @@ bool InstCombinerImpl::run() {
       // remain in the entry block, and dynamic allocas must not be sunk in
       // between a stacksave / stackrestore pair, which would incorrectly
       // shorten its lifetime.
-      if (isa<PHINode, AllocaInst>(I) || I->isEHPad() || I->mayThrow() ||
-          !I->willReturn() || I->isTerminator())
+      if (isa<PHINode, AllocaInst>(I) || I->isEHPad() || I->isTerminator())
         return std::nullopt;
 
       BasicBlock *BB = I->getParent();
