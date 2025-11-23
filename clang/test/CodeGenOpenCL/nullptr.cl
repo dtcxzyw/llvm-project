@@ -700,9 +700,9 @@ int test_and_ptr(private char* p1, local char* p2) {
 // CHECK-NOOPT-LABEL: test_fold_private
 // SPIR64-NOOPT:  call{{.*}} void @test_fold_callee
 // SPIR64-NOOPT:  store ptr addrspace(1) addrspacecast (ptr addrspace(4) null to ptr addrspace(1)), ptr %glob{{.*}}, align 8
-// SPIR64-NOOPT:  %{{.*}} = sub i64 %{{.*}}, ptrtoint (ptr addrspace(1) addrspacecast (ptr addrspace(4) null to ptr addrspace(1)) to i64)
+// SPIR64-NOOPT:  %{{.*}} = sub nsw i64 %{{.*}}, ptrtoint (ptr addrspace(1) addrspacecast (ptr addrspace(4) null to ptr addrspace(1)) to i64)
 // AMDGCN-NOOPT: store ptr addrspace(1) null, ptr addrspace(5) %glob{{.*}}, align 8
-// AMDGCN-NOOPT: %{{.*}} = sub i64 %{{.*}}, 0
+// AMDGCN-NOOPT: %{{.*}} = sub nsw i64 %{{.*}}, 0
 // SPIR64-NOOPT:  call{{.*}} void @test_fold_callee
 // SPIR64-NOOPT:  %[[SEXT:.*]] = sext i32 ptrtoint (ptr addrspacecast (ptr addrspace(4) null to ptr) to i32) to i64
 // AMDGCN-NOOPT: %[[SEXT:.*]] = sext i32 ptrtoint (ptr addrspace(5) addrspacecast (ptr null to ptr addrspace(5)) to i32) to i64
@@ -719,9 +719,9 @@ void test_fold_private(void) {
 // CHECK-NOOPT-LABEL: test_fold_local
 // CHECK-NOOPT:  call{{.*}} void @test_fold_callee
 // SPIR64-NOOPT: store ptr addrspace(1) addrspacecast (ptr addrspace(4) null to ptr addrspace(1)), ptr %glob{{.*}}, align 8
-// SPIR64-NOOPT: %{{.*}} = sub i64 %{{.*}}, ptrtoint (ptr addrspace(1) addrspacecast (ptr addrspace(4) null to ptr addrspace(1)) to i64)
+// SPIR64-NOOPT: %{{.*}} = sub nsw i64 %{{.*}}, ptrtoint (ptr addrspace(1) addrspacecast (ptr addrspace(4) null to ptr addrspace(1)) to i64)
 // AMDGCN-NOOPT: store ptr addrspace(1) null, ptr addrspace(5) %glob{{.*}}, align 8
-// AMDGCN-NOOPT: %{{.*}} = sub i64 %{{.*}}, 0
+// AMDGCN-NOOPT: %{{.*}} = sub nsw i64 %{{.*}}, 0
 // CHECK-NOOPT:  call{{.*}} void @test_fold_callee
 // SPIR64-NOOPT: %[[SEXT:.*]] = sext i32 ptrtoint (ptr addrspace(3) addrspacecast (ptr addrspace(4) null to ptr addrspace(3)) to i32) to i64
 // AMDGCN-NOOPT: %[[SEXT:.*]] = sext i32 ptrtoint (ptr addrspace(3) addrspacecast (ptr null to ptr addrspace(3)) to i32) to i64

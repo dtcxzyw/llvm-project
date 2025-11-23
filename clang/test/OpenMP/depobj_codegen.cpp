@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 // CHECK: [[END:%.+]] = load ptr, ptr [[END_ADDR]], align 8
 // CHECK: [[BEGIN_INT:%.+]] = ptrtoint ptr [[BEGIN]] to i64
 // CHECK: [[END_INT:%.+]] = ptrtoint ptr [[END]] to i64
-// CHECK: [[BE_SUB:%.+]] = sub i64 [[BEGIN_INT]], [[END_INT]]
+// CHECK: [[BE_SUB:%.+]] = sub nsw i64 [[BEGIN_INT]], [[END_INT]]
 // CHECK: [[BE_SUB_ST_SUB:%.+]] = add nsw i64 [[BE_SUB]], 1
 // CHECK: [[BE_SUB_ST_SUB_1_SUB:%.+]] = sub nsw i64 [[BE_SUB_ST_SUB]], 1
 // CHECK: [[BE_SUB_ST_SUB_1_SUB_1_DIV:%.+]] = sdiv i64 [[BE_SUB_ST_SUB_1_SUB]], 1
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 // CHECK: [[END:%.+]] = load ptr, ptr [[END_ADDR]], align 8
 // CHECK: [[BEGIN_INT:%.+]] = ptrtoint ptr [[BEGIN]] to i64
 // CHECK: [[END_INT:%.+]] = ptrtoint ptr [[END]] to i64
-// CHECK: [[BE_SUB:%.+]] = sub i64 [[BEGIN_INT]], [[END_INT]]
+// CHECK: [[BE_SUB:%.+]] = sub nsw i64 [[BEGIN_INT]], [[END_INT]]
 // CHECK: [[BE_SUB_ST_SUB:%.+]] = add nsw i64 [[BE_SUB]], 1
 // CHECK: [[BE_SUB_ST_SUB_1_SUB:%.+]] = sub nsw i64 [[BE_SUB_ST_SUB]], 1
 // CHECK: [[NITER:%.+]] = sdiv i64 [[BE_SUB_ST_SUB_1_SUB]], 1

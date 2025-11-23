@@ -143,7 +143,7 @@ float load3() {
 // HOST:  %2 = getelementptr inbounds [100 x %struct.vec], ptr %ld.managed1, i64 0, i64 1
 // HOST:  %3 = getelementptr inbounds nuw %struct.vec, ptr %2, i32 0, i32 1
 // HOST:  %4 = ptrtoint ptr %3 to i64
-// HOST:  %5 = sub i64 %4, %1
+// HOST:  %5 = sub nsw i64 %4, %1
 // HOST:  %sub.ptr.div = sdiv exact i64 %5, 4
 // HOST:  %conv = sitofp i64 %sub.ptr.div to float
 // HOST:  ret float %conv

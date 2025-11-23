@@ -4706,7 +4706,13 @@ Value *ScalarExprEmitter::EmitSub(const BinOpInfo &op) {
     = Builder.CreatePtrToInt(op.LHS, CGF.PtrDiffTy, "sub.ptr.lhs.cast");
   llvm::Value *RHS
     = Builder.CreatePtrToInt(op.RHS, CGF.PtrDiffTy, "sub.ptr.rhs.cast");
-  Value *diffInChars = Builder.CreateSub(LHS, RHS, "sub.ptr.sub");
+  // Pointer difference in C requires that both operands point to elements of an
+  // array. The size of an array must fit in ptrdiff_t, so the subtraction
+  // cannot overflow. For consistency, we do not set NSW when -fwrapv-pointer is
+  // given.
+  Value *diffInChars =
+      Builder.CreateSub(LHS, RHS, "sub.ptr.sub", /*HasNUW=*/false,
+                        /*HasNSW=*/!CGF.getLangOpts().PointerOverflowDefined);
 
   // Okay, figure out the element size.
   const BinaryOperator *expr = cast<BinaryOperator>(op.E);

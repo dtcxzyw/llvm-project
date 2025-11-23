@@ -31,3 +31,9 @@ int test_struct_bitfield(struct S* s) {
   // DEFAULT: getelementptr inbounds nuw %struct.S, ptr
   // FWRAPV-POINTER: getelementptr %struct.S, ptr
 }
+
+int test_pointer_difference(char* a, char* b, char* c) {
+  return (a - c) < (b - c);
+  // DEFAULT: sub nsw i64
+  // FWRAPV-POINTER: sub i64
+}

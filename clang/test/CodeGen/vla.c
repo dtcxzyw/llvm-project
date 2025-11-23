@@ -134,7 +134,7 @@ int test4(unsigned n, char (*p)[n][n+1][6]) {
   // CHECK-NEXT: [[T1:%.*]] = load ptr, ptr [[P]], align 4
   // CHECK-NEXT: [[T2:%.*]] = ptrtoint ptr [[T0]] to i32
   // CHECK-NEXT: [[T3:%.*]] = ptrtoint ptr [[T1]] to i32
-  // CHECK-NEXT: [[T4:%.*]] = sub i32 [[T2]], [[T3]]
+  // CHECK-NEXT: [[T4:%.*]] = sub nsw i32 [[T2]], [[T3]]
   // CHECK-NEXT: [[T5:%.*]] = mul nuw i32 [[DIM0]], [[DIM1]]
   // CHECK-NEXT: [[T6:%.*]] = mul nuw i32 6, [[T5]]
   // CHECK-NEXT: [[T7:%.*]] = sdiv exact i32 [[T4]], [[T6]]

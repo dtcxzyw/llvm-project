@@ -93,6 +93,10 @@ C/C++ Language Potentially Breaking Changes
 - The ``-Wincompatible-pointer-types`` diagnostic now defaults to an error;
   it can still be downgraded to a warning by passing ``-Wno-error=incompatible-pointer-types``. (#GH74605)
 
+- Clang now sets NSW flag for pointer difference to eliminate dead path in std::vector. This may lead to different
+  behavior when the size of the array is larger than PTRDIFF_MAX. Use ``-fwrapv-pointer`` to make pointer overflow
+  well-defined and restore the previous behavior.
+
 C++ Specific Potentially Breaking Changes
 -----------------------------------------
 - For C++20 modules, the Reduced BMI mode will be the default option. This may introduce

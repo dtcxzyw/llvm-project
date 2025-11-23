@@ -584,7 +584,7 @@ extern "C" void foo5() {
 // CHECK1-NEXT:    [[TMP13:%.*]] = load ptr, ptr [[DOTCAPTURE_EXPR_8]], align 8
 // CHECK1-NEXT:    [[SUB_PTR_LHS_CAST:%.*]] = ptrtoint ptr [[TMP12]] to i64
 // CHECK1-NEXT:    [[SUB_PTR_RHS_CAST:%.*]] = ptrtoint ptr [[TMP13]] to i64
-// CHECK1-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
+// CHECK1-NEXT:    [[SUB_PTR_SUB:%.*]] = sub nsw i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
 // CHECK1-NEXT:    [[SUB_PTR_DIV:%.*]] = sdiv exact i64 [[SUB_PTR_SUB]], 8
 // CHECK1-NEXT:    [[SUB12:%.*]] = sub nsw i64 [[SUB_PTR_DIV]], 1
 // CHECK1-NEXT:    [[ADD13:%.*]] = add nsw i64 [[SUB12]], 1
@@ -614,7 +614,7 @@ extern "C" void foo5() {
 // CHECK1-NEXT:    [[TMP20:%.*]] = load ptr, ptr [[DOTCAPTURE_EXPR_27]], align 8
 // CHECK1-NEXT:    [[SUB_PTR_LHS_CAST31:%.*]] = ptrtoint ptr [[TMP19]] to i64
 // CHECK1-NEXT:    [[SUB_PTR_RHS_CAST32:%.*]] = ptrtoint ptr [[TMP20]] to i64
-// CHECK1-NEXT:    [[SUB_PTR_SUB33:%.*]] = sub i64 [[SUB_PTR_LHS_CAST31]], [[SUB_PTR_RHS_CAST32]]
+// CHECK1-NEXT:    [[SUB_PTR_SUB33:%.*]] = sub nsw i64 [[SUB_PTR_LHS_CAST31]], [[SUB_PTR_RHS_CAST32]]
 // CHECK1-NEXT:    [[SUB_PTR_DIV34:%.*]] = sdiv exact i64 [[SUB_PTR_SUB33]], 8
 // CHECK1-NEXT:    [[SUB35:%.*]] = sub nsw i64 [[SUB_PTR_DIV34]], 1
 // CHECK1-NEXT:    [[ADD36:%.*]] = add nsw i64 [[SUB35]], 1
@@ -1024,7 +1024,7 @@ extern "C" void foo5() {
 // CHECK1-NEXT:    [[TMP13:%.*]] = load ptr, ptr [[DOTCAPTURE_EXPR_8]], align 8
 // CHECK1-NEXT:    [[SUB_PTR_LHS_CAST:%.*]] = ptrtoint ptr [[TMP12]] to i64
 // CHECK1-NEXT:    [[SUB_PTR_RHS_CAST:%.*]] = ptrtoint ptr [[TMP13]] to i64
-// CHECK1-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
+// CHECK1-NEXT:    [[SUB_PTR_SUB:%.*]] = sub nsw i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
 // CHECK1-NEXT:    [[SUB_PTR_DIV:%.*]] = sdiv exact i64 [[SUB_PTR_SUB]], 8
 // CHECK1-NEXT:    [[SUB12:%.*]] = sub nsw i64 [[SUB_PTR_DIV]], 1
 // CHECK1-NEXT:    [[ADD13:%.*]] = add nsw i64 [[SUB12]], 1
@@ -1465,7 +1465,7 @@ extern "C" void foo5() {
 // CHECK2-NEXT:    [[TMP13:%.*]] = load ptr, ptr [[DOTCAPTURE_EXPR_8]], align 8
 // CHECK2-NEXT:    [[SUB_PTR_LHS_CAST:%.*]] = ptrtoint ptr [[TMP12]] to i64
 // CHECK2-NEXT:    [[SUB_PTR_RHS_CAST:%.*]] = ptrtoint ptr [[TMP13]] to i64
-// CHECK2-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
+// CHECK2-NEXT:    [[SUB_PTR_SUB:%.*]] = sub nsw i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
 // CHECK2-NEXT:    [[SUB_PTR_DIV:%.*]] = sdiv exact i64 [[SUB_PTR_SUB]], 8
 // CHECK2-NEXT:    [[SUB12:%.*]] = sub nsw i64 [[SUB_PTR_DIV]], 1
 // CHECK2-NEXT:    [[ADD13:%.*]] = add nsw i64 [[SUB12]], 1
@@ -1495,7 +1495,7 @@ extern "C" void foo5() {
 // CHECK2-NEXT:    [[TMP20:%.*]] = load ptr, ptr [[DOTCAPTURE_EXPR_27]], align 8
 // CHECK2-NEXT:    [[SUB_PTR_LHS_CAST31:%.*]] = ptrtoint ptr [[TMP19]] to i64
 // CHECK2-NEXT:    [[SUB_PTR_RHS_CAST32:%.*]] = ptrtoint ptr [[TMP20]] to i64
-// CHECK2-NEXT:    [[SUB_PTR_SUB33:%.*]] = sub i64 [[SUB_PTR_LHS_CAST31]], [[SUB_PTR_RHS_CAST32]]
+// CHECK2-NEXT:    [[SUB_PTR_SUB33:%.*]] = sub nsw i64 [[SUB_PTR_LHS_CAST31]], [[SUB_PTR_RHS_CAST32]]
 // CHECK2-NEXT:    [[SUB_PTR_DIV34:%.*]] = sdiv exact i64 [[SUB_PTR_SUB33]], 8
 // CHECK2-NEXT:    [[SUB35:%.*]] = sub nsw i64 [[SUB_PTR_DIV34]], 1
 // CHECK2-NEXT:    [[ADD36:%.*]] = add nsw i64 [[SUB35]], 1
@@ -1905,7 +1905,7 @@ extern "C" void foo5() {
 // CHECK2-NEXT:    [[TMP13:%.*]] = load ptr, ptr [[DOTCAPTURE_EXPR_8]], align 8
 // CHECK2-NEXT:    [[SUB_PTR_LHS_CAST:%.*]] = ptrtoint ptr [[TMP12]] to i64
 // CHECK2-NEXT:    [[SUB_PTR_RHS_CAST:%.*]] = ptrtoint ptr [[TMP13]] to i64
-// CHECK2-NEXT:    [[SUB_PTR_SUB:%.*]] = sub i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
+// CHECK2-NEXT:    [[SUB_PTR_SUB:%.*]] = sub nsw i64 [[SUB_PTR_LHS_CAST]], [[SUB_PTR_RHS_CAST]]
 // CHECK2-NEXT:    [[SUB_PTR_DIV:%.*]] = sdiv exact i64 [[SUB_PTR_SUB]], 8
 // CHECK2-NEXT:    [[SUB12:%.*]] = sub nsw i64 [[SUB_PTR_DIV]], 1
 // CHECK2-NEXT:    [[ADD13:%.*]] = add nsw i64 [[SUB12]], 1

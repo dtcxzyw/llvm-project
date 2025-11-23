@@ -3,7 +3,7 @@
 // Under Windows 64, int and long are 32-bits.  Make sure pointer math doesn't
 // cause any sign extensions.
 
-// CHECK:      [[P:%.*]] = add i64 %param, -8
+// CHECK:      [[P:%.*]] = add nsw i64 %param, -8
 // CHECK-NEXT: [[Q:%.*]] = inttoptr i64 [[P]] to ptr
 // CHECK-NEXT: load i64, ptr [[Q]]
 
