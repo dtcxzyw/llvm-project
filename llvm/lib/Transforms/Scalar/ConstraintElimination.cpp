@@ -718,6 +718,35 @@ ConstraintInfo::getConstraint(CmpInst::Predicate Pred, Value *Op0, Value *Op1,
       Pred != CmpInst::ICMP_SLE && Pred != CmpInst::ICMP_SLT)
     return {};
 
+  // Check if we can eliminate right shifts.
+  auto ShiftOperands = [](Value *&Op0, Value *&Op1) {
+    uint64_t ShAmtC;
+    Value *X;
+    // icmp PRED (shr exact X, ShAmtC), C --> icmp PRED X, (C << ShAmtC)
+    if (!match(Op0, m_Exact(m_Shr(m_Value(X), m_ConstantInt(ShAmtC)))))
+      return false;
+    bool IsLShr = cast<BinaryOperator>(Op0)->getOpcode() == Instruction::LShr;
+    // icmp PRED (shr exact X, ShAmtC), (shr exact Y, ShAmtC) --> icmp PRED X, Y
+    // Value *Y;
+    // if (match(Op1, m_Exact(m_Shr(m_Value(Y), m_SpecificInt(ShAmtC))))) {
+    //   Op0 = X;
+    //   Op1 = Y;
+    //   return true;
+    // }
+    const APInt *RHSC;
+    if (!match(Op1, m_APInt(RHSC)))
+      return false;
+      bool Overflow = false;
+      APInt NewC = IsLShr ? RHSC->ushl_ov(ShAmtC, Overflow) : RHSC->sshl_ov(ShAmtC, Overflow);
+      if (Overflow)
+        return false;
+      Op0 = X;
+      Op1 = ConstantInt::get(Op1->getType(), NewC);
+      return true;
+  };
+  if (!ShiftOperands(Op0, Op1))
+    ShiftOperands(Op1, Op0);
+
   SmallVector<ConditionTy, 4> Preconditions;
   bool IsSigned = ForceSignedSystem || CmpInst::isSigned(Pred);
   auto &Value2Index = getValue2Index(IsSigned);
