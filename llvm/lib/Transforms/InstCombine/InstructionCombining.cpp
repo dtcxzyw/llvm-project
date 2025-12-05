@@ -4245,7 +4245,7 @@ Instruction *InstCombinerImpl::visitBranchInst(BranchInst &BI) {
     }
   }
 
-  DC.registerBranch(&BI);
+  // DC.registerBranch(&BI);
   return nullptr;
 }
 
@@ -5912,6 +5912,7 @@ bool InstCombinerImpl::prepareWorklist(Function &F) {
         HandleOnlyLiveSuccessor(BB, BI->getSuccessor(!CondVal));
         continue;
       }
+      DC.registerBranch(BI);
     } else if (SwitchInst *SI = dyn_cast<SwitchInst>(TI)) {
       if (isa<UndefValue>(SI->getCondition())) {
         // Switch on undef is UB.
