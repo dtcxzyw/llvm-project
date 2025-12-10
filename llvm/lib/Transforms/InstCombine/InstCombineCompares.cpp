@@ -8683,7 +8683,7 @@ Instruction *InstCombinerImpl::visitFCmpInst(FCmpInst &I) {
     Changed = true;
   }
 
-  const CmpInst::Predicate Pred = I.getPredicate();
+  CmpInst::Predicate Pred = I.getPredicate();
   Value *Op0 = I.getOperand(0), *Op1 = I.getOperand(1);
   if (Value *V = simplifyFCmpInst(Pred, Op0, Op1, I.getFastMathFlags(),
                                   SQ.getWithInstruction(&I)))
@@ -8826,6 +8826,15 @@ Instruction *InstCombinerImpl::visitFCmpInst(FCmpInst &I) {
       Value *MaskX = Builder.CreateAnd(X, ConstantInt::get(IntTy, SignMask));
       return new ICmpInst(IntPred, MaskX, ConstantInt::getNullValue(IntTy));
     }
+  }
+
+  // Canonicalize predicates.
+  if (FCmpInst::isUnordered(Pred) && (I.hasNoNaNs() || (isKnownNeverNaN(Op0, 
+          getSimplifyQuery().getWithInstruction(&I)) &&
+          isKnownNeverNaN(Op1, getSimplifyQuery().getWithInstruction(&I))))) {
+    Pred = FCmpInst::getOrderedPredicate(Pred);
+    I.setPredicate(Pred);
+    Changed = true;
   }
 
   // Handle fcmp with instruction LHS and constant RHS.
