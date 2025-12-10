@@ -178,6 +178,11 @@ KnownBits llvm::computeKnownBits(const Value *V, const APInt &DemandedElts,
 
 static bool haveNoCommonBitsSetSpecialCases(const Value *LHS, const Value *RHS,
                                             const SimplifyQuery &SQ) {
+  // X op ~X
+  if (match(RHS, m_Not(m_Specific(LHS))) && 
+      isGuaranteedNotToBeUndef(LHS, SQ.AC, SQ.CxtI, SQ.DT))
+    return true;
+  
   // Look for an inverted mask: (X & ~M) op (Y & M).
   {
     Value *M;
