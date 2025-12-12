@@ -1,0 +1,346 @@
+diff --git a/llvm/lib/Transforms/Utils/PredicateInfo.cpp b/llvm/lib/Transforms/Utils/PredicateInfo.cpp
+index 978d5a25a57c8..47f902a7da7be 100644
+--- a/llvm/lib/Transforms/Utils/PredicateInfo.cpp
++++ b/llvm/lib/Transforms/Utils/PredicateInfo.cpp
+@@ -15,7 +15,9 @@
+ #include "llvm/ADT/STLExtras.h"
+ #include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/Analysis/AssumptionCache.h"
++#include "llvm/Analysis/IteratedDominanceFrontier.h"
+ #include "llvm/IR/AssemblyAnnotationWriter.h"
++#include "llvm/IR/CFG.h"
+ #include "llvm/IR/Dominators.h"
+ #include "llvm/IR/IRBuilder.h"
+ #include "llvm/IR/InstIterator.h"
+@@ -212,6 +214,8 @@ class PredicateInfoBuilder {
+   // whether it returned a valid result.
+   DenseMap<Value *, unsigned int> ValueInfoNums;
+ 
++  DenseMap<BasicBlock *, SmallVector<Value *, 4>> PHICandidates;
++
+   BumpPtrAllocator &Allocator;
+ 
+   ValueInfo &getOrCreateValueInfo(Value *);
+@@ -223,6 +227,13 @@ class PredicateInfoBuilder {
+                      SmallVectorImpl<Value *> &OpsToRename);
+   void processSwitch(SwitchInst *, BasicBlock *,
+                      SmallVectorImpl<Value *> &OpsToRename);
++  void identifyPHICandidates(SmallVectorImpl<Value *> &OpsToRename);
++  void needsPHIInsertion(Value *Op,
++                         const SmallPtrSetImpl<BasicBlock *> &DefiningBlocks,
++                         SmallPtrSetImpl<BasicBlock *> &PHIBlocks);
++  PHINode *insertPredicatePHIs(Value *Op, BasicBlock *PHIBlock,
++                               SmallVectorImpl<Value *> &OpsToRename);
++  void processPredicatePHIs(SmallVectorImpl<Value *> &OpsToRename);
+   void renameUses(SmallVectorImpl<Value *> &OpsToRename);
+   void addInfoFor(SmallVectorImpl<Value *> &OpsToRename, Value *Op,
+                   PredicateBase *PB);
+@@ -460,6 +471,114 @@ void PredicateInfoBuilder::processSwitch(
+   }
+ }
+ 
++void PredicateInfoBuilder::identifyPHICandidates(
++    SmallVectorImpl<Value *> &OpsToRename) {
++  for (Value *Op : OpsToRename) {
++    const auto &ValueInfo = getValueInfo(Op);
++    SmallPtrSet<BasicBlock *, 4> DefiningBlocks;
++    for (const auto *PInfo : ValueInfo.Infos) {
++      if (auto *PBranch = dyn_cast<PredicateBranch>(PInfo)) {
++        DefiningBlocks.insert(PBranch->From);
++      } else if (auto *PSwitch = dyn_cast<PredicateSwitch>(PInfo)) {
++        DefiningBlocks.insert(PSwitch->From);
++      }
++    }
++
++    if (DefiningBlocks.size() > 1) {
++      SmallPtrSet<BasicBlock *, 8> PHIBlocks;
++      needsPHIInsertion(Op, DefiningBlocks, PHIBlocks);
++      for (BasicBlock *PHIBlock : PHIBlocks) {
++        PHICandidates[PHIBlock].push_back(Op);
++      }
++    }
++  }
++}
++
++void PredicateInfoBuilder::needsPHIInsertion(
++    Value *Op, const SmallPtrSetImpl<BasicBlock *> &DefiningBlocks,
++    SmallPtrSetImpl<BasicBlock *> &PHIBlocks) {
++  IDFCalculator<false> IDF(DT);
++  IDF.setDefiningBlocks(DefiningBlocks);
++
++  SmallPtrSet<BasicBlock *, 8> LiveInBlocks;
++  for (auto CurUser = Op->users().begin(); CurUser != Op->users().end();
++       ++CurUser) {
++    if (auto *I = dyn_cast<Instruction>(*CurUser)) {
++      LiveInBlocks.insert(I->getParent());
++    }
++  }
++  IDF.setLiveInBlocks(LiveInBlocks);
++
++  SmallVector<BasicBlock *, 4> IDFBlocks;
++  IDF.calculate(IDFBlocks);
++
++  for (const auto &IDFBlock : IDFBlocks) {
++    PHIBlocks.insert(std::move(IDFBlock));
++  }
++}
++
++PHINode *PredicateInfoBuilder::insertPredicatePHIs(
++    Value *Op, BasicBlock *PHIBlock, SmallVectorImpl<Value *> &OpsToRename) {
++  IRBuilder<> Builder(&PHIBlock->front());
++
++  PHINode *PHI = Builder.CreatePHI(Op->getType(), pred_size(PHIBlock),
++                                   Op->getName() + ".predicate.phi");
++  const auto &ValueInfo = getValueInfo(Op);
++
++  for (BasicBlock *Pred : predecessors(PHIBlock)) {
++    Value *IncomingValue = nullptr;
++    for (const auto *PInfo : ValueInfo.Infos) {
++      if (auto *PBranch = dyn_cast<PredicateBranch>(PInfo)) {
++        if (PBranch->From == Pred && PBranch->To == PHIBlock) {
++          IncomingValue = PBranch->OriginalOp;
++        }
++      } else if (auto *PSwitch = dyn_cast<PredicateSwitch>(PInfo)) {
++        if (PSwitch->From == Pred && PSwitch->To == PHIBlock) {
++          IncomingValue = PSwitch->OriginalOp;
++        }
++      }
++    }
++    if (IncomingValue) {
++      PHI->addIncoming(IncomingValue, Pred);
++    } else {
++      PHI->eraseFromParent();
++      return nullptr;
++    }
++  }
++
++  return PHI;
++}
++
++void PredicateInfoBuilder::processPredicatePHIs(
++    SmallVectorImpl<Value *> &OpsToRename) {
++  SmallVector<PHINode *, 4> InsertedPHINodes;
++
++  for (const auto &PHICandidate : PHICandidates) {
++    BasicBlock *PHIBlock = PHICandidate.first;
++    for (Value *Op : PHICandidate.second) {
++      auto *PHI = insertPredicatePHIs(Op, PHIBlock, OpsToRename);
++      InsertedPHINodes.push_back(PHI);
++    }
++  }
++
++  size_t Idx = 0, NumNodes = InsertedPHINodes.size();
++  for (const auto &PHICandidate : PHICandidates) {
++    BasicBlock *PHIBlock = PHICandidate.first;
++    for (Value *Op : PHICandidate.second) {
++      while (Idx < NumNodes && InsertedPHINodes[Idx] == nullptr) {
++        ++Idx;
++      }
++      if (Idx == NumNodes)
++        return;
++      for (Instruction &I : *PHIBlock) {
++        if (!isa<PHINode>(I))
++          I.replaceUsesOfWith(Op, InsertedPHINodes[Idx]);
++      }
++      ++Idx;
++    }
++  }
++}
++
+ // Build predicate info for our function
+ void PredicateInfoBuilder::buildPredicateInfo() {
+   DT.updateDFSNumbers();
+@@ -486,6 +605,10 @@ void PredicateInfoBuilder::buildPredicateInfo() {
+       if (DT.isReachableFromEntry(II->getParent()))
+         processAssume(II, II->getParent(), OpsToRename);
+   }
++
++  identifyPHICandidates(OpsToRename);
++  processPredicatePHIs(OpsToRename);
++
+   // Now rename all our operations.
+   renameUses(OpsToRename);
+ }
+diff --git a/llvm/test/Transforms/LoopVersioningLICM/loopversioningLICM1.ll b/llvm/test/Transforms/LoopVersioningLICM/loopversioningLICM1.ll
+index b4f8abbf83a53..3b194a88c7ea0 100644
+--- a/llvm/test/Transforms/LoopVersioningLICM/loopversioningLICM1.ll
++++ b/llvm/test/Transforms/LoopVersioningLICM/loopversioningLICM1.ll
+@@ -68,10 +68,10 @@ define i32 @foo(ptr nocapture %var1, ptr nocapture readnone %var2, ptr nocapture
+ ; CHECK-NEXT:    [[ADD8]] = add nsw i32 [[ADD86]], [[ADD]]
+ ; CHECK-NEXT:    [[INC]] = add nuw i32 [[J_113]], 1
+ ; CHECK-NEXT:    [[CMP2:%.*]] = icmp ult i32 [[INC]], [[ITR]]
+-; CHECK-NEXT:    br i1 [[CMP2]], label [[FOR_BODY3]], label [[FOR_INC11_LOOPEXIT_LOOPEXIT5:%.*]], !llvm.loop [[LOOP7:![0-9]+]]
++; CHECK-NEXT:    br i1 [[CMP2]], label [[FOR_BODY3]], label [[FOR_INC11_LOOPEXIT_LOOPEXIT7:%.*]], !llvm.loop [[LOOP7:![0-9]+]]
+ ; CHECK:       for.inc11.loopexit.loopexit:
+ ; CHECK-NEXT:    br label [[FOR_INC11_LOOPEXIT:%.*]]
+-; CHECK:       for.inc11.loopexit.loopexit5:
++; CHECK:       for.inc11.loopexit.loopexit7:
+ ; CHECK-NEXT:    [[ADD8_LCSSA:%.*]] = phi i32 [ [[ADD8]], [[FOR_BODY3]] ]
+ ; CHECK-NEXT:    store i32 [[ADD8_LCSSA]], ptr [[ARRAYIDX7]], align 4, !alias.scope [[META2]]
+ ; CHECK-NEXT:    br label [[FOR_INC11_LOOPEXIT]]
+diff --git a/llvm/test/Transforms/NewGVN/phi-predicate-opt.ll b/llvm/test/Transforms/NewGVN/phi-predicate-opt.ll
+new file mode 100644
+index 0000000000000..1164cce689f02
+--- /dev/null
++++ b/llvm/test/Transforms/NewGVN/phi-predicate-opt.ll
+@@ -0,0 +1,39 @@
++; NOTE: Assertions have been autogenerated by utils/update_test_checks.py
++; RUN: opt < %s -passes=newgvn -S | FileCheck %s
++
++@p = local_unnamed_addr global i32 0
++
++define noundef i32 @h5diff(i32 %0, i1 %1) local_unnamed_addr #0 {
++; CHECK-LABEL: @h5diff(
++; CHECK-NEXT:    [[COND:%.*]] = icmp eq i32 [[TMP0:%.*]], 0
++; CHECK-NEXT:    br i1 [[TMP1:%.*]], label [[TMP3:%.*]], label [[TMP4:%.*]]
++; CHECK:       3:
++; CHECK-NEXT:    store i32 1, ptr @p, align 4
++; CHECK-NEXT:    br i1 [[COND]], label [[TMP5:%.*]], label [[COMMON_RET:%.*]]
++; CHECK:       common.ret:
++; CHECK-NEXT:    ret i32 0
++; CHECK:       4:
++; CHECK-NEXT:    store i32 2, ptr @p, align 4
++; CHECK-NEXT:    br i1 [[COND]], label [[TMP5]], label [[COMMON_RET]]
++; CHECK:       5:
++; CHECK-NEXT:    store i32 0, ptr @p, align 4
++; CHECK-NEXT:    br label [[COMMON_RET]]
++;
++  %cond = icmp eq i32 %0, 0
++  br i1 %1, label %3, label %4
++
++3:
++  store i32 1, ptr @p, align 4
++  br i1 %cond, label %5, label %common.ret
++
++common.ret:
++  ret i32 0
++
++4:
++  store i32 2, ptr @p, align 4
++  br i1 %cond, label %5, label %common.ret
++
++5:
++  store i32 %0, ptr @p, align 4
++  br label %common.ret
++}
+diff --git a/llvm/test/Transforms/NewGVN/pr33116.ll b/llvm/test/Transforms/NewGVN/pr33116.ll
+index a0dc3b2382f91..3d272d3efaaf3 100644
+--- a/llvm/test/Transforms/NewGVN/pr33116.ll
++++ b/llvm/test/Transforms/NewGVN/pr33116.ll
+@@ -9,9 +9,9 @@ define void @b(i1 %arg) {
+ ; CHECK:       while.d:
+ ; CHECK-NEXT:    br label [[F:%.*]]
+ ; CHECK:       f:
+-; CHECK-NEXT:    br i1 %arg, label [[IF_E:%.*]], label [[C]]
++; CHECK-NEXT:    br i1 [[ARG:%.*]], label [[IF_E:%.*]], label [[C]]
+ ; CHECK:       c:
+-; CHECK-NEXT:    br i1 %arg, label [[IF_G:%.*]], label [[IF_E]]
++; CHECK-NEXT:    br i1 [[ARG]], label [[IF_G:%.*]], label [[IF_E]]
+ ; CHECK:       if.g:
+ ; CHECK-NEXT:    store i32 undef, ptr @a, align 4
+ ; CHECK-NEXT:    br label [[WHILE_D]]
+diff --git a/llvm/test/Transforms/NewGVN/pr33204.ll b/llvm/test/Transforms/NewGVN/pr33204.ll
+index a57544cc7f557..6a76444420f93 100644
+--- a/llvm/test/Transforms/NewGVN/pr33204.ll
++++ b/llvm/test/Transforms/NewGVN/pr33204.ll
+@@ -24,9 +24,9 @@ define void @hoge(i32 %arg, i1 %arg2) {
+ ; CHECK-NEXT:    unreachable
+ ; CHECK:       bb6:
+ ; CHECK-NEXT:    store i32 [[TMP]], ptr @global.1, align 4, !h [[META0]]
+-; CHECK-NEXT:    br i1 %arg2, label [[BB7:%.*]], label [[BB1]]
++; CHECK-NEXT:    br i1 [[ARG2:%.*]], label [[BB7:%.*]], label [[BB1]]
+ ; CHECK:       bb7:
+-; CHECK-NEXT:    br i1 %arg2, label [[BB10:%.*]], label [[BB8:%.*]]
++; CHECK-NEXT:    br i1 [[ARG2]], label [[BB10:%.*]], label [[BB8:%.*]]
+ ; CHECK:       bb8:
+ ; CHECK-NEXT:    br i1 false, label [[BB9:%.*]], label [[BB3:%.*]]
+ ; CHECK:       bb9:
+diff --git a/llvm/test/Transforms/NewGVN/pr33720.ll b/llvm/test/Transforms/NewGVN/pr33720.ll
+index 5621148a12068..ddd4317a6d2b5 100644
+--- a/llvm/test/Transforms/NewGVN/pr33720.ll
++++ b/llvm/test/Transforms/NewGVN/pr33720.ll
+@@ -8,11 +8,11 @@
+ define void @patatino(i1 %arg) {
+ ; CHECK-LABEL: @patatino(
+ ; CHECK-NEXT:  entry:
+-; CHECK-NEXT:    br i1 %arg, label [[IF_END24:%.*]], label [[FOR_COND16:%.*]]
++; CHECK-NEXT:    br i1 [[ARG:%.*]], label [[IF_END24:%.*]], label [[FOR_COND16:%.*]]
+ ; CHECK:       for.cond2thread-pre-split:
+ ; CHECK-NEXT:    br i1 false, label [[FOR_BODY:%.*]], label [[FOR_COND8_PREHEADER:%.*]]
+ ; CHECK:       for.cond8.preheader:
+-; CHECK-NEXT:    br i1 %arg, label [[L1:%.*]], label [[FOR_COND11THREAD_PRE_SPLIT_LR_PH:%.*]]
++; CHECK-NEXT:    br i1 [[ARG]], label [[L1:%.*]], label [[FOR_COND11THREAD_PRE_SPLIT_LR_PH:%.*]]
+ ; CHECK:       for.cond11thread-pre-split.lr.ph:
+ ; CHECK-NEXT:    br label [[L1]]
+ ; CHECK:       for.body:
+@@ -32,7 +32,7 @@ define void @patatino(i1 %arg) {
+ ; CHECK-NEXT:    br label [[FOR_BODY]]
+ ; CHECK:       for.cond16:
+ ; CHECK-NEXT:    [[J_0:%.*]] = phi ptr [ @f, [[ENTRY:%.*]] ], [ poison, [[FOR_COND20:%.*]] ], [ @e, [[FOR_COND16]] ]
+-; CHECK-NEXT:    br i1 %arg, label [[FOR_COND20]], label [[FOR_COND16]]
++; CHECK-NEXT:    br i1 [[ARG]], label [[FOR_COND20]], label [[FOR_COND16]]
+ ; CHECK:       for.cond20:
+ ; CHECK-NEXT:    [[J_2:%.*]] = phi ptr [ [[J_0]], [[FOR_COND16]] ], [ poison, [[IF_END24]] ]
+ ; CHECK-NEXT:    br i1 true, label [[IF_END24]], label [[FOR_COND16]]
+diff --git a/llvm/test/Transforms/SCCP/2008-01-27-UndefCorrelate.ll b/llvm/test/Transforms/SCCP/2008-01-27-UndefCorrelate.ll
+index 895b1393dadae..71b4ab85a4dc2 100644
+--- a/llvm/test/Transforms/SCCP/2008-01-27-UndefCorrelate.ll
++++ b/llvm/test/Transforms/SCCP/2008-01-27-UndefCorrelate.ll
+@@ -19,7 +19,8 @@ define i32 @main(i1 %arg) {
+ ; CHECK-NEXT:    [[TMP9:%.*]] = icmp slt i32 [[K]], 10
+ ; CHECK-NEXT:    br i1 [[TMP9]], label [[BB_BACKEDGE]], label [[BB12]]
+ ; CHECK:       bb12:
+-; CHECK-NEXT:    [[TMP14:%.*]] = icmp eq i32 [[K]], 10
++; CHECK-NEXT:    [[K_PREDICATE_PHI:%.*]] = phi i32 [ [[K]], [[COND_FALSE]] ], [ [[K]], [[COND_TRUE]] ]
++; CHECK-NEXT:    [[TMP14:%.*]] = icmp eq i32 [[K_PREDICATE_PHI]], 10
+ ; CHECK-NEXT:    br i1 [[TMP14]], label [[COND_NEXT18:%.*]], label [[COND_TRUE17:%.*]]
+ ; CHECK:       cond_true17:
+ ; CHECK-NEXT:    tail call void @abort()
+diff --git a/llvm/test/Transforms/Util/PredicateInfo/phi-predicate.ll b/llvm/test/Transforms/Util/PredicateInfo/phi-predicate.ll
+new file mode 100644
+index 0000000000000..c83c6f7cadc33
+--- /dev/null
++++ b/llvm/test/Transforms/Util/PredicateInfo/phi-predicate.ll
+@@ -0,0 +1,42 @@
++; NOTE: Assertions have been autogenerated by utils/update_test_checks.py
++; RUN: opt -S -passes=print-predicateinfo < %s 2>&1 >/dev/null | FileCheck %s
++
++@p = local_unnamed_addr global i32 0
++
++define noundef i32 @h5diff(i32 %0, i1 %1) local_unnamed_addr #0 {
++; CHECK-LABEL: @h5diff(
++; CHECK-NEXT:    [[COND:%.*]] = icmp eq i32 [[TMP0:%.*]], 0
++; CHECK-NEXT:    br i1 [[TMP1:%.*]], label [[TMP3:%.*]], label [[TMP4:%.*]]
++; CHECK:       3:
++; CHECK-NEXT:    store i32 1, ptr @p, align 4
++; CHECK:         [[DOT0:%.*]] = bitcast i32 [[TMP0]] to i32
++; CHECK-NEXT:    br i1 [[COND]], label [[TMP5:%.*]], label [[COMMON_RET:%.*]]
++; CHECK:       common.ret:
++; CHECK-NEXT:    ret i32 0
++; CHECK:       4:
++; CHECK-NEXT:    store i32 2, ptr @p, align 4
++; CHECK:         [[DOT1:%.*]] = bitcast i32 [[TMP0]] to i32
++; CHECK-NEXT:    br i1 [[COND]], label [[TMP5]], label [[COMMON_RET]]
++; CHECK:       5:
++; CHECK-NEXT:    [[DOTPREDICATE_PHI:%.*]] = phi i32 [ [[DOT1]], [[TMP4]] ], [ [[DOT0]], [[TMP3]] ]
++; CHECK-NEXT:    store i32 [[DOTPREDICATE_PHI]], ptr @p, align 4
++; CHECK-NEXT:    br label [[COMMON_RET]]
++;
++  %cond = icmp eq i32 %0, 0
++  br i1 %1, label %3, label %4
++
++3:
++  store i32 1, ptr @p, align 4
++  br i1 %cond, label %5, label %common.ret
++
++common.ret:
++  ret i32 0
++
++4:
++  store i32 2, ptr @p, align 4
++  br i1 %cond, label %5, label %common.ret
++
++5:
++  store i32 %0, ptr @p, align 4
++  br label %common.ret
++}
