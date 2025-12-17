@@ -15,7 +15,9 @@
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/IteratedDominanceFrontier.h"
 #include "llvm/IR/AssemblyAnnotationWriter.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstIterator.h"
@@ -212,6 +214,8 @@ class PredicateInfoBuilder {
   // whether it returned a valid result.
   DenseMap<Value *, unsigned int> ValueInfoNums;
 
+  DenseMap<BasicBlock *, SmallVector<Value *, 4>> PHICandidates;
+
   BumpPtrAllocator &Allocator;
 
   ValueInfo &getOrCreateValueInfo(Value *);
@@ -223,6 +227,13 @@ class PredicateInfoBuilder {
                      SmallVectorImpl<Value *> &OpsToRename);
   void processSwitch(SwitchInst *, BasicBlock *,
                      SmallVectorImpl<Value *> &OpsToRename);
+  void identifyPHICandidates(SmallVectorImpl<Value *> &OpsToRename);
+  void needsPHIInsertion(Value *Op,
+                         const SmallPtrSetImpl<BasicBlock *> &DefiningBlocks,
+                         SmallVectorImpl<BasicBlock *> &PHIBlocks);
+  PHINode *insertPredicatePHIs(Value *Op, BasicBlock *PHIBlock,
+                               SmallVectorImpl<Value *> &OpsToRename);
+  void processPredicatePHIs(SmallVectorImpl<Value *> &OpsToRename);
   void renameUses(SmallVectorImpl<Value *> &OpsToRename);
   void addInfoFor(SmallVectorImpl<Value *> &OpsToRename, Value *Op,
                   PredicateBase *PB);
@@ -467,6 +478,105 @@ void PredicateInfoBuilder::processSwitch(
   }
 }
 
+void PredicateInfoBuilder::identifyPHICandidates(
+    SmallVectorImpl<Value *> &OpsToRename) {
+  for (Value *Op : OpsToRename) {
+    const auto &ValueInfo = getValueInfo(Op);
+    SmallPtrSet<BasicBlock *, 4> DefiningBlocks;
+    for (const auto *PInfo : ValueInfo.Infos) {
+      if (auto *PBranch = dyn_cast<PredicateBranch>(PInfo)) {
+        DefiningBlocks.insert(PBranch->From);
+      } else if (auto *PSwitch = dyn_cast<PredicateSwitch>(PInfo)) {
+        DefiningBlocks.insert(PSwitch->From);
+      }
+    }
+
+    if (DefiningBlocks.size() > 1) {
+      SmallVector<BasicBlock *, 8> PHIBlocks;
+      needsPHIInsertion(Op, DefiningBlocks, PHIBlocks);
+      for (BasicBlock *PHIBlock : PHIBlocks) {
+        PHICandidates[PHIBlock].push_back(Op);
+      }
+    }
+  }
+}
+
+void PredicateInfoBuilder::needsPHIInsertion(
+    Value *Op, const SmallPtrSetImpl<BasicBlock *> &DefiningBlocks,
+    SmallVectorImpl<BasicBlock *> &PHIBlocks) {
+  IDFCalculator<false> IDF(DT);
+  IDF.setDefiningBlocks(DefiningBlocks);
+
+  SmallPtrSet<BasicBlock *, 8> LiveInBlocks;
+  for (auto *CurUser : Op->users()) {
+    if (auto *I = dyn_cast<Instruction>(CurUser))
+      LiveInBlocks.insert(I->getParent());
+  }
+  IDF.setLiveInBlocks(LiveInBlocks);
+
+  SmallVector<BasicBlock *, 4> IDFBlocks;
+  IDF.calculate(IDFBlocks);
+
+  for (const auto &IDFBlock : IDFBlocks) {
+    PHIBlocks.push_back(std::move(IDFBlock));
+  }
+}
+
+PHINode *PredicateInfoBuilder::insertPredicatePHIs(
+    Value *Op, BasicBlock *PHIBlock, SmallVectorImpl<Value *> &OpsToRename) {
+  const auto &ValueInfo = getValueInfo(Op);
+
+  SmallVector<std::pair<Value *, BasicBlock *>> IncomingValues;
+  for (BasicBlock *Pred : predecessors(PHIBlock)) {
+    Value *IncomingValue = nullptr;
+    for (const auto *PInfo : ValueInfo.Infos) {
+      if (auto *PBranch = dyn_cast<PredicateBranch>(PInfo)) {
+        if (PBranch->From == Pred && PBranch->To == PHIBlock) {
+          IncomingValue = PBranch->OriginalOp;
+        }
+      } else if (auto *PSwitch = dyn_cast<PredicateSwitch>(PInfo)) {
+        if (PSwitch->From == Pred && PSwitch->To == PHIBlock) {
+          IncomingValue = PSwitch->OriginalOp;
+        }
+      }
+    }
+    if (!IncomingValue) {
+      return nullptr;
+    }
+    IncomingValues.push_back({IncomingValue, Pred});
+  }
+
+  IRBuilder<> Builder(&PHIBlock->front());
+  PHINode *PHI = Builder.CreatePHI(Op->getType(), pred_size(PHIBlock),
+                                   Op->getName() + ".predicate.phi");
+
+  for (auto &[IncomingValue, Pred] : IncomingValues) {
+    PHI->addIncoming(IncomingValue, Pred);
+  }
+
+  return PHI;
+}
+
+void PredicateInfoBuilder::processPredicatePHIs(
+    SmallVectorImpl<Value *> &OpsToRename) {
+  for (const auto &PHICandidate : PHICandidates) {
+    BasicBlock *PHIBlock = PHICandidate.first;
+    for (Value *Op : PHICandidate.second) {
+      if (auto *PHI = insertPredicatePHIs(Op, PHIBlock, OpsToRename)) {
+        for (Instruction &I : *PHIBlock) {
+          if (!DT.dominates(PHI, &I))
+            continue;
+          for (unsigned OpIdx = 0; OpIdx < I.getNumOperands(); ++OpIdx) {
+            if (I.getOperand(OpIdx) == Op) {
+              I.setOperand(OpIdx, PHI);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 // Build predicate info for our function
 void PredicateInfoBuilder::buildPredicateInfo() {
   DT.updateDFSNumbers();
@@ -493,6 +603,10 @@ void PredicateInfoBuilder::buildPredicateInfo() {
       if (DT.isReachableFromEntry(II->getParent()))
         processAssume(II, II->getParent(), OpsToRename);
   }
+
+  identifyPHICandidates(OpsToRename);
+  processPredicatePHIs(OpsToRename);
+
   // Now rename all our operations.
   renameUses(OpsToRename);
 }
