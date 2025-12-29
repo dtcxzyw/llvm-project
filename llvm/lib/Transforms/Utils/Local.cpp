@@ -1077,6 +1077,28 @@ static void redirectValuesFromPredecessorsToPhi(BasicBlock *BB,
   Value *OldVal = PN->removeIncomingValue(BB, false);
   assert(OldVal && "No entry in PHI for Pred BB!");
 
+  // Fast path: If BB has a single predecessor and the incoming value is not
+  // defined in BB itself, we can directly redirect the edge.
+  //
+  // Note: We rely on TryToSimplifyUncondBranchFromEmptyBlock (the caller) to
+  // have already verified via CanPropagatePredecessorsForPHIs that merging
+  // blocks won't introduce value conflicts for any common predecessors.
+  auto *BBSinglePred = BB->getSinglePredecessor();
+  Instruction *OldInst = dyn_cast<Instruction>(OldVal);
+  if (BBSinglePred && OldInst && OldInst->getParent() != BB) {
+    PN->addIncoming(OldVal, BBSinglePred);
+
+    auto *knownDefine = OldVal;
+    for (unsigned i = 0, e = PN->getNumIncomingValues(); i != e; ++i)
+      if (PN->getIncomingBlock(i) == BBSinglePred &&
+          !isa<UndefValue>(PN->getIncomingValue(i)))
+        knownDefine = PN->getIncomingValue(i);
+    for (unsigned i = 0, e = PN->getNumIncomingValues(); i != e; ++i)
+      if (PN->getIncomingBlock(i) == BBSinglePred)
+        PN->setIncomingValue(i, knownDefine);
+    return;
+  }
+
   IncomingValueMap IncomingValues;
 
   // We are merging two blocks - BB, and the block containing PN - and
