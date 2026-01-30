@@ -7774,11 +7774,10 @@ static bool isGuaranteedNotToBeUndefOrPoison(
       if (const auto *PN = dyn_cast<PHINode>(V)) {
         BinaryOperator *BO;
         Value *Start, *Step;
-        if (matchSimpleRecurrence(PN, BO, Start, Step) &&
-            !::canCreateUndefOrPoison(cast<Operator>(BO), Kind,
+        if (matchSimpleRecurrence(PN, BO, Start, Step))
+          return !::canCreateUndefOrPoison(cast<Operator>(BO), Kind,
                                       /*ConsiderFlagsAndMetadata=*/true) &&
-            OpCheck(Start) && OpCheck(Step))
-          return true;
+            OpCheck(Start) && OpCheck(Step);
 
         unsigned Num = PN->getNumIncomingValues();
         bool IsWellDefined = true;
