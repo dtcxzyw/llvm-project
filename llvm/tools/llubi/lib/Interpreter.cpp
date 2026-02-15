@@ -714,6 +714,55 @@ public:
     setResult(SI, std::move(Res));
   }
 
+  void visitAllocaInst(AllocaInst &AI) {
+
+  }
+
+  void visitLoadInst(LoadInst &LI) {
+    auto RetVal = load(getValue(LI.getPointerOperand()), LI.getAlign().value(),
+                       LI.getType(), LI.isVolatile());
+    // TODO: handle metadata
+    setResult(LI, std::move(RetVal));
+  }
+
+  void visitStoreInst(StoreInst &SI) {
+    auto &Ptr = getValue(SI.getPointerOperand());
+    auto &Val = getValue(SI.getValueOperand());
+    // TODO: handle metadata
+    store(Ptr, SI.getAlign().value(), Val,
+          SI.getValueOperand()->getType(), SI.isVolatile());
+  }
+
+  void visitGetElementPtrInst(GetElementPtrInst &GEP) {
+    
+  }
+
+  void visitIntToPtr(IntToPtrInst &I) {
+    return visitUnOp(I, [&](const SingleValue &V) -> SingleValue {
+      if (isPoison(V))
+        return poison();
+      return MemMgr.lookupPointer(std::get<APInt>(V));
+    });
+  }
+
+  void visitPtrToInt(PtrToIntInst &I) {
+    return visitUnOp(I, [&](const SingleValue &V) -> SingleValue {
+      if (isPoison(V))
+        return poison();
+      auto &Ptr = std::get<Pointer>(V);
+      return Ptr.Address;
+    });
+  }
+
+  void visitPtrToAddr(PtrToAddrInst &I) {
+    return visitUnOp(I, [&](const SingleValue &V) -> SingleValue {
+      if (isPoison(V))
+        return poison();
+      auto &Ptr = std::get<Pointer>(V);
+      return Ptr.Address;
+    });
+  }
+
   void visitInstruction(Instruction &I) {
     Handler.onUnrecognizedInstruction(I);
     Status = false;
