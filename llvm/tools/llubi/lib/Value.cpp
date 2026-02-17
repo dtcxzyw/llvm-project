@@ -22,8 +22,8 @@ void Pointer::print(raw_ostream &OS) const {
   OS << "ptr 0x" << AddrStr << " [";
   if (Obj) {
     OS << Obj->getName();
-    if (Offset)
-      OS << " + " << Offset;
+    if (Address != Obj->getAddress())
+      OS << " + " << (Address - Obj->getAddress());
   } else {
     OS << "dangling";
   }
@@ -31,7 +31,7 @@ void Pointer::print(raw_ostream &OS) const {
 }
 
 AnyValue Pointer::null(unsigned BitWidth) {
-  return AnyValue(Pointer(nullptr, APInt::getZero(BitWidth), 0));
+  return AnyValue(Pointer(nullptr, APInt::getZero(BitWidth)));
 }
 
 void AnyValue::print(raw_ostream &OS) const {

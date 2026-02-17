@@ -14,6 +14,7 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/IR/Module.h"
 #include <map>
+#include <random>
 
 namespace llvm::ubi {
 
@@ -21,6 +22,11 @@ enum class MemInitKind {
   Zeroed,
   Uninitialized,
   Poisoned,
+};
+
+enum class UndefValueBehavior {
+  NonDeterministic, // Each use of the undef value can yield different results.
+  Zero,             // All uses of the undef value yield zero.
 };
 
 enum class MemoryObjectState {
@@ -65,17 +71,20 @@ public:
   StringRef getName() const { return Name; }
   unsigned getAddressSpace() const { return AS; }
   MemoryObjectState getState() const { return State; }
+  void setState(MemoryObjectState S) { State = S; }
   bool isConstant() const { return IsConstant; }
   void setIsConstant(bool C) { IsConstant = C; }
+
+  bool inBounds(const APInt &NewAddr) const {
+    return NewAddr.uge(Address) && NewAddr.ule(Address + Size);
+  }
 
   Byte &operator[](uint64_t Offset) {
     assert(Offset < Size && "Offset out of bounds");
     return Bytes[Offset];
   }
-  void writeRawBytes(uint64_t Offset, const void *Data, uint64_t Length);
-  void writeInteger(uint64_t Offset, const APInt &Int, const DataLayout &DL);
-  void writeFloat(uint64_t Offset, const APFloat &Float, const DataLayout &DL);
-  void writePointer(uint64_t Offset, const Pointer &Ptr, const DataLayout &DL);
+  ArrayRef<Byte> getBytes() const { return Bytes; }
+  MutableArrayRef<Byte> getBytes() { return Bytes; }
 
   void markAsFreed();
 };
@@ -122,6 +131,9 @@ class Context {
   uint32_t VScale = 4;
   uint32_t MaxSteps = 0;
   uint32_t MaxStackDepth = 256;
+  UndefValueBehavior UndefBehavior = UndefValueBehavior::NonDeterministic;
+
+  std::mt19937_64 Rng;
 
   // Memory
   uint64_t UsedMem = 0;
@@ -129,7 +141,13 @@ class Context {
   // For now we don't model the behavior of address reuse, which is common
   // with stack coloring.
   uint64_t AllocationBase = 8;
+  // Maintains a global list of ‘exposed’ provenances. This is used to form a
+  // pointer with an exposed provenance.
   std::map<uint64_t, IntrusiveRefCntPtr<MemoryObject>> MemoryObjects;
+  AnyValue fromBytes(ArrayRef<Byte> Bytes, Type *Ty, uint32_t &OffsetInBits,
+                     bool CheckPaddingBits);
+  void toBytes(const AnyValue &Val, Type *Ty, uint32_t &OffsetInBits,
+               MutableArrayRef<Byte> Bytes, bool PaddingBits);
 
   // Constants
   // Use std::map to avoid iterator/reference invalidation.
@@ -156,10 +174,13 @@ public:
   void setVScale(uint32_t VS) { VScale = VS; }
   void setMaxSteps(uint32_t MS) { MaxSteps = MS; }
   void setMaxStackDepth(uint32_t Depth) { MaxStackDepth = Depth; }
+  void setUndefValueBehavior(UndefValueBehavior UB) { UndefBehavior = UB; }
+  void reseed(uint32_t Seed) { Rng.seed(Seed); }
   uint64_t getMemoryLimit() const { return MaxMem; }
   uint32_t getVScale() const { return VScale; }
   uint32_t getMaxSteps() const { return MaxSteps; }
   uint32_t getMaxStackDepth() const { return MaxStackDepth; }
+  UndefValueBehavior getUndefValueBehavior() const { return UndefBehavior; }
 
   LLVMContext &getContext() const { return Ctx; }
   const DataLayout &getDataLayout() const { return DL; }
@@ -178,9 +199,29 @@ public:
   /// Derive a pointer from a memory object with offset 0.
   /// Please use Pointer's interface for further manipulations.
   Pointer deriveFromMemoryObject(IntrusiveRefCntPtr<MemoryObject> Obj);
+  /// Form a pointer from a raw address, with an exposed provenance if possible.
+  /// It will return a pointer with no provenance if the address does not fall
+  /// within the address range of any valid target object in the same address
+  /// space.
+  Pointer exposeProvenance(const APInt &Address, unsigned AS);
+
+  /// Convert byte sequence to an value of the given type. Uninitialized bits
+  /// are flushed according to the options.
+  AnyValue fromBytes(ArrayRef<Byte> Bytes, Type *Ty);
+  /// Convert a value to byte sequence. Padding bits are set to zero.
+  void toBytes(const AnyValue &Val, Type *Ty, MutableArrayRef<Byte> Bytes);
+  /// Direct memory load without checks.
+  AnyValue load(MemoryObject &MO, uint64_t Offset, Type *ValTy);
+  /// Direct memory store without checks.
+  void store(MemoryObject &MO, uint64_t Offset, const AnyValue &Val,
+             Type *ValTy);
+  void storeRawBytes(MemoryObject &MO, uint64_t Offset, const void *Data,
+                     uint64_t Size);
 
   Function *getTargetFunction(const Pointer &Ptr);
   BasicBlock *getTargetBlock(const Pointer &Ptr);
+
+  void freeze(AnyValue &Val, Type *Ty);
 
   /// Initialize global variables and function/block objects. This function
   /// should be called before executing any function. Returns false if the
