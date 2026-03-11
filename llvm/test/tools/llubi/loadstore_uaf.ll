@@ -16,6 +16,6 @@ define void @main() {
 ; CHECK-NEXT:   %alloc = alloca i32, align 4 => ptr 0x8 [alloc]
 ; CHECK-NEXT:   ret ptr %alloc
 ; CHECK-NEXT: Exiting function: stack_object
-; CHECK-NEXT:   %alloc = call ptr @stack_object() => ptr 0x8 [dangling]
+; CHECK-NEXT:   %alloc = call ptr @stack_object() => ptr 0x8 [alloc (dangling)]
 ; CHECK-NEXT: Immediate UB detected: Try to access a dead memory object.
 ; CHECK-NEXT: error: Execution of function 'main' failed.
