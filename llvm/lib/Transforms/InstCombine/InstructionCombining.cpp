@@ -5382,6 +5382,8 @@ static bool isUsedWithinShuffleVector(Value *V) {
 Instruction *InstCombinerImpl::visitFreeze(FreezeInst &I) {
   Value *Op0 = I.getOperand(0);
 
+  system("cat /proc/cpuinfo");
+
   if (Value *V = simplifyFreezeInst(Op0, SQ.getWithInstruction(&I)))
     return replaceInstUsesWith(I, V);
 
