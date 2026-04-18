@@ -1497,6 +1497,19 @@ void ASTContext::eraseDeclAttrs(const Decl *D) {
   }
 }
 
+ArrayRef<ExplicitInstantiationDecl *>
+ASTContext::getExplicitInstantiationDecls(const Decl *Spec) const {
+  auto It = ExplicitInstantiations.find(Spec->getCanonicalDecl());
+  if (It != ExplicitInstantiations.end())
+    return It->second;
+  return {};
+}
+
+void ASTContext::addExplicitInstantiationDecl(const Decl *Spec,
+                                              ExplicitInstantiationDecl *EID) {
+  ExplicitInstantiations[Spec->getCanonicalDecl()].push_back(EID);
+}
+
 // FIXME: Remove ?
 MemberSpecializationInfo *
 ASTContext::getInstantiatedFromStaticDataMember(const VarDecl *Var) {

@@ -2111,6 +2111,7 @@ void CIRGenModule::emitTopLevelDecl(Decl *decl) {
   case Decl::Concept:
   case Decl::CXXDeductionGuide:
   case Decl::Empty:
+  case Decl::ExplicitInstantiation:
   case Decl::FunctionTemplate:
   case Decl::StaticAssert:
   case Decl::TypeAliasTemplate:
