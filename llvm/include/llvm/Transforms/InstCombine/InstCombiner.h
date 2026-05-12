@@ -19,6 +19,7 @@
 #define LLVM_TRANSFORMS_INSTCOMBINE_INSTCOMBINER_H
 
 #include "llvm/ADT/PostOrderIterator.h"
+#include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/DomConditionCache.h"
 #include "llvm/Analysis/InstructionSimplify.h"
 #include "llvm/Analysis/TargetFolder.h"
@@ -417,7 +418,19 @@ public:
     if (V->use_empty() && isa<Instruction>(V) && !V->hasName() && I.hasName())
       V->takeName(&I);
 
+    SmallVector<User *> Users;
+    if (!isa<Constant>(V))
+      Users.assign(I.user_begin(), I.user_end());
+
     I.replaceAllUsesWith(V);
+    
+    for (auto *U : Users) {
+      for (auto &AssumeVH : AC.assumptionsFor(U)) {
+        if (!AssumeVH)
+            continue;
+        AC.updateAffectedValues(cast<AssumeInst>(AssumeVH));
+      }
+    }
     return &I;
   }
 
