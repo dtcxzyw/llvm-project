@@ -3057,7 +3057,8 @@ static Value *simplifyICmpWithZero(CmpPredicate Pred, Value *LHS, Value *RHS,
     KnownBits LHSKnown = computeKnownBits(LHS, Q);
     if (LHSKnown.isNegative())
       return getTrue(ITy);
-    if (LHSKnown.isNonNegative() && isKnownNonZero(LHS, Q))
+    if (LHSKnown.isNonNegative() &&
+        (LHSKnown.isNonZero() || isKnownNonZero(LHS, Q)))
       return getFalse(ITy);
     break;
   }
@@ -3073,7 +3074,8 @@ static Value *simplifyICmpWithZero(CmpPredicate Pred, Value *LHS, Value *RHS,
     KnownBits LHSKnown = computeKnownBits(LHS, Q);
     if (LHSKnown.isNegative())
       return getFalse(ITy);
-    if (LHSKnown.isNonNegative() && isKnownNonZero(LHS, Q))
+    if (LHSKnown.isNonNegative() &&
+        (LHSKnown.isNonZero() || isKnownNonZero(LHS, Q)))
       return getTrue(ITy);
     break;
   }

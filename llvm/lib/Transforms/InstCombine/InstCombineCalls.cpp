@@ -708,7 +708,8 @@ static Instruction *foldCtpop(IntrinsicInst &II, InstCombinerImpl &IC) {
   // More generally we can also handle non-constant power of 2 patterns such as
   // shl/shr(Pow2, X), (X & -X), etc... by transforming:
   // ctpop(Pow2OrZero) --> icmp ne X, 0
-  if (IC.isKnownToBeAPowerOfTwo(Op0, /* OrZero */ true))
+  if (Known.countMinPopulation() <= 1 &&
+      IC.isKnownToBeAPowerOfTwo(Op0, /* OrZero */ true))
     return CastInst::Create(Instruction::ZExt,
                             IC.Builder.CreateICmp(ICmpInst::ICMP_NE, Op0,
                                                   Constant::getNullValue(Ty)),

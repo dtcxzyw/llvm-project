@@ -1224,12 +1224,10 @@ Instruction *InstCombinerImpl::foldICmpWithZero(ICmpInst &Cmp) {
   //   icmp eq/ne %x, 0
   Value *X, *Y;
   if (match(Cmp.getOperand(0), m_URem(m_Value(X), m_Value(Y))) &&
-      ICmpInst::isEquality(Pred)) {
-    KnownBits XKnown = computeKnownBits(X, &Cmp);
-    KnownBits YKnown = computeKnownBits(Y, &Cmp);
-    if (XKnown.countMaxPopulation() == 1 && YKnown.countMinPopulation() >= 2)
-      return new ICmpInst(Pred, X, Cmp.getOperand(1));
-  }
+      ICmpInst::isEquality(Pred) &&
+      computeKnownBits(X, &Cmp).countMaxPopulation() == 1 &&
+      computeKnownBits(Y, &Cmp).countMinPopulation() >= 2)
+    return new ICmpInst(Pred, X, Cmp.getOperand(1));
 
   // (icmp eq/ne (mul X Y)) -> (icmp eq/ne X/Y) if we know about whether X/Y are
   // odd/non-zero/there is no overflow.

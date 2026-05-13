@@ -7421,9 +7421,8 @@ OverflowResult llvm::computeOverflowForSignedMul(const Value *LHS,
     // product is exactly the minimum negative number.
     // E.g. mul i16 with 17 sign bits: 0xff00 * 0xff80 = 0x8000
     // For simplicity we just check if at least one side is not negative.
-    KnownBits LHSKnown = computeKnownBits(LHS, SQ);
-    KnownBits RHSKnown = computeKnownBits(RHS, SQ);
-    if (LHSKnown.isNonNegative() || RHSKnown.isNonNegative())
+    if (computeKnownBits(LHS, SQ).isNonNegative() ||
+        computeKnownBits(RHS, SQ).isNonNegative())
       return OverflowResult::NeverOverflows;
   }
   return OverflowResult::MayOverflow;

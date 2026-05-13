@@ -969,8 +969,7 @@ Instruction *InstCombinerImpl::foldAddWithConstant(BinaryOperator &Add) {
         ShAmt = BitWidth - C->logBase2() - 1;
       else if (C2->isPowerOf2())
         ShAmt = BitWidth - C2->logBase2() - 1;
-      if (ShAmt &&
-          MaskedValueIsZero(X, APInt::getHighBitsSet(BitWidth, ShAmt), &Add)) {
+      if (ShAmt && LHSKnown.countMinLeadingZeros() >= ShAmt) {
         Constant *ShAmtC = ConstantInt::get(Ty, ShAmt);
         Value *NewShl = Builder.CreateShl(X, ShAmtC, "sext");
         return BinaryOperator::CreateAShr(NewShl, ShAmtC);
