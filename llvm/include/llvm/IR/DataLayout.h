@@ -604,6 +604,8 @@ public:
     return getTypeSizeInBits(Ty) == getTypeStoreSizeInBits(Ty);
   }
 
+  LLVM_ABI TypeSize getStructTypeAllocSize(StructType *Ty) const;
+
   /// Returns the offset in bytes between successive objects of the
   /// specified type, including alignment padding.
   ///
@@ -612,7 +614,36 @@ public:
   ///
   /// This is the amount that alloca reserves for this type. For example,
   /// returns 12 or 16 for x86_fp80, depending on alignment.
-  LLVM_ABI TypeSize getTypeAllocSize(Type *Ty) const;
+  TypeSize getTypeAllocSize(Type *Ty) const {
+    switch (Ty->getTypeID()) {
+    case Type::ArrayTyID: {
+      // The alignment of the array is the alignment of the element, so there
+      // is no need for further adjustment.
+      auto *ATy = cast<ArrayType>(Ty);
+      return ATy->getNumElements() * getTypeAllocSize(ATy->getElementType());
+    }
+    case Type::StructTyID: {
+      return getStructTypeAllocSize(cast<StructType>(Ty));
+    }
+    case Type::IntegerTyID: {
+      unsigned BitWidth = Ty->getIntegerBitWidth();
+      TypeSize Size = TypeSize::getFixed(divideCeil(BitWidth, 8));
+      Align A = getIntegerAlignment(BitWidth, /*ABI=*/true);
+      return alignTo(Size, A.value());
+    }
+    case Type::PointerTyID: {
+      unsigned AS = Ty->getPointerAddressSpace();
+      TypeSize Size = TypeSize::getFixed(getPointerSize(AS));
+      return alignTo(Size, getPointerABIAlignment(AS).value());
+    }
+    case Type::TargetExtTyID: {
+      Type *LayoutTy = cast<TargetExtType>(Ty)->getLayoutType();
+      return getTypeAllocSize(LayoutTy);
+    }
+    default:
+      return alignTo(getTypeStoreSize(Ty), getABITypeAlign(Ty).value());
+    }
+  }
 
   /// Returns the offset in bits between successive objects of the
   /// specified type, including alignment padding; always a multiple of 8.
