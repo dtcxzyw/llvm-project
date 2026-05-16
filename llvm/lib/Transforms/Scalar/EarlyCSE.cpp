@@ -1809,11 +1809,12 @@ bool EarlyCSE::run() {
   // discussion on this:
   // http://lists.llvm.org/pipermail/llvm-commits/Week-of-Mon-20120116/135228.html
   std::deque<StackNode *> nodesToProcess;
+  BumpPtrAllocator Allocator;
 
   bool Changed = false;
 
   // Process the root node.
-  nodesToProcess.push_back(new StackNode(
+  nodesToProcess.push_back(new (Allocator) StackNode(
       AvailableValues, AvailableLoads, AvailableInvariants, AvailableCalls,
       AvailableGEPs, CurrentGeneration, DT.getRootNode(),
       DT.getRootNode()->begin(), DT.getRootNode()->end()));
@@ -1838,14 +1839,14 @@ bool EarlyCSE::run() {
     } else if (NodeToProcess->childIter() != NodeToProcess->end()) {
       // Push the next child onto the stack.
       DomTreeNode *child = NodeToProcess->nextChild();
-      nodesToProcess.push_back(new StackNode(
+      nodesToProcess.push_back(new (Allocator) StackNode(
           AvailableValues, AvailableLoads, AvailableInvariants, AvailableCalls,
           AvailableGEPs, NodeToProcess->childGeneration(), child,
           child->begin(), child->end()));
     } else {
       // It has been processed, and there are no more children to process,
       // so delete it and pop it off the stack.
-      delete NodeToProcess;
+      NodeToProcess->~StackNode();
       nodesToProcess.pop_back();
     }
   } // while (!nodes...)
