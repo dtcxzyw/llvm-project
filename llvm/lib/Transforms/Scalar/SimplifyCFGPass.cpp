@@ -287,13 +287,12 @@ static bool simplifyFunctionCFGImpl(Function &F, const TargetTransformInfo &TTI,
   // iterate between the two optimizations.  We structure the code like this to
   // avoid rerunning iterativelySimplifyCFG if the second pass of
   // removeUnreachableBlocks doesn't do anything.
-  if (!removeUnreachableBlocks(F, DT ? &DTU : nullptr))
-    return true;
-
   do {
-    EverChanged = iterativelySimplifyCFG(F, TTI, DT ? &DTU : nullptr, Options);
-    EverChanged |= removeUnreachableBlocks(F, DT ? &DTU : nullptr);
-  } while (EverChanged);
+    if (!removeUnreachableBlocks(F, DT ? &DTU : nullptr))
+      return true;
+    if (!iterativelySimplifyCFG(F, TTI, DT ? &DTU : nullptr, Options))
+      return true;
+  } while (true);
 
   return true;
 }
