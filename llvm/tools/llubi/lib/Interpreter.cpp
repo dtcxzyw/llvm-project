@@ -1830,6 +1830,48 @@ public:
       // callee. We do it explicitly to avoid duplication.
       AttributeSet AttrsAtCallSite = CB.getParamAttributes(I);
       AttributeSet AttrsAtCallee = Callee->getAttributes().getParamAttrs(I);
+
+      auto HandleInitializes = [&](ArrayRef<ConstantRange> List) {
+        if (ArgVal.isPoison()) {
+          reportImmediateUB() << "Invalid poison pointer argument with initializes attribute.";
+          return;
+        }
+
+        unsigned IndexBitWidth = DL.getIndexSizeInBits(ArgTy->getPointerAddressSpace());
+        for (auto &CR : List) {
+          constexpr GEPNoWrapFlags Flags = GEPNoWrapFlags::inBounds();
+          AnyValue Offset = canonicalizeIndex(CR.getLower(), IndexBitWidth, Flags);
+          if (Offset.isPoison()) {
+            reportImmediateUB() << "The lower bound " << CR.getLower() << " in the initializes attribute is too large.";
+            return;
+          }
+          AnyValue AccumulatedOffset = APInt(IndexBitWidth, 0);
+          AnyValue BasePtr = computePtrAdd(ArgVal.asPointer(), Offset.asInteger(),Flags, AccumulatedOffset );
+          if (BasePtr.isPoison()) {
+            reportImmediateUB() << "The lower bound " << CR.getLower() << " in the initializes attribute is invalid for pointer " << BasePtr;
+            return;
+          }
+          auto *MO = BasePtr.asPointer().getMemoryObject();
+          if (!MO) {
+            reportImmediateUB() << "Cannot track initializes through pointer " << BasePtr;
+            return;
+          }
+
+          uint64_t Size = (CR.getUpper() - CR.getLower()).getZExtInst();
+          if (auto Offset = verifyMemAccess(*MO, BasePtr.address(), Size, Align(), /*Store=*/true)) {
+            // TODO: clone provenance
+          }
+          else {
+            reportImmediateUB() << "Cannot track initializes through pointer " << BasePtr;
+            return;
+          }
+        }
+      };
+      if (AttrsAtCallSite.hasAttribute(Attribute::Initializes))
+        HandleInitializes(AttrsAtCallSite.getAttribute(Attribute::Initializes).getInitializes());
+      if (AttrsAtCallee.hasAttribute(Attribute::Initializes))
+        HandleInitializes(AttrsAtCallee.getAttribute(Attribute::Initializes).getInitializes());
+      
       handleAttributes(ArgTy, ArgVal, AttrsAtCallSite, AttrsAtCallee);
     }
 
