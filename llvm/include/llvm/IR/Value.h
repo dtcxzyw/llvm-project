@@ -52,6 +52,7 @@ class raw_ostream;
 template<typename ValueTy> class StringMapEntry;
 class Twine;
 class User;
+class ValueHandleBase;
 
 using ValueName = StringMapEntry<Value *>;
 
@@ -73,8 +74,7 @@ using ValueName = StringMapEntry<Value *>;
 /// objects that watch it and listen to RAUW and Destroy events.  See
 /// llvm/IR/ValueHandle.h for details.
 class Value {
-  const unsigned char SubclassID;   // Subclass identifier (for isa/dyn_cast)
-  unsigned char HasValueHandle : 1; // Has a ValueHandle pointing to this?
+  const unsigned char SubclassID; // Subclass identifier (for isa/dyn_cast)
 
 protected:
   /// Hold arbitary subclass data.
@@ -82,7 +82,7 @@ protected:
   /// This member is similar to SubclassData, however it is often used for
   /// holding information which may be used to aid optimization, but which may
   /// be cleared to zero without affecting conservative interpretation.
-  unsigned char SubclassOptionalData : 7;
+  unsigned char SubclassOptionalData;
 
 private:
   /// Hold arbitrary subclass data.
@@ -117,9 +117,10 @@ protected:
 private:
   Type *VTy;
   Use *UseList = nullptr;
+  ValueHandleBase *ValueHandle = nullptr;
 
   friend class ValueAsMetadata; // Allow access to IsUsedByMD.
-  friend class ValueHandleBase; // Allow access to HasValueHandle.
+  friend class ValueHandleBase; // Allow access to ValueHandle.
 
   template <typename UseT> // UseT == 'Use' or 'const Use'
   class use_iterator_impl {
@@ -552,7 +553,7 @@ public:
   }
 
   /// Return true if there is a value handle associated with this value.
-  bool hasValueHandle() const { return HasValueHandle; }
+  bool hasValueHandle() const { return ValueHandle != nullptr; }
 
   /// Return true if there is metadata referencing this value.
   bool isUsedByMetadata() const { return IsUsedByMD; }

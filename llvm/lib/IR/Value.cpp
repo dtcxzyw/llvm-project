@@ -52,9 +52,9 @@ static inline Type *checkType(Type *Ty) {
 }
 
 Value::Value(Type *ty, unsigned scid)
-    : SubclassID(scid), HasValueHandle(0), SubclassOptionalData(0),
-      SubclassData(0), NumUserOperands(0), IsUsedByMD(false), HasName(false),
-      VTy(checkType(ty)) {
+    : SubclassID(scid), SubclassOptionalData(0), SubclassData(0),
+      NumUserOperands(0), IsUsedByMD(false), HasName(false), VTy(checkType(ty)),
+      ValueHandle(nullptr) {
   static_assert(ConstantFirstVal == 0, "!(SubclassID < ConstantFirstVal)");
   // FIXME: Why isn't this in the subclass gunk??
   // Note, we cannot call isa<CallInst> before the CallInst has been
@@ -70,13 +70,13 @@ Value::Value(Type *ty, unsigned scid)
            (/*SubclassID < ConstantFirstVal ||*/ SubclassID > ConstantLastVal))
     assert((VTy->isFirstClassType() || VTy->isVoidTy()) &&
            "Cannot create non-first-class values except for constants!");
-  static_assert(sizeof(Value) == 2 * sizeof(void *) + 2 * sizeof(unsigned),
+  static_assert(sizeof(Value) == 3 * sizeof(void *) + 2 * sizeof(unsigned),
                 "Value too big");
 }
 
 Value::~Value() {
   // Notify all ValueHandles (if present) that this value is going away.
-  if (HasValueHandle)
+  if (ValueHandle)
     ValueHandleBase::ValueIsDeleted(this);
   if (isUsedByMetadata())
     ValueAsMetadata::handleDeletion(this);
@@ -524,7 +524,7 @@ void Value::doRAUW(Value *New, ReplaceMetadataUses ReplaceMetaUses) {
          "replaceAllUses of value with new value of different type!");
 
   // Notify all ValueHandles (if present) that this value is going away.
-  if (HasValueHandle)
+  if (ValueHandle)
     ValueHandleBase::ValueIsRAUWd(this, New);
   if (ReplaceMetaUses == ReplaceMetadataUses::Yes && isUsedByMetadata())
     ValueAsMetadata::handleRAUW(this, New);
@@ -1188,47 +1188,11 @@ void ValueHandleBase::AddToExistingUseListAfter(ValueHandleBase *List) {
 void ValueHandleBase::AddToUseList() {
   assert(getValPtr() && "Null pointer doesn't have a use list!");
 
-  LLVMContextImpl *pImpl = getValPtr()->getContext().pImpl;
-
-  if (getValPtr()->HasValueHandle) {
-    // If this value already has a ValueHandle, then it must be in the
-    // ValueHandles map already.
-    ValueHandleBase *&Entry = pImpl->ValueHandles[getValPtr()];
-    assert(Entry && "Value doesn't have any handles?");
-    AddToExistingUseList(&Entry);
-    return;
-  }
-
-  // Ok, it doesn't have any handles yet, so we must insert it into the
-  // DenseMap.  However, doing this insertion could cause the DenseMap to
-  // reallocate itself, which would invalidate all of the PrevP pointers that
-  // point into the old table.  Handle this by checking for reallocation and
-  // updating the stale pointers only if needed.
-  DenseMap<Value*, ValueHandleBase*> &Handles = pImpl->ValueHandles;
-  const void *OldBucketPtr = Handles.getPointerIntoBucketsArray();
-
-  ValueHandleBase *&Entry = Handles[getValPtr()];
-  assert(!Entry && "Value really did already have handles?");
-  AddToExistingUseList(&Entry);
-  getValPtr()->HasValueHandle = true;
-
-  // If reallocation didn't happen or if this was the first insertion, don't
-  // walk the table.
-  if (Handles.isPointerIntoBucketsArray(OldBucketPtr) ||
-      Handles.size() == 1) {
-    return;
-  }
-
-  // Okay, reallocation did happen.  Fix the Prev Pointers.
-  for (auto I = Handles.begin(), E = Handles.end(); I != E; ++I) {
-    assert(I->second && I->first == I->second->getValPtr() &&
-           "List invariant broken!");
-    I->second->setPrevPtr(&I->second);
-  }
+  AddToExistingUseList(&getValPtr()->ValueHandle);
 }
 
 void ValueHandleBase::RemoveFromUseList() {
-  assert(getValPtr() && getValPtr()->HasValueHandle &&
+  assert(getValPtr() && getValPtr()->ValueHandle &&
          "Pointer doesn't have a use list!");
 
   // Unlink this from its use list.
@@ -1242,27 +1206,16 @@ void ValueHandleBase::RemoveFromUseList() {
     return;
   }
 
-  // If the Next pointer was null, then it is possible that this was the last
-  // ValueHandle watching VP.  If so, delete its entry from the ValueHandles
-  // map.
-  LLVMContextImpl *pImpl = getValPtr()->getContext().pImpl;
-  DenseMap<Value*, ValueHandleBase*> &Handles = pImpl->ValueHandles;
-  if (Handles.isPointerIntoBucketsArray(PrevPtr)) {
-    // TODO: Remove the only user of DenseMap's callback erase.
-    Handles.erase(getValPtr(), [](auto &Bucket) {
-      Bucket.second->setPrevPtr(&Bucket.second);
-    });
-    getValPtr()->HasValueHandle = false;
-  }
+  if (PrevPtr == &getValPtr()->ValueHandle)
+    getValPtr()->ValueHandle = nullptr;
 }
 
 void ValueHandleBase::ValueIsDeleted(Value *V) {
-  assert(V->HasValueHandle && "Should only be called if ValueHandles present");
+  assert(V->ValueHandle && "Should only be called if ValueHandles present");
 
   // Get the linked list base, which is guaranteed to exist since the
-  // HasValueHandle flag is set.
-  LLVMContextImpl *pImpl = V->getContext().pImpl;
-  ValueHandleBase *Entry = pImpl->ValueHandles[V];
+  // ValueHandle flag is set.
+  ValueHandleBase *Entry = V->ValueHandle;
   assert(Entry && "Value bit set but no entries exist");
 
   // We use a local ValueHandleBase as an iterator so that ValueHandles can add
@@ -1296,11 +1249,11 @@ void ValueHandleBase::ValueIsDeleted(Value *V) {
   }
 
   // All callbacks, weak references, and assertingVHs should be dropped by now.
-  if (V->HasValueHandle) {
+  if (V->ValueHandle) {
 #ifndef NDEBUG      // Only in +Asserts mode...
     dbgs() << "While deleting: " << *V->getType() << " %" << V->getName()
            << "\n";
-    if (pImpl->ValueHandles[V]->getKind() == Assert)
+    if (V->ValueHandle->getKind() == Assert)
       llvm_unreachable("An asserting value handle still pointed to this"
                        " value!");
 
@@ -1310,15 +1263,14 @@ void ValueHandleBase::ValueIsDeleted(Value *V) {
 }
 
 void ValueHandleBase::ValueIsRAUWd(Value *Old, Value *New) {
-  assert(Old->HasValueHandle &&"Should only be called if ValueHandles present");
+  assert(Old->ValueHandle && "Should only be called if ValueHandles present");
   assert(Old != New && "Changing value into itself!");
   assert(Old->getType() == New->getType() &&
          "replaceAllUses of value with new value of different type!");
 
   // Get the linked list base, which is guaranteed to exist since the
-  // HasValueHandle flag is set.
-  LLVMContextImpl *pImpl = Old->getContext().pImpl;
-  ValueHandleBase *Entry = pImpl->ValueHandles[Old];
+  // ValueHandle flag is set.
+  ValueHandleBase *Entry = Old->ValueHandle;
 
   assert(Entry && "Value bit set but no entries exist");
 
@@ -1350,18 +1302,16 @@ void ValueHandleBase::ValueIsRAUWd(Value *Old, Value *New) {
 #ifndef NDEBUG
   // If any new weak value handles were added while processing the
   // list, then complain about it now.
-  if (Old->HasValueHandle)
-    for (Entry = pImpl->ValueHandles[Old]; Entry; Entry = Entry->Next)
-      switch (Entry->getKind()) {
-      case WeakTracking:
-        dbgs() << "After RAUW from " << *Old->getType() << " %"
-               << Old->getName() << " to " << *New->getType() << " %"
-               << New->getName() << "\n";
-        llvm_unreachable(
-            "A weak tracking value handle still pointed to the old value!\n");
-      default:
-        break;
-      }
+  for (Entry = Old->ValueHandle; Entry; Entry = Entry->Next)
+    switch (Entry->getKind()) {
+    case WeakTracking:
+      dbgs() << "After RAUW from " << *Old->getType() << " %" << Old->getName()
+             << " to " << *New->getType() << " %" << New->getName() << "\n";
+      llvm_unreachable(
+          "A weak tracking value handle still pointed to the old value!\n");
+    default:
+      break;
+    }
 #endif
 }
 
