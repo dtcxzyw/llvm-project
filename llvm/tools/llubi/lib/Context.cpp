@@ -128,10 +128,13 @@ MaterializedConstant Context::getConstantValueImpl(Constant *C) {
 
   if (auto *CB = dyn_cast<ConstantByte>(C)) {
     if (auto *VecTy = dyn_cast<VectorType>(CB->getType()))
-      return std::vector<AnyValue>(
-          getEVL(VecTy->getElementCount()),
-          AnyValue(ByteValue(CB->getValue(), DL.isLittleEndian())));
-    return ByteValue(CB->getValue(), DL.isLittleEndian());
+      return MaterializedConstant(
+          std::vector<AnyValue>(
+              getEVL(VecTy->getElementCount()),
+              AnyValue(ByteValue(CB->getValue(), DL.isLittleEndian()))),
+          /*Cacheable=*/true);
+    return MaterializedConstant(ByteValue(CB->getValue(), DL.isLittleEndian()),
+                                /*Cacheable=*/true);
   }
 
   if (auto *CDS = dyn_cast<ConstantDataSequential>(C)) {
