@@ -522,6 +522,8 @@ AnyValue Context::fromBytes(ConstBytesView Bytes, Type *Ty,
     }
   }
 
+  OffsetInBits = NewOffsetInBits;
+
   if (IsByteType) {
     assert(!CheckPaddingBits &&
            "Non-vector-element cases should be handled by the fast path.");
@@ -533,8 +535,6 @@ AnyValue Context::fromBytes(ConstBytesView Bytes, Type *Ty,
       std::reverse(LogicalBytes.begin(), LogicalBytes.end());
     return ByteValue(NumBits, std::move(LogicalBytes), DL.isLittleEndian());
   }
-
-  OffsetInBits = NewOffsetInBits;
 
   APInt Bits(NumBitsToExtract, RawBits);
 
