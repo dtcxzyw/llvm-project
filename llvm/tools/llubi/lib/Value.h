@@ -284,7 +284,7 @@ public:
   uint32_t getBitWidth() const { return BitWidth; }
   ArrayRef<Byte> bytes() const { return Val; }
   MutableArrayRef<Byte> mutableBytes() { return Val; }
-  void print(raw_ostream &OS) const;
+  void print(Context &Ctx, raw_ostream &OS) const;
 };
 
 // Value representation for actual values of LLVM values.

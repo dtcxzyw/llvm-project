@@ -119,7 +119,7 @@ void AnyValue::print(Context &Ctx, raw_ostream &OS) const {
     PtrVal.print(OS);
     break;
   case StorageKind::Byte:
-    ByteVal.print(OS);
+    ByteVal.print(Ctx, OS);
     break;
   case StorageKind::Poison:
     OS << "poison";
@@ -344,9 +344,10 @@ ByteValue ByteValue::poison(uint32_t BitWidth, bool IsLittleEndian) {
                    IsLittleEndian, /*ImplicitClearHighBits=*/true);
 }
 
-void ByteValue::print(raw_ostream &OS) const {
+void ByteValue::print(Context &Ctx, raw_ostream &OS) const {
   OS << 'b' << BitWidth << ' ';
-  for (const Byte &V : Val) {
+
+  auto PrintByte = [&](const Byte &V) {
     bool IsFullByte = (BitWidth & 7) == 0 ||
                       (IsLittleEndian ? &Val.back() : &Val.front()) != &V;
     // Try to print a byte in short form
@@ -383,6 +384,27 @@ void ByteValue::print(raw_ostream &OS) const {
       }
     }
     OS << ' ';
+  };
+
+  auto &DL = Ctx.getDataLayout();
+  unsigned PtrWidthForAS0 = DL.getPointerSizeInBits(0);
+  Type *PtrTy = PointerType::getUnqual(Ctx.getContext());
+
+  if (PtrWidthForAS0 % 8 == 0 && BitWidth % PtrWidthForAS0 == 0) {
+    // Try to treat the bytes value as an array of pointers in address space 0.
+    unsigned PtrSize = PtrWidthForAS0 / 8;
+    for (size_t I = 0, E = Val.size(); I != E; I += PtrSize) {
+      auto Res = Ctx.fromBytes(ArrayRef(Val).slice(I, PtrSize), PtrTy);
+      if (Res.isPointer()) {
+        Res.asPointer().print(OS);
+      } else {
+        for (size_t J = 0; J != PtrSize; ++J)
+          PrintByte(Val[I + J]);
+      }
+    }
+  } else {
+    for (const Byte &V : Val)
+      PrintByte(V);
   }
 }
 
