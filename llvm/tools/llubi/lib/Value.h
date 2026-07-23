@@ -59,11 +59,13 @@ struct Byte {
   void poisonBits(uint8_t Mask) {
     ConcreteMask &= ~Mask;
     Value &= ~Mask;
+    TagMask &= ~Mask;
   }
 
   void undefBits(uint8_t Mask) {
     ConcreteMask &= ~Mask;
     Value |= Mask;
+    TagMask &= ~Mask;
   }
 
   void writeBits(uint8_t Mask, uint8_t Val) {

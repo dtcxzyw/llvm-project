@@ -370,12 +370,13 @@ void ByteValue::print(Context &Ctx, raw_ostream &OS) const {
           OS << '!';
         }
       }
-      if (uint32_t TagMask = V.ConcreteMask & V.TagMask) {
+      assert((V.ConcreteMask & V.TagMask) == V.TagMask);
+      if (V.TagMask) {
         // Print tags if available.
         OS << '(';
         for (uint32_t I = 0; I != BitEnd; ++I) {
           uint32_t Mask = 1U << (BitEnd - 1 - I);
-          if (TagMask & Mask)
+          if (V.TagMask & Mask)
             OS << (V.TagValue & Mask ? '1' : '0');
           else
             OS << '!';
@@ -396,7 +397,8 @@ void ByteValue::print(Context &Ctx, raw_ostream &OS) const {
     for (size_t I = 0, E = Val.size(); I != E; I += PtrSize) {
       ArrayRef<Byte> Slice = ArrayRef(Val).slice(I, PtrSize);
       if (all_of(Slice, [](const Byte &V) {
-            return (V.ConcreteMask & V.TagMask) == 255;
+            assert((V.ConcreteMask & V.TagMask) == V.TagMask);
+            return V.TagMask == 255;
           })) {
         AnyValue Res = Ctx.fromBytes(Slice, PtrTy);
         if (Res.isPointer()) {

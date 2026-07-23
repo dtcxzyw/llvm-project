@@ -452,6 +452,7 @@ AnyValue Context::fromBytes(ConstBytesView Bytes, Type *Ty,
   constexpr uint32_t WordBits = APInt::APINT_BITS_PER_WORD;
   SmallVector<APInt::WordType> RawBits;
   bool IsByteType = Ty->isByteTy();
+  // LogicalBytes is always little-endian.
   std::vector<Byte> LogicalBytes;
   if (IsByteType)
     LogicalBytes.resize(divideCeil(NumBitsToExtract, 8));
@@ -512,7 +513,9 @@ AnyValue Context::fromBytes(ConstBytesView Bytes, Type *Ty,
     RawBits[I / WordBits] |= static_cast<APInt::WordType>(ActualBits)
                              << (I % WordBits);
     if (IsTagValid) {
-      if ((LogicalByte.TagMask & LogicalByte.ConcreteMask & Mask) == Mask) {
+      assert((LogicalByte.TagMask & LogicalByte.ConcreteMask) ==
+             LogicalByte.TagMask);
+      if ((LogicalByte.TagMask & Mask) == Mask) {
         uint8_t ActualTagBits = LogicalByte.TagValue & Mask;
         RawTagBits[I / WordBits] |= static_cast<APInt::WordType>(ActualTagBits)
                                     << (I % WordBits);
@@ -884,8 +887,6 @@ void Context::freeze(AnyValue &Val, Type *Ty) {
       V.Value &= OldMask;
       if (mayUseNonDeterminism())
         V.Value |= (Rng() & 255) & ~OldMask;
-      V.TagMask &= OldMask;
-      V.TagValue &= OldMask;
     }
     return;
   }
