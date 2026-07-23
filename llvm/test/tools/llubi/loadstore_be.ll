@@ -157,6 +157,16 @@ define void @main() {
   store b8 255, ptr %alloc_byte
   %bytes_zextd_poison = load b7, ptr %alloc_byte
 
+  %alloc_ptr_array = alloca [4 x ptr]
+  store i64 0, ptr %alloc_ptr_array
+  %ptr_array_1 = getelementptr ptr, ptr %alloc_ptr_array, i64 1
+  store ptr %alloc_ptr_array, ptr %ptr_array_1
+  %ptr_array_2 = getelementptr ptr, ptr %alloc_ptr_array, i64 2
+  store ptr %alloc_ptr_array, ptr %ptr_array_2
+  %ptr_array_2_middle = getelementptr i8, ptr %alloc_ptr_array, i64 20
+  store i8 0, ptr %ptr_array_2_middle
+  %mixed_alloc = load b256, ptr %alloc_ptr_array
+
   ret void
 }
 ; CHECK: Entering function: main
@@ -277,5 +287,14 @@ define void @main() {
 ; CHECK-NEXT:   %bytes_zextd = load b32, ptr %alloc_byte, align 4 => b32 0x0E 0xAD 0xBE 0xEF 
 ; CHECK-NEXT:   store b8 -1, ptr %alloc_byte, align 1
 ; CHECK-NEXT:   %bytes_zextd_poison = load b7, ptr %alloc_byte, align 1 => b7 !!!!!!! 
+; CHECK-NEXT:   %alloc_ptr_array = alloca [4 x ptr], align 8 => ptr 0xD8 [alloc_ptr_array]
+; CHECK-NEXT:   store i64 0, ptr %alloc_ptr_array, align 8
+; CHECK-NEXT:   %ptr_array_1 = getelementptr ptr, ptr %alloc_ptr_array, i64 1 => ptr 0xE0 [alloc_ptr_array + 8]
+; CHECK-NEXT:   store ptr %alloc_ptr_array, ptr %ptr_array_1, align 8
+; CHECK-NEXT:   %ptr_array_2 = getelementptr ptr, ptr %alloc_ptr_array, i64 2 => ptr 0xE8 [alloc_ptr_array + 16]
+; CHECK-NEXT:   store ptr %alloc_ptr_array, ptr %ptr_array_2, align 8
+; CHECK-NEXT:   %ptr_array_2_middle = getelementptr i8, ptr %alloc_ptr_array, i64 20 => ptr 0xEC [alloc_ptr_array + 20]
+; CHECK-NEXT:   store i8 0, ptr %ptr_array_2_middle, align 1
+; CHECK-NEXT:   %mixed_alloc = load b256, ptr %alloc_ptr_array, align 8 => b256 ptr 0x0 [nullary]ptr 0xD8 [alloc_ptr_array]ptr 0xD8 [nullary]ptr 0x2ADF69B8978BB307 [nullary]
 ; CHECK-NEXT:   ret void
 ; CHECK-NEXT: Exiting function: main
