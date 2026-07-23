@@ -251,7 +251,7 @@ define void @main() {
 ; CHECK-NEXT:   %load_struct_noundef = load { i8, i32 }, ptr %alloc_struct_padding, align 4, !noundef !0 => { i8 0, i32 0 }
 ; CHECK-NEXT:   %alloc_ptr = alloca ptr, align 8 => ptr 0xC0 [alloc_ptr]
 ; CHECK-NEXT:   store ptr %alloc_ptr, ptr %alloc_ptr, align 8
-; CHECK-NEXT:   %bytes = load b64, ptr %alloc_ptr, align 8 => b64 ptr 0xC0 [alloc_ptr]
+; CHECK-NEXT:   %bytes = load b64, ptr %alloc_ptr, align 8 => b64 ptr 0xC0 [alloc_ptr] 
 ; CHECK-NEXT:   %ptr_with_provenance = load ptr, ptr %alloc_ptr, align 8 => ptr 0xC0 [alloc_ptr]
 ; CHECK-NEXT:   %addr_bits = load i8, ptr %alloc_ptr, align 1 => i8 0
 ; CHECK-NEXT:   store i8 %addr_bits, ptr %alloc_ptr, align 1
@@ -271,7 +271,7 @@ define void @main() {
 ; CHECK-NEXT:   %first_byte_with_provenance_reversed_v8b1 = bitcast b8 %first_byte_with_provenance_reversed to <8 x b1> => { b1 0(0) , b1 0(1) , b1 0(1) , b1 0(0) , b1 0(0) , b1 0(1) , b1 0(0) , b1 0(0)  }
 ; CHECK-NEXT:   %first_byte_with_provenance_v8b1 = call <8 x b1> @llvm.vector.reverse.v8b1(<8 x b1> %first_byte_with_provenance_reversed_v8b1) => { b1 0(0) , b1 0(0) , b1 0(1) , b1 0(0) , b1 0(0) , b1 0(1) , b1 0(1) , b1 0(0)  }
 ; CHECK-NEXT:   store <8 x b1> %first_byte_with_provenance_v8b1, ptr %alloc_ptr, align 1
-; CHECK-NEXT:   %bytes_recovered = load b64, ptr %alloc_ptr, align 8 => b64 ptr 0xC0 [alloc_ptr]
+; CHECK-NEXT:   %bytes_recovered = load b64, ptr %alloc_ptr, align 8 => b64 ptr 0xC0 [alloc_ptr] 
 ; CHECK-NEXT:   %ptr_with_provenance3 = load ptr, ptr %alloc_ptr, align 8 => ptr 0xC0 [alloc_ptr]
 ; CHECK-NEXT:   %alloc_byte = alloca b32, align 4 => ptr 0xCC [alloc_byte]
 ; CHECK-NEXT:   store b8 127, ptr %alloc_byte, align 1
@@ -295,6 +295,6 @@ define void @main() {
 ; CHECK-NEXT:   store ptr %alloc_ptr_array, ptr %ptr_array_2, align 8
 ; CHECK-NEXT:   %ptr_array_2_middle = getelementptr i8, ptr %alloc_ptr_array, i64 20 => ptr 0xEC [alloc_ptr_array + 20]
 ; CHECK-NEXT:   store i8 0, ptr %ptr_array_2_middle, align 1
-; CHECK-NEXT:   %mixed_alloc = load b256, ptr %alloc_ptr_array, align 8 => b256 ptr 0x0 [nullary]ptr 0xD8 [alloc_ptr_array]ptr 0xD8 [nullary]ptr 0x2ADF69B8978BB307 [nullary]
+; CHECK-NEXT:   %mixed_alloc = load b256, ptr %alloc_ptr_array, align 8 => b256 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 ptr 0xD8 [alloc_ptr_array] 00000000(10001101) 00000000(11101101) 00000000(10101000) 00000000(01010011) 0x00 00000000(10100110) 00000000(00010110) 11011000(00011010) 0x2A 0xDF 0x69 0xB8 0x97 0x8B 0xB3 0x07 
 ; CHECK-NEXT:   ret void
 ; CHECK-NEXT: Exiting function: main

@@ -394,13 +394,21 @@ void ByteValue::print(Context &Ctx, raw_ostream &OS) const {
     // Try to treat the bytes value as an array of pointers in address space 0.
     unsigned PtrSize = PtrWidthForAS0 / 8;
     for (size_t I = 0, E = Val.size(); I != E; I += PtrSize) {
-      auto Res = Ctx.fromBytes(ArrayRef(Val).slice(I, PtrSize), PtrTy);
-      if (Res.isPointer()) {
-        Res.asPointer().print(OS);
-      } else {
-        for (size_t J = 0; J != PtrSize; ++J)
-          PrintByte(Val[I + J]);
+      ArrayRef<Byte> Slice = ArrayRef(Val).slice(I, PtrSize);
+      if (all_of(Slice, [](const Byte &V) {
+            return (V.ConcreteMask & V.TagMask) == 255;
+          })) {
+        AnyValue Res = Ctx.fromBytes(Slice, PtrTy);
+        if (Res.isPointer()) {
+          Res.asPointer().print(OS);
+          OS << ' ';
+          continue;
+        }
       }
+
+      // Otherwise, fallback into bytes array
+      for (size_t J = 0; J != PtrSize; ++J)
+        PrintByte(Val[I + J]);
     }
   } else {
     for (const Byte &V : Val)
