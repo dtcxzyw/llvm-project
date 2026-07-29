@@ -22,6 +22,7 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
+#include "llvm/ADT/SmallBitVector.h"
 #include "llvm/Analysis/AssumeBundleQueries.h"
 #include "llvm/Analysis/ConstantFolding.h"
 #include "llvm/Analysis/DomTreeUpdater.h"
@@ -2682,12 +2683,12 @@ BasicBlock *llvm::changeToInvokeAndSplitBasicBlock(CallInst *CI,
   return Split;
 }
 
-static bool markAliveBlocks(Function &F, SmallVectorImpl<bool> &Reachable,
+static bool markAliveBlocks(Function &F, SmallBitVector &Reachable,
                             DomTreeUpdater *DTU = nullptr) {
   SmallVector<BasicBlock*, 128> Worklist;
   BasicBlock *BB = &F.front();
   Worklist.push_back(BB);
-  Reachable[BB->getNumber()] = true;
+  Reachable.set(BB->getNumber());
   bool Changed = false;
   do {
     BB = Worklist.pop_back_val();
@@ -2864,9 +2865,9 @@ static bool markAliveBlocks(Function &F, SmallVectorImpl<bool> &Reachable,
 
     Changed |= ConstantFoldTerminator(BB, true, nullptr, DTU);
     for (BasicBlock *Successor : successors(BB)) {
-      if (!Reachable[Successor->getNumber()]) {
+      if (!Reachable.test(Successor->getNumber())) {
         Worklist.push_back(Successor);
-        Reachable[Successor->getNumber()] = true;
+        Reachable.set(Successor->getNumber());
       }
     }
   } while (!Worklist.empty());
@@ -2913,14 +2914,17 @@ Instruction *llvm::removeUnwindEdge(BasicBlock *BB, DomTreeUpdater *DTU) {
 /// otherwise.
 bool llvm::removeUnreachableBlocks(Function &F, DomTreeUpdater *DTU,
                                    MemorySSAUpdater *MSSAU) {
-  SmallVector<bool, 16> Reachable(F.getMaxBlockNumber());
+  SmallBitVector Reachable(F.getMaxBlockNumber());
   bool Changed = markAliveBlocks(F, Reachable, DTU);
+
+  // if (Reachable.count() == F.size())
+  //   return Changed;
 
   // Are there any blocks left to actually delete?
   SmallSetVector<BasicBlock *, 8> BlocksToRemove;
   for (BasicBlock &BB : F) {
     // Skip reachable basic blocks
-    if (Reachable[BB.getNumber()])
+    if (Reachable.test(BB.getNumber()))
       continue;
     // Skip already-deleted blocks
     if (DTU && DTU->isBBPendingDeletion(&BB))
