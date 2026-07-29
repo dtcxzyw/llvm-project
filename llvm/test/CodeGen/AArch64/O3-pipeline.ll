@@ -28,8 +28,8 @@
 ; CHECK-NEXT:     FunctionPass Manager
 ; CHECK-NEXT:       Expand IR instructions
 ; CHECK-NEXT:       Expand Atomic instructions
-; CHECK-NEXT:       Simplify the CFG
 ; CHECK-NEXT:       Dominator Tree Construction
+; CHECK-NEXT:       Simplify the CFG
 ; CHECK-NEXT:       Natural Loop Information
 ; CHECK-NEXT:       Canonicalize natural loops
 ; CHECK-NEXT:       Cycle Info Analysis

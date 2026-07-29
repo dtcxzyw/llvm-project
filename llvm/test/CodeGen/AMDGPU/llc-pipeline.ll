@@ -66,12 +66,11 @@
 ; GCN-O0-NEXT:      Lower SwitchInst's to branches
 ; GCN-O0-NEXT:      Lower invoke and unwind, for unwindless code generators
 ; GCN-O0-NEXT:      Remove unreachable blocks from the CFG
-; GCN-O0-NEXT:      Post-Dominator Tree Construction
 ; GCN-O0-NEXT:      Dominator Tree Construction
+; GCN-O0-NEXT:      Post-Dominator Tree Construction
 ; GCN-O0-NEXT:      Cycle Info Analysis
 ; GCN-O0-NEXT:      Uniformity Analysis
 ; GCN-O0-NEXT:      Unify divergent function exit nodes
-; GCN-O0-NEXT:      Dominator Tree Construction
 ; GCN-O0-NEXT:      Cycle Info Analysis
 ; GCN-O0-NEXT:      Convert irreducible control-flow into natural loops
 ; GCN-O0-NEXT:      Natural Loop Information
@@ -282,7 +281,6 @@
 ; GCN-O1-NEXT:      Post-Dominator Tree Construction
 ; GCN-O1-NEXT:      Uniformity Analysis
 ; GCN-O1-NEXT:      Unify divergent function exit nodes
-; GCN-O1-NEXT:      Dominator Tree Construction
 ; GCN-O1-NEXT:      Cycle Info Analysis
 ; GCN-O1-NEXT:      Convert irreducible control-flow into natural loops
 ; GCN-O1-NEXT:      Natural Loop Information
@@ -602,7 +600,6 @@
 ; GCN-O1-OPTS-NEXT:      Post-Dominator Tree Construction
 ; GCN-O1-OPTS-NEXT:      Uniformity Analysis
 ; GCN-O1-OPTS-NEXT:      Unify divergent function exit nodes
-; GCN-O1-OPTS-NEXT:      Dominator Tree Construction
 ; GCN-O1-OPTS-NEXT:      Cycle Info Analysis
 ; GCN-O1-OPTS-NEXT:      Convert irreducible control-flow into natural loops
 ; GCN-O1-OPTS-NEXT:      Natural Loop Information
@@ -932,7 +929,6 @@
 ; GCN-O2-NEXT:      Post-Dominator Tree Construction
 ; GCN-O2-NEXT:      Uniformity Analysis
 ; GCN-O2-NEXT:      Unify divergent function exit nodes
-; GCN-O2-NEXT:      Dominator Tree Construction
 ; GCN-O2-NEXT:      Cycle Info Analysis
 ; GCN-O2-NEXT:      Convert irreducible control-flow into natural loops
 ; GCN-O2-NEXT:      Natural Loop Information
@@ -1279,7 +1275,6 @@
 ; GCN-O3-NEXT:      Post-Dominator Tree Construction
 ; GCN-O3-NEXT:      Uniformity Analysis
 ; GCN-O3-NEXT:      Unify divergent function exit nodes
-; GCN-O3-NEXT:      Dominator Tree Construction
 ; GCN-O3-NEXT:      Cycle Info Analysis
 ; GCN-O3-NEXT:      Convert irreducible control-flow into natural loops
 ; GCN-O3-NEXT:      Natural Loop Information

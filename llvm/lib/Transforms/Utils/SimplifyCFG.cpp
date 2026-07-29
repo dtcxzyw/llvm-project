@@ -103,7 +103,8 @@ cl::opt<bool> RequireAndPreserveDomTree(
 
     cl::desc(
         "Temporary development switch used to gradually uplift SimplifyCFG "
-        "into preserving DomTree,"));
+        "into preserving DomTree,"),
+    cl::init(true));
 
 // Chosen as 2 so as to be cheap, but still to have enough power to fold
 // a select, so the "clamp" idiom (of a min followed by a max) will be caught.
