@@ -2917,8 +2917,8 @@ bool llvm::removeUnreachableBlocks(Function &F, DomTreeUpdater *DTU,
   SmallBitVector Reachable(F.getMaxBlockNumber());
   bool Changed = markAliveBlocks(F, Reachable, DTU);
 
-  // if (Reachable.count() == F.size())
-  //   return Changed;
+  if (Reachable.count() == F.size())
+    return Changed;
 
   // Are there any blocks left to actually delete?
   SmallSetVector<BasicBlock *, 8> BlocksToRemove;
