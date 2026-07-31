@@ -4252,6 +4252,8 @@ bool llvm::foldBranchToCommonDest(CondBrInst *BI, DomTreeUpdater *DTU,
         return false;
     }
 
+    if (DTU)
+      DTU->flush();
     auto IsBCSSAUse = [BB, &I](Use &U) {
       auto *UI = cast<Instruction>(U.getUser());
       if (auto *PN = dyn_cast<PHINode>(UI))
