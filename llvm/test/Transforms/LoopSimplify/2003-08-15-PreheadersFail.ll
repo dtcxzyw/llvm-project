@@ -1,4 +1,4 @@
-; RUN: opt < %s -passes=instcombine,simplifycfg,licm -simplifycfg-require-and-preserve-domtree=1  -disable-output
+; RUN: opt < %s -passes=instcombine,simplifycfg,licm  -disable-output
 target datalayout = "e-p:32:32"
 @yy_base = external global [787 x i16]		; <ptr> [#uses=1]
 @yy_state_ptr = external global ptr		; <ptr> [#uses=3]

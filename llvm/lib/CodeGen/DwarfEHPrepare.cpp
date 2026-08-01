@@ -16,7 +16,6 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/CFG.h"
-#include "llvm/Analysis/DomTreeUpdater.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/CodeGen/TargetLowering.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
@@ -58,7 +57,7 @@ class DwarfEHPrepare {
 
   Function &F;
   const LibcallLoweringInfo &Libcalls;
-  DomTreeUpdater *DTU;
+  DominatorTree *DT;
   const TargetTransformInfo *TTI;
   const Triple &TargetTriple;
 
@@ -79,9 +78,9 @@ class DwarfEHPrepare {
 
 public:
   DwarfEHPrepare(CodeGenOptLevel OptLevel_, Function &F_,
-                 const LibcallLoweringInfo &Libcalls_, DomTreeUpdater *DTU_,
+                 const LibcallLoweringInfo &Libcalls_, DominatorTree *DT_,
                  const TargetTransformInfo *TTI_, const Triple &TargetTriple_)
-      : OptLevel(OptLevel_), F(F_), Libcalls(Libcalls_), DTU(DTU_), TTI(TTI_),
+      : OptLevel(OptLevel_), F(F_), Libcalls(Libcalls_), DT(DT_), TTI(TTI_),
         TargetTriple(TargetTriple_) {}
 
   bool run();
@@ -130,13 +129,13 @@ Value *DwarfEHPrepare::GetExceptionObject(ResumeInst *RI) {
 size_t DwarfEHPrepare::pruneUnreachableResumes(
     SmallVectorImpl<ResumeInst *> &Resumes,
     SmallVectorImpl<LandingPadInst *> &CleanupLPads) {
-  assert(DTU && "Should have DomTreeUpdater here.");
+  assert(DT && "Should have DominatorTree here.");
 
   BitVector ResumeReachable(Resumes.size());
   size_t ResumeIndex = 0;
   for (auto *RI : Resumes) {
     for (auto *LP : CleanupLPads) {
-      if (isPotentiallyReachable(LP, RI, nullptr, &DTU->getDomTree())) {
+      if (isPotentiallyReachable(LP, RI, nullptr, DT)) {
         ResumeReachable.set(ResumeIndex);
         break;
       }
@@ -160,7 +159,7 @@ size_t DwarfEHPrepare::pruneUnreachableResumes(
       BasicBlock *BB = RI->getParent();
       new UnreachableInst(Ctx, RI->getIterator());
       RI->eraseFromParent();
-      simplifyCFG(BB, *TTI, DTU);
+      simplifyCFG(BB, *TTI);
     }
   }
   Resumes.resize(ResumesLeft);
@@ -265,9 +264,6 @@ bool DwarfEHPrepare::InsertUnwindResumeCalls() {
     return true;
   }
 
-  std::vector<DominatorTree::UpdateType> Updates;
-  Updates.reserve(Resumes.size());
-
   llvm::SmallVector<Value *, 1> RewindFunctionArgs;
 
   BasicBlock *UnwindBB = BasicBlock::Create(Ctx, "unwind_resume", &F);
@@ -279,7 +275,6 @@ bool DwarfEHPrepare::InsertUnwindResumeCalls() {
   for (ResumeInst *RI : Resumes) {
     BasicBlock *Parent = RI->getParent();
     UncondBrInst::Create(UnwindBB, Parent);
-    Updates.push_back({DominatorTree::Insert, Parent, UnwindBB});
 
     Value *ExnObj = GetExceptionObject(RI);
     PN->addIncoming(ExnObj, Parent);
@@ -306,9 +301,6 @@ bool DwarfEHPrepare::InsertUnwindResumeCalls() {
   CI->setDoesNotReturn();
   new UnreachableInst(Ctx, UnwindBB);
 
-  if (DTU)
-    DTU->applyUpdates(Updates);
-
   return true;
 }
 
@@ -322,11 +314,7 @@ static bool prepareDwarfEH(CodeGenOptLevel OptLevel, Function &F,
                            const LibcallLoweringInfo &Libcalls,
                            DominatorTree *DT, const TargetTransformInfo *TTI,
                            const Triple &TargetTriple) {
-  DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Lazy);
-
-  return DwarfEHPrepare(OptLevel, F, Libcalls, DT ? &DTU : nullptr, TTI,
-                        TargetTriple)
-      .run();
+  return DwarfEHPrepare(OptLevel, F, Libcalls, DT, TTI, TargetTriple).run();
 }
 
 namespace {
@@ -370,7 +358,6 @@ public:
       AU.addRequired<DominatorTreeWrapperPass>();
       AU.addRequired<TargetTransformInfoWrapperPass>();
     }
-    AU.addPreserved<DominatorTreeWrapperPass>();
   }
 
   StringRef getPassName() const override {
@@ -412,9 +399,8 @@ PreservedAnalyses DwarfEHPreparePass::run(Function &F,
 
   if (!Changed)
     return PreservedAnalyses::all();
-  PreservedAnalyses PA;
-  PA.preserve<DominatorTreeAnalysis>();
-  return PA;
+  return PreservedAnalyses::none();
+  ;
 }
 
 char DwarfEHPrepareLegacyPass::ID = 0;

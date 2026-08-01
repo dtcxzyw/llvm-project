@@ -1,4 +1,4 @@
-; RUN: opt < %s -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -disable-output
+; RUN: opt < %s -passes=simplifycfg -disable-output
 
 define void @test(ptr %ldo, i1 %c, i1 %d) {
 bb9:

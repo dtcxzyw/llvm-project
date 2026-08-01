@@ -1,4 +1,4 @@
-; RUN: opt %s -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -S \
+; RUN: opt %s -passes=simplifycfg -S \
 ; RUN: | FileCheck %s
 
 ;; Generated using:

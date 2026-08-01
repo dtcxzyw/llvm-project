@@ -26,12 +26,10 @@
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/CFG.h"
-#include "llvm/Analysis/DomTreeUpdater.h"
 #include "llvm/Analysis/GlobalsModRef.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/CFG.h"
-#include "llvm/IR/Dominators.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/ValueHandle.h"
 #include "llvm/InitializePasses.h"
@@ -86,18 +84,13 @@ static cl::opt<bool> UserSpeculateUnpredictables(
 
 STATISTIC(NumSimpl, "Number of blocks simplified");
 
-static bool
-performBlockTailMerging(Function &F, ArrayRef<BasicBlock *> BBs,
-                        std::vector<DominatorTree::UpdateType> *Updates) {
+static bool performBlockTailMerging(Function &F, ArrayRef<BasicBlock *> BBs) {
   SmallVector<PHINode *, 1> NewOps;
 
   // We don't want to change IR just because we can.
   // Only do that if there are at least two blocks we'll tail-merge.
   if (BBs.size() < 2)
     return false;
-
-  if (Updates)
-    Updates->reserve(Updates->size() + BBs.size());
 
   BasicBlock *CanonicalBB;
   Instruction *CanonicalTerm;
@@ -151,9 +144,6 @@ performBlockTailMerging(Function &F, ArrayRef<BasicBlock *> BBs,
     Instruction *BI = UncondBrInst::Create(CanonicalBB, BB);
     BI->setDebugLoc(Term->getDebugLoc());
     Term->eraseFromParent();
-
-    if (Updates)
-      Updates->push_back({DominatorTree::Insert, BB, CanonicalBB});
   }
 
   CanonicalTerm->setDebugLoc(CommonDebugLoc);
@@ -161,16 +151,12 @@ performBlockTailMerging(Function &F, ArrayRef<BasicBlock *> BBs,
   return true;
 }
 
-static bool tailMergeBlocksWithSimilarFunctionTerminators(Function &F,
-                                                          DomTreeUpdater *DTU) {
+static bool tailMergeBlocksWithSimilarFunctionTerminators(Function &F) {
   SmallMapVector<unsigned /*TerminatorOpcode*/, SmallVector<BasicBlock *, 2>, 4>
       Structure;
 
   // Scan all the blocks in the function, record the interesting-ones.
   for (BasicBlock &BB : F) {
-    if (DTU && DTU->isBBPendingDeletion(&BB))
-      continue;
-
     // We are only interested in function-terminating blocks.
     if (!succ_empty(&BB))
       continue;
@@ -212,14 +198,8 @@ static bool tailMergeBlocksWithSimilarFunctionTerminators(Function &F,
   }
 
   bool Changed = false;
-
-  std::vector<DominatorTree::UpdateType> Updates;
-
   for (ArrayRef<BasicBlock *> BBs : make_second_range(Structure))
-    Changed |= performBlockTailMerging(F, BBs, DTU ? &Updates : nullptr);
-
-  if (DTU)
-    DTU->applyUpdates(Updates);
+    Changed |= performBlockTailMerging(F, BBs);
 
   return Changed;
 }
@@ -227,7 +207,6 @@ static bool tailMergeBlocksWithSimilarFunctionTerminators(Function &F,
 /// Call SimplifyCFG on all the blocks in the function,
 /// iterating until no more changes are made.
 static bool iterativelySimplifyCFG(Function &F, const TargetTransformInfo &TTI,
-                                   DomTreeUpdater *DTU,
                                    const SimplifyCFGOptions &Options) {
   bool Changed = false;
   bool LocalChange = true;
@@ -248,18 +227,8 @@ static bool iterativelySimplifyCFG(Function &F, const TargetTransformInfo &TTI,
     LocalChange = false;
 
     // Loop over all of the basic blocks and remove them if they are unneeded.
-    for (Function::iterator BBIt = F.begin(); BBIt != F.end(); ) {
-      BasicBlock &BB = *BBIt++;
-      if (DTU) {
-        assert(
-            !DTU->isBBPendingDeletion(&BB) &&
-            "Should not end up trying to simplify blocks marked for removal.");
-        // Make sure that the advanced iterator does not point at the blocks
-        // that are marked for removal, skip over all such blocks.
-        while (BBIt != F.end() && DTU->isBBPendingDeletion(&*BBIt))
-          ++BBIt;
-      }
-      if (simplifyCFG(&BB, TTI, DTU, Options, LoopHeaders)) {
+    for (BasicBlock &BB: make_early_inc_range(F)) {
+      if (simplifyCFG(&BB, TTI, Options, LoopHeaders)) {
         LocalChange = true;
         ++NumSimpl;
       }
@@ -269,15 +238,11 @@ static bool iterativelySimplifyCFG(Function &F, const TargetTransformInfo &TTI,
   return Changed;
 }
 
-static bool simplifyFunctionCFGImpl(Function &F, const TargetTransformInfo &TTI,
-                                    DominatorTree *DT,
-                                    const SimplifyCFGOptions &Options) {
-  DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Eager);
-
-  bool EverChanged = removeUnreachableBlocks(F, DT ? &DTU : nullptr);
-  EverChanged |=
-      tailMergeBlocksWithSimilarFunctionTerminators(F, DT ? &DTU : nullptr);
-  EverChanged |= iterativelySimplifyCFG(F, TTI, DT ? &DTU : nullptr, Options);
+static bool simplifyFunctionCFG(Function &F, const TargetTransformInfo &TTI,
+                                const SimplifyCFGOptions &Options) {
+  bool EverChanged = removeUnreachableBlocks(F);
+  EverChanged |= tailMergeBlocksWithSimilarFunctionTerminators(F);
+  EverChanged |= iterativelySimplifyCFG(F, TTI, Options);
 
   // If neither pass changed anything, we're done.
   if (!EverChanged) return false;
@@ -287,31 +252,15 @@ static bool simplifyFunctionCFGImpl(Function &F, const TargetTransformInfo &TTI,
   // iterate between the two optimizations.  We structure the code like this to
   // avoid rerunning iterativelySimplifyCFG if the second pass of
   // removeUnreachableBlocks doesn't do anything.
-  if (!removeUnreachableBlocks(F, DT ? &DTU : nullptr))
+  if (!removeUnreachableBlocks(F))
     return true;
 
   do {
-    EverChanged = iterativelySimplifyCFG(F, TTI, DT ? &DTU : nullptr, Options);
-    EverChanged |= removeUnreachableBlocks(F, DT ? &DTU : nullptr);
+    EverChanged = iterativelySimplifyCFG(F, TTI, Options);
+    EverChanged |= removeUnreachableBlocks(F);
   } while (EverChanged);
 
   return true;
-}
-
-static bool simplifyFunctionCFG(Function &F, const TargetTransformInfo &TTI,
-                                DominatorTree *DT,
-                                const SimplifyCFGOptions &Options) {
-  assert((!RequireAndPreserveDomTree ||
-          (DT && DT->verify(DominatorTree::VerificationLevel::Full))) &&
-         "Original domtree is invalid?");
-
-  bool Changed = simplifyFunctionCFGImpl(F, TTI, DT, Options);
-
-  assert((!RequireAndPreserveDomTree ||
-          (DT && DT->verify(DominatorTree::VerificationLevel::Full))) &&
-         "Failed to maintain validity of domtree!");
-
-  return Changed;
 }
 
 // Command-line settings override compile-time settings.
@@ -375,19 +324,11 @@ PreservedAnalyses SimplifyCFGPass::run(Function &F,
                                        FunctionAnalysisManager &AM) {
   auto &TTI = AM.getResult<TargetIRAnalysis>(F);
   Options.AC = &AM.getResult<AssumptionAnalysis>(F);
-  DominatorTree *DT = nullptr;
-  if (RequireAndPreserveDomTree)
-    DT = &AM.getResult<DominatorTreeAnalysis>(F);
-  if (!simplifyFunctionCFG(F, TTI, DT, Options))
+  if (!simplifyFunctionCFG(F, TTI, Options))
     return PreservedAnalyses::all();
   // If we removed some blocks, update block numbers to keep dense numbering.
   F.renumberBlocks();
-  PreservedAnalyses PA;
-  if (RequireAndPreserveDomTree) {
-    DT->updateBlockNumbers();
-    PA.preserve<DominatorTreeAnalysis>();
-  }
-  return PA;
+  return PreservedAnalyses::none();
 }
 
 namespace {
@@ -411,20 +352,12 @@ struct CFGSimplifyPass : public FunctionPass {
       return false;
 
     Options.AC = &getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
-    DominatorTree *DT = nullptr;
-    if (RequireAndPreserveDomTree)
-      DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
-
     auto &TTI = getAnalysis<TargetTransformInfoWrapperPass>().getTTI(F);
-    return simplifyFunctionCFG(F, TTI, DT, Options);
+    return simplifyFunctionCFG(F, TTI, Options);
   }
   void getAnalysisUsage(AnalysisUsage &AU) const override {
     AU.addRequired<AssumptionCacheTracker>();
-    if (RequireAndPreserveDomTree)
-      AU.addRequired<DominatorTreeWrapperPass>();
     AU.addRequired<TargetTransformInfoWrapperPass>();
-    if (RequireAndPreserveDomTree)
-      AU.addPreserved<DominatorTreeWrapperPass>();
     AU.addPreserved<GlobalsAAWrapperPass>();
   }
 };
@@ -435,7 +368,6 @@ INITIALIZE_PASS_BEGIN(CFGSimplifyPass, "simplifycfg", "Simplify the CFG", false,
                       false)
 INITIALIZE_PASS_DEPENDENCY(TargetTransformInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
-INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_END(CFGSimplifyPass, "simplifycfg", "Simplify the CFG", false,
                     false)
 

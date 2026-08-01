@@ -25,7 +25,6 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Analysis/DomTreeUpdater.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/UniformityAnalysis.h"
@@ -64,11 +63,10 @@ public:
       : TTI(TTI) {}
 
   // We can preserve non-critical-edgeness when we unify function exit nodes
-  BasicBlock *unifyReturnBlockSet(Function &F, DomTreeUpdater &DTU,
+  BasicBlock *unifyReturnBlockSet(Function &F,
                                   ArrayRef<BasicBlock *> ReturningBlocks,
                                   StringRef Name);
-  bool run(Function &F, DominatorTree *DT, const PostDominatorTree &PDT,
-           const UniformityInfo &UA);
+  bool run(Function &F, const PostDominatorTree &PDT, const UniformityInfo &UA);
 };
 
 class AMDGPUUnifyDivergentExitNodesLegacy : public FunctionPass {
@@ -87,7 +85,6 @@ char &llvm::AMDGPUUnifyDivergentExitNodesID =
 
 INITIALIZE_PASS_BEGIN(AMDGPUUnifyDivergentExitNodesLegacy, DEBUG_TYPE,
                       "Unify divergent function exit nodes", false, false)
-INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(PostDominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(UniformityInfoWrapperPass)
 INITIALIZE_PASS_END(AMDGPUUnifyDivergentExitNodesLegacy, DEBUG_TYPE,
@@ -95,17 +92,9 @@ INITIALIZE_PASS_END(AMDGPUUnifyDivergentExitNodesLegacy, DEBUG_TYPE,
 
 void AMDGPUUnifyDivergentExitNodesLegacy::getAnalysisUsage(
     AnalysisUsage &AU) const {
-  if (RequireAndPreserveDomTree)
-    AU.addRequired<DominatorTreeWrapperPass>();
-
   AU.addRequired<PostDominatorTreeWrapperPass>();
 
   AU.addRequired<UniformityInfoWrapperPass>();
-
-  if (RequireAndPreserveDomTree) {
-    AU.addPreserved<DominatorTreeWrapperPass>();
-    // FIXME: preserve PostDominatorTreeWrapperPass
-  }
 
   // We preserve the non-critical-edgeness property
   AU.addPreservedID(BreakCriticalEdgesID);
@@ -136,8 +125,7 @@ static bool isUniformlyReached(const UniformityInfo &UA, BasicBlock &BB) {
 }
 
 BasicBlock *AMDGPUUnifyDivergentExitNodesImpl::unifyReturnBlockSet(
-    Function &F, DomTreeUpdater &DTU, ArrayRef<BasicBlock *> ReturningBlocks,
-    StringRef Name) {
+    Function &F, ArrayRef<BasicBlock *> ReturningBlocks, StringRef Name) {
   // Otherwise, we need to insert a new basic block into the function, add a PHI
   // nodes (if the function returns values), and convert all of the return
   // instructions into unconditional branches.
@@ -170,14 +158,11 @@ BasicBlock *AMDGPUUnifyDivergentExitNodesImpl::unifyReturnBlockSet(
     Updates.emplace_back(DominatorTree::Insert, BB, NewRetBlock);
   }
 
-  if (RequireAndPreserveDomTree)
-    DTU.applyUpdates(Updates);
   Updates.clear();
 
   for (BasicBlock *BB : ReturningBlocks) {
     // Cleanup possible branch to unconditional branch to the return.
-    simplifyCFG(BB, *TTI, RequireAndPreserveDomTree ? &DTU : nullptr,
-                SimplifyCFGOptions().bonusInstThreshold(2));
+    simplifyCFG(BB, *TTI, SimplifyCFGOptions().bonusInstThreshold(2));
   }
 
   return NewRetBlock;
@@ -223,7 +208,7 @@ static void handleNBranch(Function &F, BasicBlock *BB, Instruction *BI,
   Updates.emplace_back(DominatorTree::Insert, BB, DummyReturnBB);
 }
 
-bool AMDGPUUnifyDivergentExitNodesImpl::run(Function &F, DominatorTree *DT,
+bool AMDGPUUnifyDivergentExitNodesImpl::run(Function &F,
                                             const PostDominatorTree &PDT,
                                             const UniformityInfo &UA) {
   if (PDT.root_size() == 0 ||
@@ -329,12 +314,6 @@ bool AMDGPUUnifyDivergentExitNodesImpl::run(Function &F, DominatorTree *DT,
     }
   }
 
-  // FIXME: add PDT here once simplifycfg is ready.
-  DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Eager);
-  if (RequireAndPreserveDomTree)
-    DTU.applyUpdates(Updates);
-  Updates.clear();
-
   // Now handle return blocks.
   if (ReturningBlocks.empty())
     return Changed; // No blocks return
@@ -342,33 +321,26 @@ bool AMDGPUUnifyDivergentExitNodesImpl::run(Function &F, DominatorTree *DT,
   if (ReturningBlocks.size() == 1)
     return Changed; // Already has a single return block
 
-  unifyReturnBlockSet(F, DTU, ReturningBlocks, "UnifiedReturnBlock");
+  unifyReturnBlockSet(F, ReturningBlocks, "UnifiedReturnBlock");
   return true;
 }
 
 bool AMDGPUUnifyDivergentExitNodesLegacy::runOnFunction(Function &F) {
-  DominatorTree *DT = nullptr;
-  if (RequireAndPreserveDomTree)
-    DT = &getAnalysis<DominatorTreeWrapperPass>().getDomTree();
   const auto &PDT =
       getAnalysis<PostDominatorTreeWrapperPass>().getPostDomTree();
   const auto &UA = getAnalysis<UniformityInfoWrapperPass>().getUniformityInfo();
   const auto *TranformInfo =
       &getAnalysis<TargetTransformInfoWrapperPass>().getTTI(F);
-  return AMDGPUUnifyDivergentExitNodesImpl(TranformInfo).run(F, DT, PDT, UA);
+  return AMDGPUUnifyDivergentExitNodesImpl(TranformInfo).run(F, PDT, UA);
 }
 
 PreservedAnalyses
 AMDGPUUnifyDivergentExitNodesPass::run(Function &F,
                                        FunctionAnalysisManager &AM) {
-  DominatorTree *DT = nullptr;
-  if (RequireAndPreserveDomTree)
-    DT = &AM.getResult<DominatorTreeAnalysis>(F);
-
   const auto &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
   const auto &UA = AM.getResult<UniformityInfoAnalysis>(F);
   const auto *TransformInfo = &AM.getResult<TargetIRAnalysis>(F);
-  return AMDGPUUnifyDivergentExitNodesImpl(TransformInfo).run(F, DT, PDT, UA)
+  return AMDGPUUnifyDivergentExitNodesImpl(TransformInfo).run(F, PDT, UA)
              ? PreservedAnalyses::none()
              : PreservedAnalyses::all();
 }

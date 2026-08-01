@@ -1,4 +1,4 @@
-; RUN: opt < %s -mtriple=powerpc64le-unknown-linux-gnu -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -hoist-common-insts=true -S | FileCheck %s
+; RUN: opt < %s -mtriple=powerpc64le-unknown-linux-gnu -passes=simplifycfg -hoist-common-insts=true -S | FileCheck %s
 
 define float @foo(ptr %src, ptr %dest, i32 signext %count, i32 signext %cond) {
 ; CHECK-LABEL: @foo(

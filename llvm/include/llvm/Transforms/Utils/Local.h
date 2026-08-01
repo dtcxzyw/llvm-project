@@ -189,9 +189,7 @@ LLVM_ABI bool EliminateDuplicatePHINodes(BasicBlock *BB,
 /// It returns true if a modification was made, possibly deleting the basic
 /// block that was pointed to. LoopHeaders is an optional input parameter
 /// providing the set of loop headers that SimplifyCFG should not eliminate.
-LLVM_ABI extern cl::opt<bool> RequireAndPreserveDomTree;
 LLVM_ABI bool simplifyCFG(BasicBlock *BB, const TargetTransformInfo &TTI,
-                          DomTreeUpdater *DTU = nullptr,
                           const SimplifyCFGOptions &Options = {},
                           ArrayRef<WeakVH> LoopHeaders = {});
 
@@ -204,7 +202,6 @@ LLVM_ABI bool FlattenCFG(BasicBlock *BB, AAResults *AA = nullptr);
 /// branches to us and one of our successors, fold the setcc into the
 /// predecessor and use logical operations to pick the right destination.
 LLVM_ABI bool foldBranchToCommonDest(CondBrInst *BI,
-                                     llvm::DomTreeUpdater *DTU = nullptr,
                                      MemorySSAUpdater *MSSAU = nullptr,
                                      const TargetTransformInfo *TTI = nullptr,
                                      AssumptionCache *AC = nullptr,

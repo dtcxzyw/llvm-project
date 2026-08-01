@@ -1,4 +1,4 @@
-; RUN: opt < %s -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -S | FileCheck %s
+; RUN: opt < %s -passes=simplifycfg -S | FileCheck %s
 
 ; Check that the debug location for the hoisted store for "ret = 0" is a
 ; line-0 location.

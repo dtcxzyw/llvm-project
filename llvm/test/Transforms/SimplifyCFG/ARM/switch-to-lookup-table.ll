@@ -1,8 +1,8 @@
-; RUN: opt -S -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -switch-to-lookup -mtriple=arm -relocation-model=static    < %s | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
-; RUN: opt -S -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -switch-to-lookup -mtriple=arm -relocation-model=pic       < %s | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
-; RUN: opt -S -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -switch-to-lookup -mtriple=arm -relocation-model=ropi      < %s | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
-; RUN: opt -S -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -switch-to-lookup -mtriple=arm -relocation-model=rwpi      < %s | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
-; RUN: opt -S -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -switch-to-lookup -mtriple=arm -relocation-model=ropi-rwpi < %s | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
+; RUN: opt -S -passes=simplifycfg -switch-to-lookup -mtriple=arm -relocation-model=static    < %s | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
+; RUN: opt -S -passes=simplifycfg -switch-to-lookup -mtriple=arm -relocation-model=pic       < %s | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
+; RUN: opt -S -passes=simplifycfg -switch-to-lookup -mtriple=arm -relocation-model=ropi      < %s | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
+; RUN: opt -S -passes=simplifycfg -switch-to-lookup -mtriple=arm -relocation-model=rwpi      < %s | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
+; RUN: opt -S -passes=simplifycfg -switch-to-lookup -mtriple=arm -relocation-model=ropi-rwpi < %s | FileCheck %s --check-prefix=CHECK --check-prefix=DISABLE
 
 ; RUN: opt -S -passes='simplifycfg<switch-to-lookup>' -mtriple=arm -relocation-model=static    < %s | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE
 ; RUN: opt -S -passes='simplifycfg<switch-to-lookup>' -mtriple=arm -relocation-model=pic       < %s | FileCheck %s --check-prefix=CHECK --check-prefix=ENABLE

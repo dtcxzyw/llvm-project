@@ -1,10 +1,10 @@
-; RUN: llc -simplifycfg-require-and-preserve-domtree=1 < %s -mtriple=sparc   -relocation-model=static | FileCheck -check-prefix=V8ABS %s
-; RUN: llc -simplifycfg-require-and-preserve-domtree=1 < %s -mtriple=sparc   -relocation-model=pic    | FileCheck -check-prefix=V8PIC %s
-; RUN: llc -simplifycfg-require-and-preserve-domtree=1 < %s -mtriple=sparcv9 -relocation-model=static | FileCheck -check-prefix=V9ABS %s
-; RUN: llc -simplifycfg-require-and-preserve-domtree=1 < %s -mtriple=sparcv9 -relocation-model=pic    | FileCheck -check-prefix=V9PIC %s
+; RUN: llc < %s -mtriple=sparc   -relocation-model=static | FileCheck -check-prefix=V8ABS %s
+; RUN: llc < %s -mtriple=sparc   -relocation-model=pic    | FileCheck -check-prefix=V8PIC %s
+; RUN: llc < %s -mtriple=sparcv9 -relocation-model=static | FileCheck -check-prefix=V9ABS %s
+; RUN: llc < %s -mtriple=sparcv9 -relocation-model=pic    | FileCheck -check-prefix=V9PIC %s
 
-; RUN: llc -simplifycfg-require-and-preserve-domtree=1 < %s -mtriple=sparcv9 -relocation-model=static -filetype=obj | llvm-readobj -r - | FileCheck -check-prefix=V9ABS-REL %s
-; RUN: llc -simplifycfg-require-and-preserve-domtree=1 < %s -mtriple=sparcv9 -relocation-model=pic -filetype=obj | llvm-readobj -r - | FileCheck -check-prefix=V9PIC-REL %s
+; RUN: llc < %s -mtriple=sparcv9 -relocation-model=static -filetype=obj | llvm-readobj -r - | FileCheck -check-prefix=V9ABS-REL %s
+; RUN: llc < %s -mtriple=sparcv9 -relocation-model=pic -filetype=obj | llvm-readobj -r - | FileCheck -check-prefix=V9PIC-REL %s
 
 %struct.__fundamental_type_info_pseudo = type { %struct.__type_info_pseudo }
 %struct.__type_info_pseudo = type { ptr, ptr }

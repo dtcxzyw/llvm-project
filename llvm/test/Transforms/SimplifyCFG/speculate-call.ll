@@ -1,4 +1,4 @@
-; RUN: opt -S -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 < %s | FileCheck %s
+; RUN: opt -S -passes=simplifycfg < %s | FileCheck %s
 
 ; CHECK-LABEL: @speculatable_attribute
 ; CHECK: select

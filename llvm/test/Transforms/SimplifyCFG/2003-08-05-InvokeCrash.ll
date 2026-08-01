@@ -1,6 +1,6 @@
 ; Do not remove the invoke!
 ;
-; RUN: opt < %s -passes=simplifycfg -simplifycfg-require-and-preserve-domtree=1 -disable-output
+; RUN: opt < %s -passes=simplifycfg -disable-output
 
 define i32 @test() personality ptr @__gxx_personality_v0 {
 	%A = invoke i32 @test( )

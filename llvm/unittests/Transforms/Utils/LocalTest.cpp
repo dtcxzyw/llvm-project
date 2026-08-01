@@ -1047,12 +1047,8 @@ TEST(Local, SimplifyCFGWithNullAC) {
   }
   ASSERT_TRUE(TestBB);
 
-  DominatorTree DT(F);
-  DomTreeUpdater DTU(DT, DomTreeUpdater::UpdateStrategy::Eager);
-
   // %test.bb is expected to be simplified by FoldCondBranchOnPHI.
-  EXPECT_TRUE(simplifyCFG(TestBB, TTI,
-                          RequireAndPreserveDomTree ? &DTU : nullptr, Options));
+  EXPECT_TRUE(simplifyCFG(TestBB, TTI, Options));
 }
 
 TEST(LocalTest, TargetTypeInfoHasNoReplacementProperty) {
