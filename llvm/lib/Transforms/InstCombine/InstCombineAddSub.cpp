@@ -2437,6 +2437,8 @@ Instruction *InstCombinerImpl::visitSub(BinaryOperator &I) {
     } else {
       if (cast<Constant>(Op1)->isNotMinSignedValue() && I.hasNoSignedWrap())
         Res->setHasNoSignedWrap(true);
+      else if (I.hasNoUnsignedWrap() && isKnownNonNegative(Op1, SQ) && isKnownNonNegative(Op0, SQ.getWithInstruction(&I)))
+        Res->setHasNoSignedWrap(true);
     }
 
     return Res;
