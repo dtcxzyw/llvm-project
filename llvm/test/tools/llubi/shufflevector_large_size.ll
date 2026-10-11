@@ -6,6 +6,6 @@ define void @main() {
   ret void
 }
 
-; CHECK: The number of elements of <vscale x 1073741823 x i32> is too large!
+; CHECK: <vscale x 1073741823 x i32> is too large!
 ; CHECK-NEXT:   %x = shufflevector <vscale x 1073741823 x i32> poison, <vscale x 1073741823 x i32> poison, <vscale x 1 x i32> zeroinitializer at @main <stdin>:5
 ; CHECK-NEXT: error: -: input module cannot be executed!

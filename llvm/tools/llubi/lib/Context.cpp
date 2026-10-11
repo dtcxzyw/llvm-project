@@ -1270,58 +1270,102 @@ uint64_t Context::getEffectiveTypeStoreSize(Type *Ty) {
   return getEffectiveTypeSize(DL.getTypeStoreSize(Ty));
 }
 
-bool Context::isValid(raw_ostream &OS) const {
-  assert(isPowerOf2_32(VScale) && "VScale must be a power of two.");
-  uint32_t MaxNumElements = UINT32_MAX / VScale;
+/// Check whether \p Ty is small enough to be emulated. Return the total bits
+/// the type (we use the allocation size as a overestimation) if it is
+/// supported. Otherwise, return std::nullopt.
+/// In fact it duplicates the logic from DL.getTypeAllocSizeInBits, with careful
+/// handling of overflows.
+std::optional<uint64_t> Context::isSupportedType(
+    raw_ostream &OS, DenseMap<Type *, uint64_t> &ValidAggTys, Type *Ty) const {
+  constexpr uint64_t MaxNumBits = UINT32_MAX;
+  uint32_t MaxNumBitsPerElement = MaxNumBits;
 
-  SmallPtrSet<Type *, 16> ValidAggTys;
-  auto IsSupportedType = [&](auto &&Self, Type *Ty) {
-    switch (Ty->getTypeID()) {
-    case Type::X86_AMXTyID:
-    case Type::TargetExtTyID:
-    case Type::TokenTyID:
-      OS << "Unsupported type " << *Ty << '\n';
-      return false;
-    case Type::ScalableVectorTyID:
-      // Avoid overflow when computing EVL.
-      if (cast<VectorType>(Ty)->getElementCount().getKnownMinValue() >=
-          MaxNumElements) {
-        OS << "The number of elements of " << *Ty << " is too large!\n";
-        return false;
-      }
-      [[fallthrough]];
-    case Type::FixedVectorTyID:
-      if (cast<VectorType>(Ty)->getElementType()->isTargetExtTy()) {
-        OS << "Unsupported type " << *Ty << '\n';
-        return false;
-      }
-      return true;
-    case Type::ArrayTyID:
-      // The number of elements is used as uint32_t in the value
-      // representation. Reject arrays with too many elements to avoid
-      // truncation.
-      if (cast<ArrayType>(Ty)->getNumElements() > UINT32_MAX) {
-        OS << "The number of elements of " << *Ty << " is too large!\n";
-        return false;
-      }
-      [[fallthrough]];
-    case Type::StructTyID:
-      if (auto *STy = dyn_cast<StructType>(Ty); STy && STy->isOpaque()) {
-        OS << "Unsupported opaque struct type %" << STy->getName() << "\n";
-        return false;
-      }
-      if (ValidAggTys.contains(Ty))
-        return true;
-      for (unsigned I = 0, E = Ty->getNumContainedTypes(); I != E; ++I)
-        if (!Self(Self, Ty->getContainedType(I)))
-          return false;
-      ValidAggTys.insert(Ty);
-      return true;
-    default:
-      return true;
+  switch (Ty->getTypeID()) {
+  case Type::X86_AMXTyID:
+  case Type::TargetExtTyID:
+  case Type::TokenTyID:
+    OS << "Unsupported type " << *Ty << '\n';
+    return std::nullopt;
+  case Type::ScalableVectorTyID:
+    assert(isPowerOf2_32(VScale) && "VScale must be a power of two.");
+    MaxNumBitsPerElement /= VScale;
+    [[fallthrough]];
+  case Type::FixedVectorTyID: {
+    ElementCount EC = cast<VectorType>(Ty)->getElementCount();
+    MaxNumBitsPerElement /= EC.getKnownMinValue();
+    auto ElementBits = isSupportedType(OS, ValidAggTys,
+                                       cast<VectorType>(Ty)->getElementType());
+    if (!ElementBits)
+      return std::nullopt;
+    if (*ElementBits > MaxNumBitsPerElement) {
+      OS << *Ty << " is too large!\n";
+      return std::nullopt;
     }
-  };
+    // Now the multiplication never overflows.
+    return *ElementBits * getEVL(EC);
+  }
+  case Type::ArrayTyID: {
+    if (uint64_t Size = ValidAggTys.lookup(Ty))
+      return Size;
+    uint64_t Scale =
+        std::max(cast<ArrayType>(Ty)->getNumElements(), (uint64_t)1);
+    MaxNumBitsPerElement /= Scale;
+    auto ElementBits =
+        isSupportedType(OS, ValidAggTys, cast<ArrayType>(Ty)->getElementType());
+    if (!ElementBits)
+      return std::nullopt;
+    if (*ElementBits > MaxNumBitsPerElement) {
+      OS << *Ty << " is too large!\n";
+      return std::nullopt;
+    }
+    // Now the multiplication never overflows.
+    return ValidAggTys.insert({Ty, *ElementBits * Scale}).first->second;
+  }
+  case Type::StructTyID: {
+    auto *STy = cast<StructType>(Ty);
+    if (STy->isOpaque()) {
+      OS << "Unsupported opaque struct type %" << STy->getName() << '\n';
+      return std::nullopt;
+    }
+    if (uint64_t Size = ValidAggTys.lookup(Ty))
+      return Size;
+    uint64_t Size = 0, Alignment = 8;
+    for (unsigned I = 0, E = STy->getNumElements(); I != E; ++I) {
+      Type *ElementType = STy->getElementType(I);
+      auto ElementBits = isSupportedType(OS, ValidAggTys, ElementType);
+      if (!ElementBits)
+        return std::nullopt;
+      if (!STy->isPacked()) {
+        uint64_t ElementAlignment = DL.getABITypeAlign(ElementType).value() * 8;
+        Size = alignTo(Size, ElementAlignment);
+        Alignment = std::max(Alignment, ElementAlignment);
+      }
+      // The addition never overflows.
+      Size += *ElementBits;
+    }
+    Size = std::max(Size, (uint64_t)1);
+    if (!STy->isPacked()) {
+      // If it is not packed, we need to respect StructABIAlignment specified in
+      // the DL string.
+      Alignment = std::max(Alignment, DL.getABITypeAlign(STy).value() * 8);
+    }
+    Size = alignTo(Size, Alignment);
+    if (Size > MaxNumBits) {
+      OS << *Ty << " is too large!\n";
+      return std::nullopt;
+    }
+    return ValidAggTys.insert({Ty, Size}).first->second;
+  }
+  default:
+    // All scalar single value types are known smaller than MaxNumBits.
+    if (Ty->isSingleValueType())
+      return DL.getTypeAllocSizeInBits(Ty);
+    // void/metadata/label/function types are always supported.
+    return 0;
+  }
+}
 
+bool Context::isValid(raw_ostream &OS) const {
   StringRef ModuleFileName = M.getModuleIdentifier();
 
   auto DumpFunction = [&](Function *F) {
@@ -1368,8 +1412,9 @@ bool Context::isValid(raw_ostream &OS) const {
     return false;
   };
 
+  DenseMap<Type *, uint64_t> ValidAggTys;
 #define CHECK(TYPE, LOC)                                                       \
-  if (!IsSupportedType(IsSupportedType, TYPE))                                 \
+  if (!isSupportedType(OS, ValidAggTys, TYPE))                                 \
     return LOC;
 
   for (auto &F : M) {

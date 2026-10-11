@@ -5,6 +5,6 @@ define void @main() {
   store <2 x target("llvm.test.vectorelement")> poison, ptr null
   ret void
 }
-; CHECK: Unsupported type <2 x target("llvm.test.vectorelement")>
+; CHECK: Unsupported type target("llvm.test.vectorelement")
 ; CHECK-NEXT:   store <2 x target("llvm.test.vectorelement")> poison, ptr null, align 8 at @main <stdin>:5
 ; CHECK-NEXT: error: -: input module cannot be executed!

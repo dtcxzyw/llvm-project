@@ -228,6 +228,10 @@ class Context {
   const DataLayout &DL;
   const TargetLibraryInfoImpl TLIImpl;
 
+  std::optional<uint64_t>
+  isSupportedType(raw_ostream &OS, DenseMap<Type *, uint64_t> &ValidAggTys,
+                  Type *Ty) const;
+
   // Configuration
   uint64_t MaxMem = 0;
   uint32_t VScale = 4;
