@@ -2,6 +2,19 @@
 
 ## Project Overview
 
+Goal: create a new IR representation for statically allocated stack variables (function locals) that satisfies the constraints below, replacing the current `alloca` + `llvm.lifetime.start/end` model.
+
+Background: llvm/llvm-project#45725 shows the current model is semantically self-inconsistent: InstSimplify folds `icmp` of distinct allocas assuming that distinct allocations have distinct addresses, while stack coloring may place allocas with disjoint lifetimes at the same address. This yields miscompilations in C and safe Rust (`icmp` folds and `ptrtoint` arithmetic become inconsistent); see also #51838, #54002, #131927, #104776. Lifetime intrinsics cannot be retrofitted with coherent semantics; several replacement designs have been discussed in the issue, but none is accepted. Current state: lifetimes are restricted to allocas and their size operand was removed (#149310, #150248), and `llvm.structured.alloca` (#186811) covers only opaque physical layouts. The issue remains open, with no accepted design yet.
+
+Constraints:
+- Lifetimes must be precisely computable and verifiable from the IR alone: no walking all uses of an allocation to find its lifetime markers; well-formedness is enforced by the verifier.
+- Non-overlapping lifetimes may share storage; overlapping lifetimes must not; the program must behave as if overlapping allocations never overlap.
+- All locals are allocated on entry to a static stack frame; inlining must not excessively bloat the stack.
+- Address semantics must be consistent: distinct live allocations compare unequal; `icmp eq` folds to false only for overlapping lifetimes and does not fold for non-overlapping ones; `ptrtoint` results stay consistent; each lifetime has fresh provenance and pointers die with their lifetime.
+- Optimizer integration must not regress, including alias analysis; storage reuse must be reliably computable rather than depending on best-effort stack coloring.
+- Exception handling (landing pads) needs a defined interaction.
+- Hard budget: no sacrificing optimization results, compile time, or compatibility (existing IR, frontends, and backends; existing IR needs an upgrade path).
+
 ## Project Constraints
 
 LLVM cmake build is in ./build.
