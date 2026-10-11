@@ -62,7 +62,6 @@ autoconf/autom4te.cache
 .claude/
 /GEMINI.md
 .gemini/
-AGENTS.md
 .codex/
 # Cursor specific files
 .cursor
@@ -83,6 +82,7 @@ pythonenv*
 .clangd/
 .cache
 .clangd
+.clice
 # static analyzer regression testing project files
 /clang/utils/analyzer/projects/*/CachedSource
 /clang/utils/analyzer/projects/*/PatchedSource
@@ -90,3 +90,5 @@ pythonenv*
 /clang/utils/analyzer/projects/*/RefScanBuildResults
 # automodapi puts generated documentation files here.
 /lldb/docs/python_api/
+# Retained scratch files created by agent work.
+/work

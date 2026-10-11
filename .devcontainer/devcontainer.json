@@ -1,0 +1,26 @@
+{
+    "name": "LLVM Dev Container",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/llvm,type=bind,consistency=cached",
+    "workspaceFolder": "/llvm",
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": "true",
+            "configureZshAsDefaultShell": "true",
+            "username": "llvm",
+            "upgradePackages": "true"
+        }
+    },
+    "containerUser": "llvm",
+    "remoteUser": "llvm",
+    "runArgs": [
+        "--network=host",
+        "--cap-add=SYS_PTRACE",
+        "--cap-add=PERFMON",
+        "--security-opt",
+        "seccomp=unconfined"
+    ]
+}
